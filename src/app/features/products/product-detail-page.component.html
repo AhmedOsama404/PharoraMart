@@ -1,0 +1,107 @@
+@if (page().status === 'loading') {
+  <div class="detail"><p-skeleton height="26rem" borderRadius="1.2rem" /><div><p-skeleton height="2.4rem" /><br /><p-skeleton height="8rem" /></div></div>
+} @else if (page().status === 'error') {
+  <app-empty-state icon="pi-exclamation-triangle" [title]="i18n.t('catalog.errorTitle')"
+    [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="retry()" />
+} @else if (page().status === 'not-found' || !page().product) {
+  <app-empty-state icon="pi-exclamation-circle" [title]="i18n.t('errors.notFound')"
+    [subtitle]="i18n.t('orders.notFound')" [actionLabel]="i18n.t('notFound.backHome')" (actionClick)="goHome()" />
+} @else {
+  <p-breadcrumb [model]="crumbs()" />
+  <div class="detail">
+    <div class="gallery">
+      <div class="img-frame main-frame">
+        <i class="pi pi-image img-fallback" aria-hidden="true"></i>
+        <img class="main" [src]="images()[activeImg()]" [alt]="product()!.name" (error)="fbImg($event, 'novamart-detail')" />
+      </div>
+      <div class="thumbs" role="tablist" aria-label="product images">
+        @for (src of images(); track src; let i = $index) {
+          <button [class.active]="i === activeImg()" (click)="activeImg.set(i)" [attr.aria-label]="'image ' + (i + 1)">
+            <span class="img-frame thumb-frame">
+              <i class="pi pi-image img-fallback" aria-hidden="true"></i>
+              <img [src]="src" [alt]="product()!.name" loading="lazy" (error)="fbImg($event, 'novamart-thumb-' + i)" />
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+    <div class="info">
+      <div class="tags">
+        @if (product()!.salePrice != null) { <p-tag severity="danger" [value]="i18n.t('product.off', { percent: discount() })" /> }
+        @if (product()!.isNew) { <p-tag severity="info" [value]="i18n.t('product.new')" /> }
+        @if (product()!.isPopular) { <p-tag severity="warn" [value]="i18n.t('product.popular')" /> }
+      </div>
+      <h1>{{ product()!.name }}</h1>
+      <div class="meta">
+        <span class="rating">★ {{ product()!.rating.toFixed(1) }}</span>
+        <span>{{ i18n.t('product.reviews', { count: product()!.reviewsCount }) }}</span>·
+        <span>{{ i18n.t('product.sold', { count: product()!.soldCount }) }}</span>·
+        <span>{{ i18n.t('product.sku') }}: {{ product()!.sku }}</span>
+      </div>
+      <div class="price-row">
+        <span class="price">{{ effective() | money }}</span>
+        @if (product()!.salePrice != null) { <span class="old">{{ product()!.price | money }}</span> }
+      </div>
+      <p class="stock" [class.out]="availability() === 'out_of_stock'">
+        @if (availability() === 'out_of_stock') { {{ i18n.t('product.outOfStock') }} }
+        @else if (availability() === 'low_stock') { {{ i18n.t('product.lowStock', { count: product()!.stock }) }} }
+        @else { {{ i18n.t('product.inStock') }} }
+      </p>
+      <p class="category">{{ i18n.t('product.category') }}:
+        <a [routerLink]="['/products']" [queryParams]="{ category: product()!.categoryId }">{{ categoryName() }}</a>
+      </p>
+      @if (product()!.variants?.length) {
+        @for (v of product()!.variants!; track v.id) {
+          <div class="variant">
+            <label [attr.for]="'variant-' + v.id">{{ v.name }}</label>
+            <p-select [inputId]="'variant-' + v.id" [options]="variantOptions(v.id, v.options)" [(ngModel)]="selectedVariants[v.id]"
+              [placeholder]="i18n.t('product.selectVariant')" optionLabel="label" optionValue="value" [fluid]="true" />
+          </div>
+        }
+      }
+      <div class="buy">
+        <label>{{ i18n.t('product.qty') }}</label>
+        <app-qty-selector [qty]="qty()" [min]="1" [max]="product()!.stock || 1" (qtyChange)="qty.set($event)" />
+        @if (qty() >= product()!.stock && product()!.stock > 0) {
+          <small class="warn">{{ i18n.t('product.maxStock', { count: product()!.stock }) }}</small>
+        }
+      </div>
+      <div class="cta">
+        <p-button [label]="i18n.t('product.addToCart')" icon="pi pi-shopping-cart"
+          [disabled]="product()!.stock <= 0" (onClick)="addToCart()" />
+        <p-button [icon]="isFav() ? 'pi pi-heart-fill' : 'pi pi-heart'"
+          [severity]="isFav() ? 'danger' : 'secondary'" [outlined]="!isFav()"
+          [attr.aria-label]="isFav() ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+          (onClick)="toggleFav()" />
+      </div>
+      <p-tabs value="0">
+        <p-tablist>
+          <p-tab value="0">{{ i18n.t('product.description') }}</p-tab>
+          <p-tab value="1">{{ i18n.t('product.attributes') }}</p-tab>
+        </p-tablist>
+        <p-tabpanels>
+          <p-tabpanel value="0"><p class="desc">{{ product()!.description }}</p></p-tabpanel>
+          <p-tabpanel value="1">
+            @if (product()!.attributes && product()!.attributes.length) {
+              <dl class="attrs">
+                @for (a of product()!.attributes; track a.name) {
+                  <div><dt>{{ a.name }}</dt><dd>{{ a.value }}</dd></div>
+                }
+              </dl>
+            } @else {
+              <p class="desc">{{ i18n.t('errors.notFound') }}</p>
+            }
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+    </div>
+  </div>
+  <section class="related">
+    <app-section-header [title]="i18n.t('product.related')" />
+    <div class="grid">
+      @for (p of page().related; track p.id) {
+        <app-product-card [product]="p" (add)="quickAdd($event)" (favToggle)="quickFav($event)" />
+      }
+    </div>
+  </section>
+}

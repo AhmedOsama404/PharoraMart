@@ -1,0 +1,57 @@
+@if (state() === 'loading') {
+  <p-skeleton height="18rem" borderRadius="1.2rem" />
+} @else if (!order()) {
+  <app-empty-state icon="pi-exclamation-circle" [title]="i18n.t('orders.notFound')"
+    [actionLabel]="i18n.t('notFound.backHome')" (actionClick)="go('/')" />
+} @else {
+  <div class="hero-ok"><i class="pi pi-check-circle"></i>
+    <div><h1>{{ i18n.t('confirmation.title') }}</h1><p>{{ i18n.t('confirmation.subtitle') }}</p></div>
+  </div>
+  <p-message severity="info" size="small" [text]="i18n.t('confirmation.mockNotice')" />
+  <div class="layout">
+    <p-card>
+      <div class="kv"><span>{{ i18n.t('confirmation.orderNumber') }}</span><strong>{{ order()!.orderNumber }}</strong></div>
+      <div class="kv"><span>{{ i18n.t('confirmation.orderDate') }}</span><strong>{{ dateOf(order()!.createdAt) }}</strong></div>
+      <div class="kv"><span>{{ i18n.t('confirmation.paymentMethod') }}</span><strong>{{ i18n.t('confirmation.cashOnDelivery') }}</strong></div>
+      <p-divider />
+      <h2>{{ i18n.t('confirmation.items') }}</h2>
+      <ul class="items">
+        @for (i of order()!.items; track i.productId + (i.variantLabel ?? '')) {
+          <li><img [src]="i.image" [alt]="i.productName" loading="lazy" (error)="imgFallback($event, i.productId)" />
+            <span>{{ i.productName }} @if (i.variantLabel) { <small>({{ i.variantLabel }})</small> } <small>× {{ i.qty }}</small></span>
+            <strong>{{ i.unitPrice * i.qty | money }}</strong></li>
+        }
+      </ul>
+      <p-divider />
+      <div class="kv"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ order()!.subtotal | money }}</strong></div>
+      <div class="kv"><span>{{ i18n.t('checkout.delivery') }}</span>
+        <strong>@if (order()!.deliveryFee === 0) { {{ i18n.t('cart.free') }} } @else { {{ order()!.deliveryFee | money }} }</strong></div>
+      <div class="kv grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ order()!.total | money }}</strong></div>
+    </p-card>
+    <div class="side">
+      <p-card>
+        <h2>{{ i18n.t('confirmation.deliveryTo') }}</h2>
+        <p>{{ order()!.customer.fullName }}<br />{{ order()!.customer.phone }}<br />
+          {{ order()!.customer.hotelName }}, {{ order()!.customer.city }}
+          @if (order()!.customer.room) { <br />{{ order()!.customer.room }} }
+        </p>
+        <h2>{{ i18n.t('confirmation.nextSteps') }}</h2>
+        <ol><li>{{ i18n.t('confirmation.next1') }}</li><li>{{ i18n.t('confirmation.next2') }}</li><li>{{ i18n.t('confirmation.next3') }}</li></ol>
+      </p-card>
+      <p-card>
+        @if (contact.mode !== 'email') {
+          <p-button [label]="i18n.t('confirmation.whatsappButton')" icon="pi pi-whatsapp" severity="success" [fluid]="true" (onClick)="wa()" />
+          <small class="hint">{{ i18n.t('confirmation.whatsappHint') }}</small>
+        }
+        @if (contact.mode !== 'whatsapp') {
+          <p-button [label]="i18n.t('confirmation.emailButton')" icon="pi pi-envelope" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="mail()" />
+          <small class="hint">{{ i18n.t('confirmation.emailHint') }}</small>
+        }
+        <div class="row">
+          <p-button [label]="i18n.t('confirmation.continueShopping')" [text]="true" (onClick)="go('/products')" />
+          <p-button [label]="i18n.t('confirmation.viewOrders')" severity="secondary" [outlined]="true" (onClick)="go('/orders')" />
+        </div>
+      </p-card>
+    </div>
+  </div>
+}

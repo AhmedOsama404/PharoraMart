@@ -1,0 +1,18 @@
+<div class="auth-wrap">
+  <p-card class="auth-card">
+    <h1>{{ i18n.t('auth.forgotTitle') }}</h1>
+    <p class="sub">{{ i18n.t('auth.forgotSubtitle') }}</p>
+    @if (sent()) {
+      <p-message severity="success" [text]="i18n.t('auth.forgotSent')" />
+    }
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="email">{{ i18n.t('auth.email') }}</label>
+        <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" />
+        @if (err(); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+      </div>
+      <p-button type="submit" [label]="i18n.t('auth.forgotButton')" [loading]="busy()" [fluid]="true" />
+    </form>
+    <div class="links"><a routerLink="/auth/login">{{ i18n.t('auth.backToLogin') }}</a></div>
+  </p-card>
+</div>

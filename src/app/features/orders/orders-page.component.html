@@ -1,0 +1,24 @@
+<h1>{{ i18n.t('orders.title') }}</h1>
+<p class="sub">{{ i18n.t('orders.subtitle') }}</p>
+@if (state() === 'loading') {
+  <div class="list">@for (i of [1,2,3]; track i) { <p-skeleton height="7rem" borderRadius="1rem" /> }</div>
+} @else if (!orders().length) {
+  <app-empty-state icon="pi-box" [title]="i18n.t('orders.emptyTitle')"
+    [subtitle]="i18n.t('orders.emptySubtitle')" [actionLabel]="i18n.t('orders.shopNow')" (actionClick)="go('/products')" />
+} @else {
+  <div class="list">
+    @for (o of orders(); track o.id) {
+      <p-card>
+        <div class="row">
+          <div>
+            <strong>{{ i18n.t('orders.orderNumber') }} {{ o.orderNumber }}</strong>
+            <div class="meta">{{ dateOf(o.createdAt) }} · {{ itemCount(o) }} items · {{ i18n.t('confirmation.cashOnDelivery') }}</div>
+          </div>
+          <p-tag [value]="statusLabel(o.status)" [severity]="statusSeverity(o.status)" />
+          <strong>{{ o.total | money }}</strong>
+          <p-button [label]="i18n.t('orders.view')" size="small" [outlined]="true" [routerLink]="['/orders', o.id]" />
+        </div>
+      </p-card>
+    }
+  </div>
+}

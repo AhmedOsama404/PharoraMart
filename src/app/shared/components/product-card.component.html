@@ -1,0 +1,58 @@
+<article class="product-card" [attr.aria-label]="product.name">
+  <a class="media img-frame" [routerLink]="['/products', product.id]" [attr.aria-label]="product.name">
+    <i class="pi pi-image img-fallback" aria-hidden="true"></i>
+    <img
+      [src]="product.images[0]"
+      [alt]="product.name"
+      loading="lazy"
+      (error)="onImgError($event)"
+    />
+    <span class="badges">
+      @if (product.salePrice != null) {
+        <p-tag severity="danger" [value]="i18n.t('product.off', { percent: discount() })" />
+      }
+      @if (product.isNew) {
+        <p-tag severity="info" [value]="i18n.t('product.new')" />
+      }
+    </span>
+    <button
+      type="button"
+      class="fav-btn"
+      [class.active]="favorites.has(product.id)"
+      (click)="onFav($event)"
+      [attr.aria-label]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+      [pTooltip]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+      tooltipPosition="top"
+    >
+      <i class="pi" [class.pi-heart-fill]="favorites.has(product.id)" [class.pi-heart]="!favorites.has(product.id)"></i>
+    </button>
+  </a>
+  <div class="body">
+    <a class="name" [routerLink]="['/products', product.id]">{{ product.name }}</a>
+    <div class="meta">
+      <span class="rating" aria-label="rating">★ {{ product.rating.toFixed(1) }}</span>
+      <span class="dot">·</span>
+      <span class="sold">{{ i18n.t('product.sold', { count: product.soldCount }) }}</span>
+      <span class="dot">·</span>
+      <span class="stock" [class.out]="product.stock <= 0" [class.low]="product.stock > 0 && product.stock <= 5">
+        @if (product.stock <= 0) { {{ i18n.t('product.outOfStock') }} }
+        @else if (product.stock <= 5) { {{ i18n.t('product.lowStock', { count: product.stock }) }} }
+        @else { {{ i18n.t('product.inStock') }} }
+      </span>
+    </div>
+    <div class="price-row">
+      <span class="price">{{ effective() | money }}</span>
+      @if (product.salePrice != null) {
+        <span class="old">{{ product.price | money }}</span>
+      }
+    </div>
+    <p-button
+      [label]="i18n.t('product.addToCart')"
+      icon="pi pi-shopping-cart"
+      size="small"
+      [fluid]="true"
+      [disabled]="product.stock <= 0"
+      (onClick)="add.emit(product)"
+    />
+  </div>
+</article>

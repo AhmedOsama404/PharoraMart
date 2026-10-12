@@ -1,0 +1,108 @@
+<section class="hero">
+  <div class="hero-copy">
+    <p-tag [value]="i18n.t('hero.badge')" severity="info" />
+    <h1>{{ i18n.t('hero.title') }}</h1>
+    <p>{{ i18n.t('hero.subtitle') }}</p>
+    <div class="cta">
+      <p-button [label]="i18n.t('hero.shopNow')" icon="pi pi-shopping-bag" (onClick)="go('/products')" />
+      <p-button [label]="i18n.t('hero.browseCategories')" severity="secondary" [outlined]="true" (onClick)="scrollTo(catsEl)" />
+    </div>
+    <ul class="perks">
+      <li><i class="pi pi-truck"></i>{{ i18n.t('hero.freeShipping') }}</li>
+      <li><i class="pi pi-money-bill"></i>{{ i18n.t('hero.cashOnDelivery') }}</li>
+      <li><i class="pi pi-refresh"></i>{{ i18n.t('hero.easyReturns') }}</li>
+    </ul>
+  </div>
+  <div class="hero-media">
+    @if (heroProduct()) {
+      <a [routerLink]="['/products', heroProduct()!.id]" class="hero-card">
+        <img [src]="heroProduct()!.images[0]" [alt]="heroProduct()!.name" fetchpriority="high" (error)="fbImg($event)" />
+        <span class="hero-info">
+          <span class="hero-name">{{ heroProduct()!.name }}</span>
+          <span class="hero-price">{{ heroProduct()!.salePrice ?? heroProduct()!.price | money }}</span>
+        </span>
+      </a>
+    }
+    <div class="hero-tiles">
+      @for (p of heroTiles(); track p.id) {
+        <a [routerLink]="['/products', p.id]"><img [src]="p.images[0]" [alt]="p.name" loading="lazy" (error)="fbImg($event)" /></a>
+      }
+    </div>
+  </div>
+</section>
+
+<section #catsEl class="block">
+  <app-section-header [title]="i18n.t('home.categoriesTitle')" [subtitle]="i18n.t('home.categoriesSubtitle')" />
+  @if (loading()) {
+    <div class="cat-grid">@for (i of [1,2,3,4,5]; track i) { <p-skeleton height="12rem" borderRadius="1rem" /> }</div>
+  } @else {
+    <div class="cat-grid">
+      @for (c of categories(); track c.id) {
+        <a class="cat-card" [routerLink]="['/products']" [queryParams]="{ category: c.id }">
+          <img [src]="c.image" [alt]="categoryName(c)" loading="lazy" (error)="fbImg($event)" />
+          <span class="cat-label"><strong>{{ categoryName(c) }}</strong><small>{{ categoryDescription(c) }}</small></span>
+        </a>
+      }
+    </div>
+  }
+</section>
+
+<section class="block">
+  <app-section-header [title]="i18n.t('home.featuredTitle')" [subtitle]="i18n.t('home.featuredSubtitle')"
+    link="/products" [linkLabel]="i18n.t('home.viewAll')" />
+  @if (loading()) {
+    <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+  } @else {
+    <div class="grid">
+      @for (p of featured(); track p.id) {
+        <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+      }
+    </div>
+  }
+</section>
+
+<section class="promo">
+  <div>
+    <h2>{{ i18n.t('home.promoTitle') }}</h2>
+    <p>{{ i18n.t('home.promoSubtitle') }}</p>
+    <p-button [label]="i18n.t('home.promoCta')" severity="contrast" (onClick)="goSale()" />
+  </div>
+  @if (saleProduct()) {
+    <a [routerLink]="['/products', saleProduct()!.id]"><img [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.name" loading="lazy" (error)="fbImg($event)" /></a>
+  }
+</section>
+
+<section class="block">
+  <app-section-header [title]="i18n.t('home.newTitle')" [subtitle]="i18n.t('home.newSubtitle')"
+    link="/products" [linkLabel]="i18n.t('home.viewAll')" />
+  @if (!loading()) {
+    <p-carousel [value]="newArrivals()" [numVisible]="4" [numScroll]="2" [responsiveOptions]="carouselOpts" [showIndicators]="false">
+      <ng-template let-p #item>
+        <div class="car-item"><app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" /></div>
+      </ng-template>
+    </p-carousel>
+  }
+</section>
+
+<section class="block">
+  <app-section-header [title]="i18n.t('home.popularTitle')" [subtitle]="i18n.t('home.popularSubtitle')"
+    link="/products" [linkLabel]="i18n.t('home.viewAll')" />
+  @if (!loading()) {
+    <div class="grid">
+      @for (p of popular(); track p.id) {
+        <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+      }
+    </div>
+  }
+</section>
+
+@if (recentlyViewed().length) {
+  <section class="block">
+    <app-section-header [title]="i18n.t('home.recentlyViewedTitle')" />
+    <div class="grid">
+      @for (p of recentlyViewed(); track p.id) {
+        <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+      }
+    </div>
+  </section>
+}

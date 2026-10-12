@@ -1,0 +1,31 @@
+.detail { display: grid; grid-template-columns: 1.05fr 1fr; gap: 2rem; margin-top: 1rem; }
+/* Framed gallery: the frame (not the img) owns the aspect box, so a fully
+   failed load degrades to a clean placeholder instead of a collapsed sliver. */
+.main-frame { aspect-ratio: 4 / 3; border-radius: 1.2rem; border: 1px solid var(--surface-border); }
+.main-frame > img.main { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.main-frame > .img-fallback { font-size: 3rem; }
+.thumbs { display: flex; gap: 0.6rem; margin-top: 0.7rem; }
+.thumbs button { border: 2px solid transparent; border-radius: 0.8rem; overflow: hidden; padding: 0; cursor: pointer; background: none; }
+.thumbs button.active { border-color: var(--primary); }
+.thumb-frame { display: block; width: 4.6rem; height: 3.6rem; }
+.thumb-frame > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-frame > .img-fallback { font-size: 1.2rem; }
+.tags { display: flex; gap: 0.4rem; }
+h1 { margin: 0.6rem 0 0.4rem; font-size: 1.7rem; letter-spacing: -0.01em; }
+.meta { display: flex; gap: 0.5rem; flex-wrap: wrap; color: var(--text-secondary); font-size: 0.88rem; align-items: center; }
+.rating { color: #b45309; font-weight: 800; }
+.price-row { display: flex; gap: 0.7rem; align-items: baseline; margin-top: 0.8rem; }
+.price { font-size: 1.9rem; font-weight: 850; } .old { color: var(--text-secondary); text-decoration: line-through; }
+.stock { font-weight: 700; } .stock.out { color: var(--danger); }
+.category a { color: var(--primary); text-decoration: none; font-weight: 600; }
+.variant { display: grid; gap: 0.4rem; margin-top: 0.8rem; } .variant label { font-weight: 700; font-size: 0.88rem; }
+.buy { display: flex; gap: 0.8rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; } .buy > label { font-weight: 700; }
+.warn { color: #b45309; }
+.cta { display: flex; gap: 0.7rem; margin: 1.1rem 0 1.4rem; }
+.desc { line-height: 1.7; color: var(--text-primary); }
+.attrs div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid var(--surface-border); }
+dt { color: var(--text-secondary); } dd { margin: 0; font-weight: 600; }
+.related { margin-top: 2.4rem; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; }
+@media (max-width: 960px) { .detail { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }

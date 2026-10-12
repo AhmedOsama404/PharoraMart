@@ -1,0 +1,91 @@
+<header class="topbar">
+  <div class="announce">{{ i18n.t('hero.freeShipping') }} · {{ i18n.t('hero.cashOnDelivery') }}</div>
+  <div class="bar container">
+    <button class="icon-btn menu-btn" (click)="mobileOpen.set(true)" [attr.aria-label]="i18n.t('nav.menu')">
+      <i class="pi pi-bars"></i>
+    </button>
+    <a routerLink="/" class="logo" aria-label="NovaMart home">
+      <span class="logo-mark">N</span>
+      <span class="logo-text">{{ i18n.t('app.name') }}</span>
+    </a>
+    <nav class="links" aria-label="primary">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('nav.home') }}</a>
+      <a routerLink="/products" routerLinkActive="active">{{ i18n.t('nav.catalog') }}</a>
+      <a routerLink="/orders" routerLinkActive="active">{{ i18n.t('nav.orders') }}</a>
+    </nav>
+    <div class="search">
+      <p-iconField iconPosition="left">
+        <p-inputIcon class="pi pi-search" />
+        <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onSearchInput($event)"
+          (keyup.enter)="goSearch()" [placeholder]="i18n.t('nav.searchPlaceholder')"
+          [attr.aria-label]="i18n.t('nav.searchPlaceholder')" />
+        @if (searchTerm) {
+          <button class="clear-search" (click)="clearSearch()" [attr.aria-label]="i18n.t('search.clear')"><i class="pi pi-times"></i></button>
+        }
+      </p-iconField>
+      @if (showSuggestions()) {
+        <div class="suggest" role="listbox">
+          @for (p of suggestions(); track p.id) {
+            <a [routerLink]="['/products', p.id]" (click)="closeSuggestions()" role="option">
+              <img [src]="p.images[0]" [alt]="p.name" loading="lazy" (error)="imgFallback($event, p.id)" />
+              <span>{{ p.name }}</span>
+            </a>
+          }
+          @if (!suggestions().length) {
+            <span class="no-suggest">{{ i18n.t('search.noResultsTitle') }}</span>
+          }
+        </div>
+      }
+    </div>
+    <div class="actions">
+      <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value"
+        (onChange)="onLang($event.value)" [attr.aria-label]="i18n.t('language.label')" class="lang-select" />
+      <p-select [options]="currencyOptions" [(ngModel)]="currencyModel" optionLabel="label" optionValue="value"
+        (onChange)="onCurrency($event.value)" [attr.aria-label]="i18n.t('currency.label')" class="cur-select" />
+      <a routerLink="/favorites" class="icon-btn" [attr.aria-label]="i18n.t('nav.favorites')">
+        <i class="pi pi-heart"></i>
+        @if (favorites.count() > 0) { <p-badge [value]="favorites.count()" severity="danger" /> }
+      </a>
+      <a routerLink="/cart" class="icon-btn" [attr.aria-label]="i18n.t('nav.cart')">
+        <i class="pi pi-shopping-cart"></i>
+        @if (cart.count() > 0) { <p-badge [value]="cart.count()" severity="info" /> }
+      </a>
+      @if (auth.isLoggedIn()) {
+        <button class="icon-btn" (click)="accountMenu.toggle($event)" [attr.aria-label]="i18n.t('nav.account')">
+          <i class="pi pi-user"></i>
+        </button>
+        <p-menu #accountMenu [popup]="true" [model]="accountItems()" />
+      } @else {
+        <a routerLink="/auth/login" class="login-link"><i class="pi pi-user"></i><span>{{ i18n.t('nav.login') }}</span></a>
+      }
+    </div>
+  </div>
+  <div class="bar mobile-search container">
+    <p-iconField iconPosition="left">
+      <p-inputIcon class="pi pi-search" />
+      <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onSearchInput($event)"
+        (keyup.enter)="goSearch()" [placeholder]="i18n.t('nav.searchPlaceholder')" [attr.aria-label]="i18n.t('nav.searchPlaceholder')" />
+    </p-iconField>
+  </div>
+</header>
+
+<p-drawer [(visible)]="mobileOpen" [header]="i18n.t('nav.menu')" position="left">
+  <nav class="mobile-nav">
+    <a routerLink="/" (click)="mobileOpen.set(false)">{{ i18n.t('nav.home') }}</a>
+    <a routerLink="/products" (click)="mobileOpen.set(false)">{{ i18n.t('nav.catalog') }}</a>
+    <a routerLink="/cart" (click)="mobileOpen.set(false)">{{ i18n.t('nav.cart') }} ({{ cart.count() }})</a>
+    <a routerLink="/favorites" (click)="mobileOpen.set(false)">{{ i18n.t('nav.favorites') }} ({{ favorites.count() }})</a>
+    <a routerLink="/orders" (click)="mobileOpen.set(false)">{{ i18n.t('nav.orders') }}</a>
+    @if (auth.isLoggedIn()) {
+      <a routerLink="/auth/profile" (click)="mobileOpen.set(false)">{{ i18n.t('nav.profile') }}</a>
+      <button class="linklike" (click)="doLogout()">{{ i18n.t('nav.logout') }}</button>
+    } @else {
+      <a routerLink="/auth/login" (click)="mobileOpen.set(false)">{{ i18n.t('nav.login') }}</a>
+      <a routerLink="/auth/register" (click)="mobileOpen.set(false)">{{ i18n.t('nav.register') }}</a>
+    }
+    <div class="mobile-prefs">
+      <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value" (onChange)="onLang($event.value)" [fluid]="true" />
+      <p-select [options]="currencyOptions" [(ngModel)]="currencyModel" optionLabel="label" optionValue="value" (onChange)="onCurrency($event.value)" [fluid]="true" />
+    </div>
+  </nav>
+</p-drawer>

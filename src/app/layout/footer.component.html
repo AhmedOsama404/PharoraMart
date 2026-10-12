@@ -1,0 +1,35 @@
+<footer class="footer">
+  <div class="container grid">
+    <div class="brand">
+      <div class="logo"><span class="logo-mark">N</span><span>{{ i18n.t('app.name') }}</span></div>
+      <p>{{ i18n.t('footer.tagline') }}</p>
+      <div class="contact">
+        <a [href]="'mailto:' + contact.supportEmail"><i class="pi pi-envelope"></i> {{ contact.supportEmail }}</a>
+        <a [href]="'https://wa.me/' + contact.whatsappNumber" target="_blank" rel="noopener"><i class="pi pi-whatsapp"></i> +{{ contact.whatsappNumber }}</a>
+        <span><i class="pi pi-clock"></i> {{ i18n.t('footer.hoursLabel') }}: {{ businessHours() }}</span>
+      </div>
+    </div>
+    <nav aria-label="shop">
+      <h4>{{ i18n.t('footer.shop') }}</h4>
+      <a routerLink="/products">{{ i18n.t('nav.catalog') }}</a>
+      <a routerLink="/products" [queryParams]="{ sale: 1 }">{{ i18n.t('home.promoTitle') }}</a>
+      <a routerLink="/favorites">{{ i18n.t('nav.favorites') }}</a>
+      <a routerLink="/cart">{{ i18n.t('nav.cart') }}</a>
+    </nav>
+    <nav aria-label="support">
+      <h4>{{ i18n.t('footer.support') }}</h4>
+      <a routerLink="/orders">{{ i18n.t('nav.orders') }}</a>
+      <a routerLink="/checkout">{{ i18n.t('nav.checkout') }}</a>
+      <a routerLink="/auth/login">{{ i18n.t('nav.login') }}</a>
+    </nav>
+    <div class="prefs">
+      <h4>{{ i18n.t('footer.contact') }}</h4>
+      <label>{{ i18n.t('footer.currencyLabel') }}</label>
+      <p-select [options]="currencyOptions" [(ngModel)]="currencyModel" optionLabel="label" optionValue="value" (onChange)="onCurrency($event.value)" [fluid]="true" />
+    </div>
+  </div>
+  <div class="bottom container">
+    <span>© {{ year }} {{ i18n.t('app.name') }}. {{ i18n.t('footer.rights') }}</span>
+    <span class="mock-note">{{ i18n.t('confirmation.mockNotice') }}</span>
+  </div>
+</footer>

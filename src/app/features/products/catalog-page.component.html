@@ -1,0 +1,89 @@
+<nav class="crumbs" aria-label="breadcrumb">
+  <a routerLink="/" class="crumb-home">{{ i18n.t('product.breadcrumbsHome') }}</a>
+  <span aria-hidden="true">/</span><span aria-current="page">{{ i18n.t('catalog.title') }}</span>
+</nav>
+<div class="head">
+  <div>
+    <h1>{{ i18n.t('catalog.title') }}</h1>
+    <p>{{ i18n.t('catalog.subtitle') }}</p>
+  </div>
+  <p-button class="filters-btn" icon="pi pi-sliders-h" [label]="i18n.t('catalog.activeFilters')" [outlined]="true" (onClick)="drawer.set(true)" />
+</div>
+
+<div class="toolbar">
+  <p-iconField iconPosition="left" class="t-search">
+    <p-inputIcon class="pi pi-search" />
+    <input pInputText [ngModel]="draft.q()" (ngModelChange)="draft.q.set($event); onSearchType()"
+      [placeholder]="i18n.t('catalog.searchPlaceholder')" [attr.aria-label]="i18n.t('catalog.searchLabel')" />
+  </p-iconField>
+  <p-select [options]="sortOptions()" [ngModel]="draft.sort()" (onChange)="setSort($event.value)"
+    optionLabel="label" optionValue="value" [attr.aria-label]="i18n.t('catalog.sortLabel')" class="t-sort" />
+</div>
+
+@if (activeChips().length) {
+  <div class="chips" aria-live="polite">
+    <span class="chips-label">{{ i18n.t('catalog.activeFilters') }}:</span>
+    @for (c of activeChips(); track c.key) {
+      <p-chip [label]="c.label" [removable]="true" (onRemove)="removeChip(c.key)" />
+    }
+    <button class="linklike" (click)="clearAll()">{{ i18n.t('catalog.clearAll') }}</button>
+  </div>
+}
+
+<div class="layout">
+  <aside class="filters" aria-label="filters">
+    <ng-container *ngTemplateOutlet="filterBody" />
+  </aside>
+  <section class="results" aria-live="polite">
+    <p class="count">{{ i18n.t('catalog.results', { count: total() }) }}</p>
+    @if (state() === 'loading') {
+      <div class="grid">@for (i of [1,2,3,4,5,6,7,8]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+    } @else if (state() === 'error') {
+      <app-empty-state icon="pi-exclamation-triangle" [title]="i18n.t('catalog.errorTitle')"
+        [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="reload()" />
+    } @else if (!items().length) {
+      <app-empty-state icon="pi-search" [title]="i18n.t('catalog.emptyTitle')"
+        [subtitle]="i18n.t('catalog.emptySubtitle')" [actionLabel]="i18n.t('catalog.clearAll')" (actionClick)="clearAll()" />
+    } @else {
+      <div class="grid">
+        @for (p of items(); track p.id) {
+          <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+        }
+      </div>
+      <p-paginator [rows]="pageSize" [totalRecords]="total()" [first]="(page() - 1) * pageSize"
+        [rowsPerPageOptions]="[8, 12, 24]" (onPageChange)="onPage($event)" />
+    }
+  </section>
+</div>
+
+<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" position="left">
+  <ng-container *ngTemplateOutlet="filterBody" />
+  <p-button [label]="i18n.t('catalog.clearAll')" [text]="true" (onClick)="clearAll()" />
+</p-drawer>
+
+<ng-template #filterBody>
+  <div class="f-group">
+    <label>{{ i18n.t('catalog.categoryLabel') }}</label>
+    <p-select [options]="categoryOptions()" [ngModel]="draft.category()" (onChange)="setCategory($event.value)"
+      optionLabel="label" optionValue="value" [fluid]="true" />
+  </div>
+  <div class="f-group">
+    <label>{{ i18n.t('catalog.priceRange') }}: {{ i18n.t('catalog.maxPrice') }} {{ draft.maxPrice() }}</label>
+    <p-slider [ngModel]="draft.maxPrice()" (onChange)="setMaxPrice($event.value)" [min]="10" [max]="maxPrice" [step]="5" />
+    <div class="price-inputs">
+      <input pInputText type="number" [ngModel]="draft.minPrice()" (ngModelChange)="setMinPrice($event)" [attr.aria-label]="i18n.t('catalog.minPrice')" [min]="0" [max]="maxPrice" />
+      <span>–</span>
+      <input pInputText type="number" [ngModel]="draft.maxPrice()" (ngModelChange)="setMaxPrice($event)" [attr.aria-label]="i18n.t('catalog.maxPrice')" [min]="0" [max]="maxPrice" />
+    </div>
+  </div>
+  <div class="f-group">
+    <label>{{ i18n.t('catalog.availabilityLabel') }}</label>
+    <p-select [options]="availOptions()" [ngModel]="draft.availability()" (onChange)="setAvail($event.value)"
+      optionLabel="label" optionValue="value" [fluid]="true" />
+  </div>
+  <div class="f-group check">
+    <p-checkbox [binary]="true" [ngModel]="draft.sale()" (onChange)="setSale($event.checked)" inputId="saleOnly" />
+    <label for="saleOnly">{{ i18n.t('catalog.onSaleOnly') }}</label>
+  </div>
+  <p-button [label]="i18n.t('catalog.clearAll')" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="clearAll()" />
+</ng-template>

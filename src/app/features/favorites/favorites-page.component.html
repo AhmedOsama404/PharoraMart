@@ -1,0 +1,12 @@
+<h1>{{ i18n.t('favorites.title') }}</h1>
+<p class="sub">{{ i18n.t('favorites.subtitle') }}</p>
+@if (!items().length) {
+  <app-empty-state icon="pi-heart" [title]="i18n.t('favorites.emptyTitle')"
+    [subtitle]="i18n.t('favorites.emptySubtitle')" [actionLabel]="i18n.t('favorites.browse')" (actionClick)="go('/products')" />
+} @else {
+  <div class="grid">
+    @for (p of items(); track p.id) {
+      <app-product-card [product]="p" (add)="moveToCart(p)" (favToggle)="remove(p)" />
+    }
+  </div>
+}

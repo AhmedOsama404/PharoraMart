@@ -1,0 +1,49 @@
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { firstErrorKey, passwordMatchValidator, phoneValidator } from './validators';
+
+describe('shared validators', () => {
+  it('requires fields (login)', () => {
+    const email = new FormControl('', [Validators.required, Validators.email]);
+    expect(firstErrorKey(email)).toBeNull(); // untouched → no visible error yet
+    email.markAsTouched();
+    expect(firstErrorKey(email)).toBe('validation.required');
+  });
+
+  it('rejects invalid email', () => {
+    const email = new FormControl('not-an-email', [Validators.required, Validators.email]);
+    email.markAsTouched();
+    expect(firstErrorKey(email)).toBe('validation.email');
+  });
+
+  it('flags short passwords with minLength', () => {
+    const pw = new FormControl('123', [Validators.required, Validators.minLength(6)]);
+    pw.markAsTouched();
+    expect(firstErrorKey(pw)).toBe('validation.minLength');
+  });
+
+  it('detects password mismatch (register)', () => {
+    const group = new FormGroup(
+      {
+        password: new FormControl('secret1'),
+        confirmPassword: new FormControl('secret2'),
+      },
+      { validators: [passwordMatchValidator] },
+    );
+    expect(group.errors?.['passwordMismatch']).toBeTrue();
+    group.get('confirmPassword')?.setValue('secret1');
+    // Re-run validator manually since setValue triggers validation:
+    expect(passwordMatchValidator(group)).toBeNull();
+  });
+
+  it('validates phone numbers (checkout)', () => {
+    const ok = new FormControl('+420777123456', [phoneValidator]);
+    expect(phoneValidator(ok)).toBeNull();
+    const bad = new FormControl('abc', [phoneValidator]);
+    expect(phoneValidator(bad)).toEqual({ phone: true });
+  });
+
+  it('returns null for untouched controls', () => {
+    const c = new FormControl('', [Validators.required]);
+    expect(firstErrorKey(c)).toBeNull();
+  });
+});

@@ -1,0 +1,31 @@
+<div class="auth-wrap">
+  <p-card class="auth-card">
+    <h1>{{ i18n.t('auth.loginTitle') }}</h1>
+    <p class="sub">{{ i18n.t('auth.loginSubtitle') }}</p>
+    <p-message severity="info" size="small" [text]="i18n.t('auth.demoNotice')" />
+    @if (pendingReason(); as reason) {
+      <p-message severity="warn" size="small" [text]="i18n.t('gate.title') + ' — ' + i18n.t('gate.' + reason)" />
+    }
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="email">{{ i18n.t('auth.email') }}</label>
+        <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" />
+        @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+      </div>
+      <div class="field">
+        <label for="password">{{ i18n.t('auth.password') }}</label>
+        <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="false"
+          [promptLabel]="i18n.t('auth.password')"
+          [fluid]="true" autocomplete="current-password" />
+        @if (err('password'); as e) { <small class="err">{{ e === 'validation.minLength' ? i18n.t(e, { min: 6 }) : i18n.t(e) }}</small> }
+      </div>
+      @if (serverError()) { <p-message severity="error" [text]="serverError()" /> }
+      <p-button type="submit" [label]="i18n.t('auth.loginButton')" [loading]="busy()" [fluid]="true" />
+    </form>
+    <div class="links">
+      <a routerLink="/auth/forgot">{{ i18n.t('auth.forgotLink') }}</a>
+      <span>{{ i18n.t('auth.noAccount') }} <a [routerLink]="['/auth/register']" [queryParams]="keepReturn()">{{ i18n.t('auth.registerButton') }}</a></span>
+      <a routerLink="/products">{{ i18n.t('auth.continueAsGuest') }}</a>
+    </div>
+  </p-card>
+</div>

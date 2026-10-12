@@ -1,0 +1,7 @@
+h1 { font-size: 1.4rem; margin: 0.6rem 0 1rem; }
+.kv { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; align-items: center; }
+.kv span { color: var(--text-secondary); } .grand { font-size: 1.2rem; }
+.items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.items li { display: grid; grid-template-columns: 3rem 1fr auto; gap: 0.6rem; align-items: center; }
+.items img { width: 3rem; height: 2.6rem; object-fit: cover; border-radius: 0.5rem; }
+.addr { color: var(--text-secondary); margin-top: 0.8rem; }

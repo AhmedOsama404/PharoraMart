@@ -1,0 +1,44 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { ProductCardComponent } from './product-card.component';
+import { MOCK_PRODUCTS } from '../../data-access/mock-data';
+
+const P = MOCK_PRODUCTS[0];
+
+describe('ProductCardComponent', () => {
+  let fixture: ComponentFixture<ProductCardComponent>;
+
+  beforeEach(async () => {
+    localStorage.clear();
+    await TestBed.configureTestingModule({
+      providers: [provideRouter([]), provideNoopAnimations()],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProductCardComponent);
+    fixture.componentInstance.product = P;
+    fixture.detectChanges();
+  });
+
+  it('renders the framed image placeholder behind the product image', () => {
+    expect(fixture.nativeElement.querySelector('.media.img-frame > img')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.media.img-frame > .img-fallback')).toBeTruthy();
+  });
+
+  it('renders name, price and stock state', () => {
+    const text = (fixture.nativeElement as HTMLElement).innerText.replace(/\s+/g, ' ');
+    expect(text).toContain(P.name);
+    expect(fixture.nativeElement.querySelector('.fav-btn')).toBeTruthy();
+  });
+
+  it('emits add and favToggle exactly once per click', () => {
+    const comp = fixture.componentInstance;
+    let adds = 0;
+    let favs = 0;
+    comp.add.subscribe(() => adds++);
+    comp.favToggle.subscribe(() => favs++);
+    fixture.debugElement.query(By.css('.body p-button')).triggerEventHandler('onClick', new MouseEvent('click'));
+    expect(adds).toBe(1);
+    expect(favs).toBe(0);
+  });
+});

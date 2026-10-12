@@ -1,0 +1,9 @@
+<div class="section-head">
+  <div>
+    <h2>{{ title }}</h2>
+    @if (subtitle) { <p>{{ subtitle }}</p> }
+  </div>
+  @if (link && linkLabel) {
+    <a [routerLink]="link" class="view-all">{{ linkLabel }} <i class="pi pi-arrow-right flip-rtl"></i></a>
+  }
+</div>

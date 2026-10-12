@@ -1,0 +1,44 @@
+<div class="auth-wrap">
+  <p-card class="auth-card">
+    <h1>{{ i18n.t('auth.registerTitle') }}</h1>
+    <p class="sub">{{ i18n.t('auth.registerSubtitle') }}</p>
+    <p-message severity="info" size="small" [text]="i18n.t('auth.demoNotice')" />
+    @if (pendingReason(); as reason) {
+      <p-message severity="warn" size="small" [text]="i18n.t('gate.title') + ' — ' + i18n.t('gate.' + reason)" />
+    }
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="name">{{ i18n.t('auth.name') }}</label>
+        <input pInputText id="name" formControlName="name" autocomplete="name" [fluid]="true" />
+        @if (err('name'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+      </div>
+      <div class="field">
+        <label for="email">{{ i18n.t('auth.email') }}</label>
+        <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" />
+        @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+      </div>
+      <div class="field">
+        <label for="phone">{{ i18n.t('auth.phone') }}</label>
+        <input pInputText id="phone" type="tel" formControlName="phone" autocomplete="tel" [fluid]="true" />
+        @if (err('phone'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+      </div>
+      <div class="field">
+        <label for="password">{{ i18n.t('auth.password') }}</label>
+        <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="true" [fluid]="true" autocomplete="new-password" />
+        @if (err('password'); as e) { <small class="err">{{ e === 'validation.minLength' ? i18n.t(e, { min: 6 }) : i18n.t(e) }}</small> }
+      </div>
+      <div class="field">
+        <label for="confirm">{{ i18n.t('auth.confirmPassword') }}</label>
+        <p-password id="confirm" formControlName="confirmPassword" [toggleMask]="true" [feedback]="false" [fluid]="true" autocomplete="new-password" />
+        @if (form.errors?.['passwordMismatch'] && (form.get('confirmPassword')?.touched || form.get('confirmPassword')?.dirty)) {
+          <small class="err">{{ i18n.t('validation.passwordMismatch') }}</small>
+        }
+      </div>
+      @if (serverError()) { <p-message severity="error" [text]="serverError()" /> }
+      <p-button type="submit" [label]="i18n.t('auth.registerButton')" [loading]="busy()" [fluid]="true" />
+    </form>
+    <div class="links">
+      <span>{{ i18n.t('auth.haveAccount') }} <a [routerLink]="['/auth/login']" [queryParams]="keepReturn()">{{ i18n.t('auth.loginButton') }}</a></span>
+    </div>
+  </p-card>
+</div>

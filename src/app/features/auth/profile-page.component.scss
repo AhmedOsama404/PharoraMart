@@ -1,0 +1,5 @@
+h1 { margin: 0; } .sub { color: var(--text-secondary); margin: 0.3rem 0 0.8rem; }
+.card { max-width: 34rem; margin-top: 1rem; display: block; }
+.row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--surface-border); }
+.row span { color: var(--text-secondary); }
+.actions { display: flex; gap: 0.7rem; margin-top: 1rem; flex-wrap: wrap; }

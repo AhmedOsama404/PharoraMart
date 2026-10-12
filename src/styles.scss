@@ -1,0 +1,176 @@
+@use 'sass:color';
+
+/* PrimeIcons */
+@import 'primeicons/primeicons.css';
+
+/* ============ NovaMart design tokens ============ */
+:root {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --accent: #f59e0b;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --surface-ground: #f4f5fb;
+  --surface-card: #ffffff;
+  --surface-border: #e5e7f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --radius-lg: 1rem;
+  --radius-md: 0.7rem;
+  --radius-sm: 0.5rem;
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-md: 0 12px 32px -12px rgb(15 23 42 / 0.22);
+  --font-stack: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Noto Kufi Arabic', 'Noto Sans Arabic', Tahoma, sans-serif;
+
+  /* Typography scale (body 1rem; card titles stay smaller by context) */
+  --font-size-xs: 0.78rem;    /* hints, badges, meta */
+  --font-size-sm: 0.88rem;    /* labels, secondary text */
+  --font-size-base: 1rem;     /* body */
+  --font-size-lg: 1.15rem;    /* prices, totals */
+  --font-size-h3: 1.1rem;
+  --font-size-h2: 1.45rem;    /* section titles */
+  --font-size-h1: 1.8rem;     /* page titles */
+  --font-weight-medium: 600;  /* labels */
+  --font-weight-bold: 700;    /* headings, buttons, names */
+  --font-weight-xbold: 800;   /* prices, hero numbers */
+  --line-height-tight: 1.25;
+  --line-height-body: 1.6;
+  --line-height-loose: 1.7;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* Forms and sections */
+  --input-height: 2.75rem;
+  --section-gap: 2.2rem;      /* space between page sections */
+  --card-padding: 1rem 1rem 1.1rem;
+  /* Breakpoints used across components: 560px (small), 700-860px (tablet),
+     960-1100px (laptop), 80rem container (desktop). Kept in sync manually. */
+
+  /* PrimeNG theme bridges */
+  --p-primary-color: var(--primary);
+  --p-primary-hover-color: var(--primary-hover);
+  --p-surface-ground: var(--surface-ground);
+  --p-surface-card: var(--surface-card);
+  --p-surface-border: var(--surface-border);
+  --p-text-color: var(--text-primary);
+  --p-text-muted-color: var(--text-secondary);
+  --p-border-radius: var(--radius-md);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-stack);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-body);
+  background: var(--surface-ground);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Shared form pattern (login, register, forgot, checkout). Components keep
+   only their layout-specific extras (e.g. .field.full). */
+.field { display: grid; gap: var(--space-2); align-content: start; }
+.field > label, label.field-label { font-weight: var(--font-weight-medium); font-size: var(--font-size-sm); }
+.err { color: var(--danger); font-size: var(--font-size-sm); line-height: var(--line-height-tight); }
+.hint { color: var(--text-secondary); font-size: var(--font-size-sm); line-height: var(--line-height-tight); }
+
+.container {
+  width: min(80rem, 100%);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+/* RTL helpers */
+[dir='rtl'] .flip-rtl {
+  transform: scaleX(-1);
+}
+
+[dir='rtl'] .p-icon-field .p-inputicon:first-child {
+  left: auto;
+  right: 0.75rem;
+}
+
+/* Focus visibility (a11y) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.35rem;
+}
+
+/* PrimeNG polish */
+.p-button {
+  border-radius: 0.75rem;
+  font-weight: 700;
+}
+
+.p-card {
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.p-tag {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.p-breadcrumb {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.p-toast {
+  max-width: min(26rem, calc(100vw - 2rem));
+}
+
+/* Image frames: a permanent placeholder lives behind every product image so
+   a fully failed load degrades to a clean framed box (see
+   handleImgError(), which hides twice-broken imgs via .img-gone). */
+.img-frame { position: relative; background: var(--surface-ground); overflow: hidden; }
+.img-frame > .img-fallback { position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 2rem; color: var(--text-secondary); opacity: 0.45; }
+/* The placeholder is a loading/failure backdrop only: hide it whenever a
+   usable image is present (loaded or retrying), show it once the image is
+   marked fully failed. Without this the icon paints over every photo. */
+.img-frame > .img-fallback { display: none; }
+.img-frame:has(> img.img-gone) > .img-fallback,
+.img-frame:has(> img:not([src])) > .img-fallback { display: grid; }
+img.img-gone { visibility: hidden; }
+
+img {
+  background: #e8ebf5;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

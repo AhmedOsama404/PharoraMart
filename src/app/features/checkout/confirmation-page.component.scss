@@ -1,0 +1,16 @@
+.hero-ok { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.hero-ok i { font-size: 2.6rem; color: #16a34a; }
+h1 { margin: 0; font-size: 1.6rem; } .hero-ok p { margin: 0.2rem 0 0; color: var(--text-secondary); }
+.layout { display: grid; grid-template-columns: 1fr 22rem; gap: 1.4rem; margin-top: 1rem; align-items: start; }
+.side { display: grid; gap: 1rem; }
+.kv { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; }
+.kv span { color: var(--text-secondary); } .grand { font-size: 1.2rem; }
+h2 { font-size: 1rem; margin: 0.8rem 0 0.5rem; }
+.items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.items li { display: grid; grid-template-columns: 3rem 1fr auto; gap: 0.6rem; align-items: center; }
+.items img { width: 3rem; height: 2.6rem; object-fit: cover; border-radius: 0.5rem; }
+.items small { color: var(--text-secondary); }
+ol { padding-inline-start: 1.2rem; display: grid; gap: 0.4rem; color: var(--text-primary); }
+.hint { display: block; color: var(--text-secondary); font-size: 0.78rem; margin: 0.4rem 0 0.8rem; }
+.row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.8rem; }
+@media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }

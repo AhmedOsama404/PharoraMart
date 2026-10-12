@@ -1,0 +1,6 @@
+.empty { text-align: center; padding: 3rem 1.5rem; border: 1px dashed var(--surface-border);
+  border-radius: var(--radius-lg); background: var(--surface-card); }
+.icon { width: 3.4rem; height: 3.4rem; border-radius: 999px; display: grid; place-items: center;
+  margin: 0 auto 1rem; background: var(--surface-ground); color: var(--text-secondary); font-size: 1.5rem; }
+h3 { margin: 0 0 0.4rem; color: var(--text-primary); }
+p { margin: 0 0 1.2rem; color: var(--text-secondary); }
