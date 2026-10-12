@@ -1,0 +1,1 @@
+function t(e,r){return r(`orders.status${e[0].toUpperCase()}${e.slice(1)}`)}function s(e){switch(e){case"delivered":return"success";case"shipped":return"info";case"confirmed":return"secondary";case"cancelled":return"danger";default:return"warn"}}export{t as a,s as b};

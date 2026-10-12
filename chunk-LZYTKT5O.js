@@ -1,0 +1,1 @@
+import{b as t}from"./chunk-VI2KB6HM.js";import{Ua as i,ab as n}from"./chunk-NVCWASPR.js";var c=class e{constructor(r){this.currency=r}currency;transform(r){return r==null||Number.isNaN(r)?"":this.currency.format(r)}static \u0275fac=function(m){return new(m||e)(i(t,16))};static \u0275pipe=n({name:"money",type:e,pure:!1})};export{c as a};

@@ -1,0 +1,1 @@
+var a={production:!0,apiBaseUrl:"https://api.example.com/api/v1",useMockApi:!0,appName:"Pharora",defaultLang:"en",defaultCurrency:"USD",supportEmail:"support@pharora.example.com",whatsappNumber:"201001234567",contactMode:"both",businessHours:"Daily 9:00 \u2013 22:00 (Egypt time)",freeShippingThreshold:75,pageSize:12};export{a};
