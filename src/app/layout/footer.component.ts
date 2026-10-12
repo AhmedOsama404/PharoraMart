@@ -5,12 +5,13 @@ import { Select } from 'primeng/select';
 import { I18nService } from '../core/services/i18n.service';
 import { CurrencyService, CURRENCIES } from '../core/services/currency.service';
 import { ContactService } from '../core/services/contact.service';
+import { BrandLogoComponent } from '../shared/components/brand-logo.component';
 
 @Component({
   selector: 'app-footer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FormsModule, Select],
+  imports: [RouterLink, FormsModule, Select, BrandLogoComponent],
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.scss',
 })

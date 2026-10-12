@@ -118,6 +118,9 @@ export class CatalogPageComponent implements OnInit {
     this.products.categories().subscribe((cats) => this.categories.set(cats));
     // The URL is the source of truth: every query-param change rebuilds the
     // draft and reloads, which keeps back/forward and bookmarks consistent.
+    // First entry lands at the top (like every fresh page); later emissions
+    // are in-page filter/pagination work, where the viewport must stay put.
+    let firstEntry = true;
     this.route.queryParamMap.subscribe((params) => {
       this.syncingFromUrl = true;
       this.draft.q.set(params.get('q') ?? '');
@@ -130,6 +133,10 @@ export class CatalogPageComponent implements OnInit {
       this.page.set(Number(params.get('page') ?? 1) || 1);
       this.syncingFromUrl = false;
       this.reload();
+      if (firstEntry) {
+        firstEntry = false;
+        this.scroll.scrollToTop();
+      }
     });
   }
 

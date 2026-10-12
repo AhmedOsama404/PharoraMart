@@ -5,7 +5,7 @@
     <p>{{ i18n.t('hero.subtitle') }}</p>
     <div class="cta">
       <p-button [label]="i18n.t('hero.shopNow')" icon="pi pi-shopping-bag" (onClick)="go('/products')" />
-      <p-button [label]="i18n.t('hero.browseCategories')" severity="secondary" [outlined]="true" (onClick)="scrollTo(catsEl)" />
+      <p-button [label]="i18n.t('hero.hotelCta')" icon="pi pi-building" severity="secondary" [outlined]="true" (onClick)="go('/checkout')" />
     </div>
     <ul class="perks">
       <li><i class="pi pi-truck"></i>{{ i18n.t('hero.freeShipping') }}</li>

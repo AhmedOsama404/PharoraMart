@@ -4,8 +4,8 @@
     <button class="icon-btn menu-btn" (click)="mobileOpen.set(true)" [attr.aria-label]="i18n.t('nav.menu')">
       <i class="pi pi-bars"></i>
     </button>
-    <a routerLink="/" class="logo" aria-label="NovaMart home">
-      <span class="logo-mark">N</span>
+    <a routerLink="/" class="logo" aria-label="Pharora home">
+      <app-brand-logo />
       <span class="logo-text">{{ i18n.t('app.name') }}</span>
     </a>
     <nav class="links" aria-label="primary">
@@ -48,7 +48,7 @@
       </a>
       <a routerLink="/cart" class="icon-btn" [attr.aria-label]="i18n.t('nav.cart')">
         <i class="pi pi-shopping-cart"></i>
-        @if (cart.count() > 0) { <p-badge [value]="cart.count()" severity="info" /> }
+        @if (cart.count() > 0) { <p-badge [value]="cart.count()" severity="success" /> }
       </a>
       @if (auth.isLoggedIn()) {
         <button class="icon-btn" (click)="accountMenu.toggle($event)" [attr.aria-label]="i18n.t('nav.account')">

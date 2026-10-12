@@ -1,4 +1,4 @@
-# NovaMart Hosting Checklist (Static SPA)
+# Pharora Hosting Checklist (Static SPA)
 
 > The storefront is a client-rendered Angular SPA. This checklist prepares a
 > future deployment; it does not claim a deployment has occurred. The app still

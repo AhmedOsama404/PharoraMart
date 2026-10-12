@@ -32,7 +32,7 @@ export class LocalizedTitleStrategy extends TitleStrategy {
   override updateTitle(snapshot: RouterStateSnapshot): void {
     this.currentSnapshot = snapshot;
     const key = this.titleKeyOf(snapshot);
-    this.title.setTitle(key ? this.i18n.t(key) : (this.buildTitle(snapshot) ?? 'NovaMart'));
+    this.title.setTitle(key ? this.i18n.t(key) : (this.buildTitle(snapshot) ?? 'Pharora'));
   }
 
   private titleKeyOf(snapshot: RouterStateSnapshot): string | null {

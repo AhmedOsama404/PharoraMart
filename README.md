@@ -1,4 +1,4 @@
-# NovaMart — Cosmetics & Herbs for Marsa Alam and Hurghada (Angular 20 + PrimeNG)
+# Pharora — Cosmetics & Herbs for Marsa Alam and Hurghada (Angular 20 + PrimeNG)
 
 Professional storefront for international hotel guests in Marsa Alam and
 Hurghada, Egypt: natural **cosmetics** and **herbs** with hotel-specific
@@ -47,7 +47,7 @@ npm test
 | `apiBaseUrl` | `https://api.example.com/api/v1` | Future backend base URL (unused in mock mode) |
 | `useMockApi` | `true` | `true` = local mock data; `false` = call real API via `ApiClientService` |
 | `defaultLang` / `defaultCurrency` | `en` / `USD` | Initial language & currency |
-| `supportEmail` | `support@novamart.example.com` | Email contact (`mailto:`) |
+| `supportEmail` | `support@pharora.example.com` | Email contact (`mailto:`) |
 | `whatsappNumber` | `201001234567` | WhatsApp click-to-chat number (no `+`) |
 | `contactMode` | `both` | `whatsapp` \| `email` \| `both` contact buttons |
 | `freeShippingThreshold` | `75` | Free shipping above this subtotal |

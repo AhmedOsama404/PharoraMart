@@ -1,7 +1,7 @@
 <footer class="footer">
   <div class="container grid">
     <div class="brand">
-      <div class="logo"><span class="logo-mark">N</span><span>{{ i18n.t('app.name') }}</span></div>
+      <div class="logo"><app-brand-logo /><span>{{ i18n.t('app.name') }}</span></div>
       <p>{{ i18n.t('footer.tagline') }}</p>
       <div class="contact">
         <a [href]="'mailto:' + contact.supportEmail"><i class="pi pi-envelope"></i> {{ contact.supportEmail }}</a>

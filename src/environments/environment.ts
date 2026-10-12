@@ -5,10 +5,10 @@ export const environment = {
   // Public business identity (all frontend-bundled values are public by
   // definition — never put secrets here). The future dashboard owns the real
   // values; these defaults keep the storefront coherent until then.
-  appName: 'NovaMart',
+  appName: 'Pharora',
   defaultLang: 'en' as const,
   defaultCurrency: 'USD' as const,
-  supportEmail: 'support@novamart.example.com',
+  supportEmail: 'support@pharora.example.com',
   whatsappNumber: '201001234567',
   contactMode: 'both' as 'whatsapp' | 'email' | 'both',
   businessHours: 'Daily 9:00 – 22:00 (Egypt time)',

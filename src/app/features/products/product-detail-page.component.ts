@@ -154,7 +154,7 @@ export class ProductDetailPageComponent {
       if (state.status === 'ready' && state.product) {
         const product = state.product;
         untracked(() => {
-          document.title = `${product.name} — NovaMart`;
+          document.title = `${product.name} — Pharora`;
           this.recent.push(product.id);
         });
       }

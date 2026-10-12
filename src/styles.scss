@@ -3,18 +3,18 @@
 /* PrimeIcons */
 @import 'primeicons/primeicons.css';
 
-/* ============ NovaMart design tokens ============ */
+/* ============ Pharora design tokens (warm ivory, botanical green, soft sand, restrained gold) ============ */
 :root {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --accent: #f59e0b;
+  --primary: #2e7d52;
+  --primary-hover: #256844;
+  --accent: #c9a227;
   --danger: #dc2626;
-  --success: #16a34a;
-  --surface-ground: #f4f5fb;
+  --success: #2f8459;
+  --surface-ground: #faf8f1;
   --surface-card: #ffffff;
-  --surface-border: #e5e7f0;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
+  --surface-border: #e6e0d0;
+  --text-primary: #1e2b23;
+  --text-secondary: #5f6f62;
   --radius-lg: 1rem;
   --radius-md: 0.7rem;
   --radius-sm: 0.5rem;
@@ -101,6 +101,13 @@ body {
   transform: scaleX(-1);
 }
 
+/* Arabic script needs room: tight Latin line-heights clip diacritics and
+   negative letter-spacing disturbs joining — both hurt clarity at display
+   sizes. Headings that carry it (hero, section, product titles) reset here. */
+[dir='rtl'] .hero h1 { line-height: 1.65; letter-spacing: 0; }
+[dir='rtl'] h2 { letter-spacing: 0; }
+[dir='rtl'] .hero-copy p { line-height: 1.9; }
+
 [dir='rtl'] .p-icon-field .p-inputicon:first-child {
   left: auto;
   right: 0.75rem;
@@ -158,7 +165,7 @@ input:focus-visible,
 img.img-gone { visibility: hidden; }
 
 img {
-  background: #e8ebf5;
+  background: #eae4d3;
 }
 
 /* Reduced motion */

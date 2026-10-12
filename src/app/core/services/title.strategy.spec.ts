@@ -32,18 +32,18 @@ describe('LocalizedTitleStrategy', () => {
 
   it('sets the translated title on navigation', async () => {
     await harness.navigateByUrl('/a', DummyAComponent);
-    expect(document.title).toBe('Shopping cart — NovaMart');
+    expect(document.title).toBe('Shopping cart — Pharora');
   });
 
   it('re-applies the title on language switch without navigation', async () => {
     await harness.navigateByUrl('/a', DummyAComponent);
     i18n.setLang('de');
     await harness.fixture.whenStable();
-    expect(document.title).toBe('Warenkorb — NovaMart');
+    expect(document.title).toBe('Warenkorb — Pharora');
   });
 
   it('falls back to the app name for routes without a titleKey', async () => {
     await harness.navigateByUrl('/b', DummyBComponent);
-    expect(document.title).toBe('NovaMart');
+    expect(document.title).toBe('Pharora');
   });
 });

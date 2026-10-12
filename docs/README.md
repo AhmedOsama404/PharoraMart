@@ -1,6 +1,6 @@
-# NovaMart Documentation
+# Pharora Documentation
 
-Developer documentation for the NovaMart storefront (Angular 20 + PrimeNG):
+Developer documentation for the Pharora storefront (Angular 20 + PrimeNG):
 cosmetics and herbs for hotel guests in Marsa Alam and Hurghada, in eight
 languages, with account-based shopping and hotel delivery — currently running
 on local mock data, structured for a future ASP.NET Core API.

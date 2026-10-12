@@ -18,6 +18,7 @@ import { CartStore } from '../core/services/cart.store';
 import { FavoritesStore } from '../core/services/favorites.store';
 import { AuthService } from '../core/services/auth.service';
 import { ProductService } from '../core/services/product.service';
+import { BrandLogoComponent } from '../shared/components/brand-logo.component';
 
 @Component({
   selector: 'app-header',
@@ -25,7 +26,7 @@ import { ProductService } from '../core/services/product.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink, RouterLinkActive, FormsModule, Badge, Drawer,
-    IconField, InputIcon, InputText, Menu, Select,
+    IconField, InputIcon, InputText, Menu, Select, BrandLogoComponent,
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',

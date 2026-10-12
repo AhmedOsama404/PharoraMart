@@ -2,7 +2,7 @@
   <p-card class="auth-card">
     <h1>{{ i18n.t('auth.loginTitle') }}</h1>
     <p class="sub">{{ i18n.t('auth.loginSubtitle') }}</p>
-    <p-message severity="info" size="small" [text]="i18n.t('auth.demoNotice')" />
+    <!-- <p-message severity="info" size="small" [text]="i18n.t('auth.demoNotice')" /> -->
     @if (pendingReason(); as reason) {
       <p-message severity="warn" size="small" [text]="i18n.t('gate.title') + ' — ' + i18n.t('gate.' + reason)" />
     }

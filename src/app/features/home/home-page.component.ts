@@ -11,7 +11,6 @@ import { FavoritesStore } from '../../core/services/favorites.store';
 import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService } from '../../core/services/pending-action.service';
 import { RecentlyViewedService } from '../../core/services/recently-viewed.service';
-import { ScrollService } from '../../core/services/scroll.service';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import type { Category, Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
@@ -34,7 +33,6 @@ export class HomePageComponent implements OnInit {
   private notify = inject(NotificationService);
   private gate = inject(PendingActionService);
   private recent = inject(RecentlyViewedService);
-  private scroll = inject(ScrollService);
   private router = inject(Router);
 
   protected loading = signal(true);
@@ -96,10 +94,6 @@ export class HomePageComponent implements OnInit {
 
   protected goSale(): void {
     this.router.navigate(['/products'], { queryParams: { sale: 1 } });
-  }
-
-  protected scrollTo(el: HTMLElement): void {
-    this.scroll.scrollIntoView(el);
   }
 
   // Dashboard-managed names/descriptions in the visitor's language.

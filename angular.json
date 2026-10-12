@@ -51,7 +51,10 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              // Fonts stay as runtime <link> (see index.html): build-time
+              // inlining would require network access to Google Fonts.
+              "optimization": { "scripts": true, "styles": true, "fonts": false }
             },
             "development": {
               "optimization": false,
