@@ -1,6 +1,6 @@
 # Deploys the mock-data demo to GitHub Pages on every push to main.
-# The site serves at https://<owner>.github.io/NovaMart/ so the build rewrites
-# <base href> at deploy time only — local sources keep "/" for ng serve.
+# The site serves at https://ahmedosama404.github.io/PharoraMart/ so the build
+# rewrites <base href> at deploy time only; local sources keep "/" for ng serve.
 # Client-side routes work via the 404.html fallback copy (same SPA shell).
 # After pushing, enable once in repo Settings → Pages → Source: GitHub Actions.
 name: Deploy demo to GitHub Pages
@@ -25,19 +25,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
       - name: Install
         run: npm ci
+
       - name: Production build (Pages base path)
-        run: npx ng build --configuration production --base-href /NovaMart/
+        run: npx ng build --configuration production --base-href /PharoraMart/
+
       - name: SPA fallback + no-Jekyll marker
         run: |
           cp dist/storefront/browser/index.html dist/storefront/browser/404.html
           touch dist/storefront/browser/.nojekyll
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
