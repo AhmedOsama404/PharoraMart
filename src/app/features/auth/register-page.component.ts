@@ -10,6 +10,7 @@ import { I18nService } from '../../core/services/i18n.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService, safeReturnUrl } from '../../core/services/pending-action.service';
+import { ScrollService } from '../../core/services/scroll.service';
 import { firstErrorKey, passwordMatchValidator, phoneValidator } from '../../shared/utils/validators';
 
 @Component({
@@ -28,6 +29,7 @@ export class RegisterPageComponent implements OnInit {
   private pending = inject(PendingActionService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private scroll = inject(ScrollService);
 
   protected busy = signal(false);
   protected serverError = signal('');
@@ -52,6 +54,8 @@ export class RegisterPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Same as login: enter at the form, never mid-page from the last view.
+    this.scroll.scrollToTop();
     // Already signed in: leave auth pages instead of looping login/register.
     if (this.auth.isLoggedIn()) {
       this.router.navigateByUrl(safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl')));

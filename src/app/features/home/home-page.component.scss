@@ -10,7 +10,10 @@
 .hero-card { position: relative; display: block; border-radius: 1.1rem; overflow: hidden; box-shadow: var(--shadow-md); }
 .hero-card img { width: 100%; height: 21rem; object-fit: cover; display: block; }
 .hero-info { position: absolute; inset-inline: 1rem; bottom: 1rem; display: flex; justify-content: space-between; align-items: center;
-  background: color-mix(in srgb, #fff 88%, transparent); backdrop-filter: blur(8px); border-radius: 0.9rem; padding: 0.6rem 0.9rem; font-weight: 700; }
+  background: color-mix(in srgb, #fff 88%, transparent); backdrop-filter: blur(8px); border-radius: 0.9rem; padding: 0.6rem 0.9rem; font-weight: 700; color: var(--text-primary); }
+/* The card is a visited link after the first click: without their own color
+   the name would inherit the browser's visited purple. */
+.hero-name { color: var(--text-primary); }
 .hero-price { color: var(--primary); }
 .hero-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
 .hero-tiles img { width: 100%; height: 6.5rem; object-fit: cover; border-radius: 0.9rem; }

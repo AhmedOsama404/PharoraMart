@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
@@ -7,6 +7,7 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { I18nService } from '../../core/services/i18n.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ScrollService } from '../../core/services/scroll.service';
 import { firstErrorKey } from '../../shared/utils/validators';
 
 @Component({
@@ -17,13 +18,19 @@ import { firstErrorKey } from '../../shared/utils/validators';
   templateUrl: './forgot-page.component.html',
   styleUrl: './forgot-page.component.scss',
 })
-export class ForgotPageComponent {
+export class ForgotPageComponent implements OnInit {
   protected i18n = inject(I18nService);
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  private scroll = inject(ScrollService);
   protected busy = signal(false);
   protected sent = signal(false);
   protected form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
+
+  ngOnInit(): void {
+    // Entered from auth links mid-page: start at the form.
+    this.scroll.scrollToTop();
+  }
 
   protected err(): string | null {
     return firstErrorKey(this.form.get('email'));

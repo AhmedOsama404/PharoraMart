@@ -10,6 +10,7 @@ import { I18nService } from '../../core/services/i18n.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService, safeReturnUrl } from '../../core/services/pending-action.service';
+import { ScrollService } from '../../core/services/scroll.service';
 import { firstErrorKey } from '../../shared/utils/validators';
 
 @Component({
@@ -28,6 +29,7 @@ export class LoginPageComponent implements OnInit {
   private pending = inject(PendingActionService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private scroll = inject(ScrollService);
 
   protected busy = signal(false);
   protected serverError = signal('');
@@ -47,6 +49,9 @@ export class LoginPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Guests arrive here mid-scroll (e.g. add-to-cart gate on mobile):
+    // start at the form, not the footer carried over from the last view.
+    this.scroll.scrollToTop();
     // Already signed in (e.g. Back button after login): leave auth pages
     // instead of looping between login and register.
     if (this.auth.isLoggedIn()) {
