@@ -1,5 +1,9 @@
 # Pharora — Cosmetics & Herbs for Marsa Alam and Hurghada (Angular 20 + PrimeNG)
 
+**New here? Start with [`docs/LEARNING_PATH.md`](./docs/LEARNING_PATH.md)** —
+a step-by-step course for developers new to this codebase (no Angular
+experience assumed) — then work the hands-on [`docs/TUTORIALS.md`](./docs/TUTORIALS.md).
+
 Professional storefront for international hotel guests in Marsa Alam and
 Hurghada, Egypt: natural **cosmetics** and **herbs** with hotel-specific
 delivery, account-based shopping, cash on delivery, and WhatsApp/email order

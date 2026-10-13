@@ -2,11 +2,17 @@
 
 Developer documentation for the Pharora storefront (Angular 20 + PrimeNG):
 cosmetics and herbs for hotel guests in Marsa Alam and Hurghada, in eight
-languages, with account-based shopping and hotel delivery — currently running
-on local mock data, structured for a future ASP.NET Core API.
+languages, with account-based shopping and hotel delivery. It runs on local
+mock data by default and connects to the real ASP.NET Core API in live mode.
+
+**New here? Start with [Learning Path](./LEARNING_PATH.md)** — a course for
+developers new to this codebase (no Angular experience assumed) — then work
+the hands-on [Tutorials](./TUTORIALS.md). Plain-language definitions:
+[Glossary](./GLOSSARY.md).
 
 ## Reading order
 
+0. [Learning Path](./LEARNING_PATH.md) — course map. Start here.
 1. [Getting Started](./GETTING_STARTED.md) — install, run, verify. Start here.
 2. [Architecture](./ARCHITECTURE.md) — how the app is put together (with diagram).
 3. [Project Structure](./PROJECT_STRUCTURE.md) — where code lives and why.
@@ -26,6 +32,8 @@ on local mock data, structured for a future ASP.NET Core API.
 15. [Service index](./services/README.md) — every service/store, linked.
 16. [Data models](./DATA_MODELS.md) — contracts and identity rules.
 17. [Translation reference](./TRANSLATION_REFERENCE.md) — keys and workflow.
+18. [Tutorials](./TUTORIALS.md) — hands-on lessons (tour, new page, forms, tests, debugging, full-stack).
+19. [Glossary](./GLOSSARY.md) — plain-language Angular/project terms.
 
 ## Common tasks
 
