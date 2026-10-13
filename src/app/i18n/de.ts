@@ -41,6 +41,7 @@ export const de: TranslationDict = {
     promoTitle: 'Mid-Season-Sale mit bis zu 40 % Rabatt',
     promoSubtitle: 'Naturkosmetik- und Kräuter-Bestseller zu Sonderpreisen. Nur solange der Vorrat reicht.',
     promoCta: 'Sale entdecken',
+    learnMore: 'Learn more',
     recentlyViewedTitle: 'Zuletzt angesehen',
     viewAll: 'Alle ansehen',
     perksTitle: 'Warum bei uns shoppen',
@@ -201,6 +202,9 @@ export const de: TranslationDict = {
     backToCart: 'Zurück zum Warenkorb',
     orderSuccess: 'Bestellung erfolgreich aufgegeben',
     duplicateBlocked: 'Deine Bestellung wird bereits verarbeitet. Bitte warte.',
+    applyCoupon: 'Apply',
+    discount: 'Discount',
+    couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Dein Warenkorb ist leer. Lege erst Produkte hinein.',
   },
   confirmation: {

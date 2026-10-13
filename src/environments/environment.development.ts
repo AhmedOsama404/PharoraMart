@@ -1,6 +1,7 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://api.example.com/api/v1',
+  // Local backend for live-API testing (set useMockApi:false to use it).
+  apiBaseUrl: 'http://localhost:5086/api/v1',
   useMockApi: true,
   // Public business identity (all frontend-bundled values are public by
   // definition — never put secrets here). The future dashboard owns the real

@@ -41,6 +41,7 @@ export const sk: TranslationDict = {
     promoTitle: 'Polosezónny výpredaj až −40 %',
     promoSubtitle: 'Bestsellery prírodnej kozmetiky a bylín za špeciálne ceny. Do vypredania zásob.',
     promoCta: 'Nakúpiť vo výpredaji',
+    learnMore: 'Learn more',
     recentlyViewedTitle: 'Nedávno zobrazené',
     viewAll: 'Zobraziť všetko',
     perksTitle: 'Prečo nakupovať u nás',
@@ -201,6 +202,9 @@ export const sk: TranslationDict = {
     backToCart: 'Späť do košíka',
     orderSuccess: 'Objednávka bola úspešne odoslaná',
     duplicateBlocked: 'Vaša objednávka sa už spracúva. Počkajte prosím.',
+    applyCoupon: 'Apply',
+    discount: 'Discount',
+    couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Košík je prázdny. Pred pokladňou pridajte produkty.',
   },
   confirmation: {

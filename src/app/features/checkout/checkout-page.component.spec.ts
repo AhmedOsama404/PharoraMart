@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
@@ -51,6 +53,8 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: ProductService, useValue: stubProducts },
         { provide: DeliveryService, useValue: stubDelivery },
         { provide: NotificationService, useValue: { success: () => undefined, error: () => undefined, info: () => undefined } },

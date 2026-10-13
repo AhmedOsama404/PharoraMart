@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { Subject, finalize, of, throwError, type Observable } from 'rxjs';
 import { ProductDetailPageComponent } from './product-detail-page.component';
@@ -57,6 +59,8 @@ describe('ProductDetailPageComponent (regression)', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'products/:id', component: ProductDetailPageComponent }]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: ProductService, useValue: stubProducts },
         { provide: NotificationService, useValue: { success: () => undefined, error: () => undefined } },
       ],

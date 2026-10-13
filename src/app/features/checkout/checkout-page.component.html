@@ -83,6 +83,14 @@
         }
       </ul>
       <div class="t-row"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ subtotal() | money }}</strong></div>
+      <div class="coupon-row">
+        <input pInputText [formControl]="couponControl" placeholder="Coupon code" aria-label="Coupon code" />
+        <p-button [label]="couponApplied() ? couponApplied() : i18n.t('checkout.applyCoupon')" severity="secondary" (onClick)="applyCoupon()" />
+      </div>
+      @if (couponError()) { <p-message severity="error" [text]="couponError()" /> }
+      @if (couponDiscount() > 0) {
+        <div class="t-row"><span>{{ i18n.t('checkout.discount') }} ({{ couponApplied() }})</span><strong>−{{ couponDiscount() | money }}</strong></div>
+      }
       <div class="t-row"><span>{{ i18n.t('checkout.delivery') }}</span>
         <strong>
           @if (quotedFee() == null) { {{ i18n.t('cart.calculatedAtCheckout') }} }

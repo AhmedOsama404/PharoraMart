@@ -41,6 +41,7 @@ export const pl: TranslationDict = {
     promoTitle: 'Wyprzedaż do −40 %',
     promoSubtitle: 'Bestsellery naturalnych kosmetyków i ziół w cenach specjalnych. Do wyczerpania zapasów.',
     promoCta: 'Zobacz wyprzedaż',
+    learnMore: 'Learn more',
     recentlyViewedTitle: 'Ostatnio oglądane',
     viewAll: 'Zobacz wszystko',
     perksTitle: 'Dlaczego warto u nas kupować',
@@ -201,6 +202,9 @@ export const pl: TranslationDict = {
     backToCart: 'Wróć do koszyka',
     orderSuccess: 'Zamówienie złożone pomyślnie',
     duplicateBlocked: 'Twoje zamówienie jest już przetwarzane. Poczekaj.',
+    applyCoupon: 'Apply',
+    discount: 'Discount',
+    couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Koszyk jest pusty. Dodaj produkty przed kasą.',
   },
   confirmation: {

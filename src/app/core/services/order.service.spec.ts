@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { OrderService } from './order.service';
 import type { CreateOrderRequest } from '../../models/order.model';
 
@@ -26,7 +28,9 @@ describe('OrderService (mock)', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     svc = TestBed.inject(OrderService);
   });
 

@@ -83,6 +83,22 @@ export class CartStore {
     this.persist();
   }
 
+  /** Replaces local lines (server pull). Caps qty defensively like load(). */
+  replaceAll(lines: { productId: string; variantKey?: string; variantLabel?: string; qty: number }[]): void {
+    this.lines.set(
+      lines
+        .filter((i) => i && typeof i.productId === 'string' && i.productId.trim() !== '' && Number.isFinite(i.qty))
+        .map((i) => ({
+          productId: i.productId,
+          variantKey: i.variantKey,
+          variantLabel: i.variantLabel,
+          qty: Math.max(1, Math.min(9999, Math.floor(i.qty))),
+          key: cartLineKey(i.productId, i.variantKey),
+        })),
+    );
+    this.persist();
+  }
+
   qtyOf(productId: string, variantKey?: string): number {
     return this.lines().find((l) => l.key === cartLineKey(productId, variantKey))?.qty ?? 0;
   }

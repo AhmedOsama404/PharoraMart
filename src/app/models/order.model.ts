@@ -32,6 +32,8 @@ export interface CreateOrderRequest {
   total: number;
   currency: string;
   paymentMethod: 'cash_on_delivery';
+  /** Optional coupon code; the backend validates and prices it. */
+  couponCode?: string;
 }
 
 export interface Order extends CreateOrderRequest {
@@ -40,4 +42,6 @@ export interface Order extends CreateOrderRequest {
   status: OrderStatus;
   createdAt: string;
   userId?: string;
+  /** Server-computed discount (0 when no coupon). */
+  discount?: number;
 }

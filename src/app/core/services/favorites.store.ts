@@ -60,4 +60,10 @@ export class FavoritesStore {
     this.ids.set([]);
     this.persist();
   }
+
+  /** Replaces local ids (server pull). */
+  replaceAll(ids: string[]): void {
+    this.ids.set([...new Set((ids ?? []).filter((x): x is string => typeof x === 'string'))]);
+    this.persist();
+  }
 }

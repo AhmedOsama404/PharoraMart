@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable, delay, map, of, throwError } from 'rxjs';
+import { Observable, delay, map, of, tap, throwError } from 'rxjs';
 import type { DeliveryQuote, Hotel } from '../../models/hotel.model';
 import { environment } from '../../../environments/environment';
+import { ApiClientService } from '../api/api-client.service';
+import { toHotel, type BackendHotel, type BackendDeliveryQuote } from '../api/delivery.mapper';
 
 // Sample hotel directory for Marsa Alam and Hurghada (mock data only).
 // Fees are illustrative samples, NOT real delivery prices. The future
@@ -33,10 +35,18 @@ const HOTELS: Hotel[] = [
  */
 @Injectable({ providedIn: 'root' })
 export class DeliveryService {
+  /** Live-mode directory cache (populated by hotels(); mock mode uses HOTELS). */
+  private liveHotels: Hotel[] | null = null;
+
+  constructor(private api: ApiClientService) {}
+
   /** Active hotels in dashboard order. */
   hotels(): Observable<Hotel[]> {
     if (!environment.useMockApi) {
-      return throwError(() => new Error('real-api-not-configured'));
+      return this.api.get<BackendHotel[]>('hotels').pipe(
+        map((items) => items.map(toHotel)),
+        tap((items) => (this.liveHotels = items)),
+      );
     }
     return of(
       [...HOTELS].filter((h) => h.isActive).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -49,14 +59,16 @@ export class DeliveryService {
   }
 
   hotelById(id: string): Hotel | undefined {
-    const found = HOTELS.find((h) => h.id === id);
+    const dir = environment.useMockApi ? HOTELS : (this.liveHotels ?? []);
+    const found = dir.find((h) => h.id === id);
     return found?.isActive ? found : undefined;
   }
 
   /** Case-insensitive search across name, area and city (active hotels only). */
   search(term: string, city?: string): Hotel[] {
+    const dir = environment.useMockApi ? HOTELS : (this.liveHotels ?? []);
     const q = term.trim().toLowerCase();
-    return HOTELS.filter((h) => {
+    return dir.filter((h) => {
       if (!h.isActive) return false;
       if (city && h.city !== city) return false;
       if (!q) return true;
@@ -69,15 +81,17 @@ export class DeliveryService {
    * backend quote is authoritative — the frontend displays the returned fee
    * instead of trusting any local calculation.
    */
-  quoteFor(hotelId: string): Observable<DeliveryQuote> {
+  quoteFor(hotelId: string, subtotal = 0, currency = 'USD'): Observable<DeliveryQuote> {
+    if (!environment.useMockApi) {
+      return this.api
+        .post<BackendDeliveryQuote>('delivery/quote', { hotelId, subtotal, currency })
+        .pipe(map((q) => ({ hotelId: q.hotelId, fee: q.fee, currency: q.currency, source: 'api' as const })));
+    }
     const hotel = this.hotelById(hotelId);
     if (!hotel) {
       // Missing or inactive hotel: fail loudly so checkout blocks instead of
       // charging a wrong fee.
       return throwError(() => new Error('unknown-hotel'));
-    }
-    if (!environment.useMockApi) {
-      return throwError(() => new Error('real-api-not-configured'));
     }
     return of({
       hotelId,

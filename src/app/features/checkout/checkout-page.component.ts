@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Divider } from 'primeng/divider';
@@ -18,6 +18,7 @@ import { OrderService } from '../../core/services/order.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { DeliveryService } from '../../core/services/delivery.service';
 import { ScrollService } from '../../core/services/scroll.service';
+import { ApiClientService } from '../../core/api/api-client.service';
 import { firstErrorKey, phoneValidator } from '../../shared/utils/validators';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import type { CreateOrderRequest } from '../../models/order.model';
@@ -47,6 +48,7 @@ export class CheckoutPageComponent implements OnInit {
   private orders = inject(OrderService);
   private notify = inject(NotificationService);
   private delivery = inject(DeliveryService);
+  private api = inject(ApiClientService);
   private router = inject(Router);
   private scroll = inject(ScrollService);
 
@@ -74,6 +76,12 @@ export class CheckoutPageComponent implements OnInit {
   // yet; the quote service (mock today, backend tomorrow) is the only writer.
   protected quotedFee = signal<number | null>(null);
   protected quoteFailed = signal(false);
+  // Coupon state (live mode only): the backend validates and prices the code;
+  // the receipted discount below is informational until the order returns.
+  protected couponControl = new FormControl('', { nonNullable: true });
+  protected couponApplied = signal('');
+  protected couponDiscount = signal(0);
+  protected couponError = signal('');
 
   // Memoized so p-select keeps a referentially stable options array.
   protected contactOptions = computed(() => [
@@ -142,7 +150,7 @@ export class CheckoutPageComponent implements OnInit {
       this.quotedFee.set(null);
       return;
     }
-    this.delivery.quoteFor(hotelId).subscribe({
+    this.delivery.quoteFor(hotelId, this.subtotal(), 'USD').subscribe({
       next: (q) => this.quotedFee.set(q.fee),
       error: () => {
         this.quotedFee.set(null);
@@ -150,6 +158,35 @@ export class CheckoutPageComponent implements OnInit {
         this.notify.error('notifications.loadFailed');
       },
     });
+  }
+
+  /** Validates the coupon against the live backend (mock mode has no coupons). */
+  protected applyCoupon(): void {
+    const code = this.couponControl.value.trim();
+    this.couponError.set('');
+    if (!code) return;
+    if (environment.useMockApi) {
+      this.couponError.set(this.i18n.t('checkout.couponInvalid'));
+      return;
+    }
+    this.api
+      .post<{ valid: boolean; discount: number; reason?: string | null }>('coupons/validate', {
+        code,
+        subtotal: this.subtotal(),
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.valid) {
+            this.couponApplied.set(code.toUpperCase());
+            this.couponDiscount.set(res.discount);
+          } else {
+            this.couponApplied.set('');
+            this.couponDiscount.set(0);
+            this.couponError.set(res.reason ?? this.i18n.t('checkout.couponInvalid'));
+          }
+        },
+        error: () => this.couponError.set(this.i18n.t('checkout.couponInvalid')),
+      });
   }
 
   // Orderable review rows from the shared cart view (same join as the cart
@@ -181,7 +218,7 @@ export class CheckoutPageComponent implements OnInit {
     if (this.subtotal() <= 0 || this.subtotal() >= environment.freeShippingThreshold) return 0;
     return this.quotedFee() ?? 0;
   });
-  protected total = computed(() => this.subtotal() + this.deliveryFee());
+  protected total = computed(() => this.subtotal() - this.couponDiscount() + this.deliveryFee());
 
   protected err(name: string): string | null {
     return firstErrorKey(this.form.get(name));
@@ -250,6 +287,7 @@ export class CheckoutPageComponent implements OnInit {
       total: this.total(),
       currency: 'USD',
       paymentMethod: 'cash_on_delivery',
+      couponCode: this.couponApplied() || undefined,
     };
     this.orders.create(req, key, this.auth.user()?.id).subscribe({
       next: (order) => {

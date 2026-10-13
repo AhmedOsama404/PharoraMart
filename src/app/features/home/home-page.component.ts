@@ -11,6 +11,7 @@ import { FavoritesStore } from '../../core/services/favorites.store';
 import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService } from '../../core/services/pending-action.service';
 import { RecentlyViewedService } from '../../core/services/recently-viewed.service';
+import { ContentService, type ContentBlock } from '../../core/services/content.service';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import type { Category, Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
@@ -32,6 +33,7 @@ export class HomePageComponent implements OnInit {
   private favorites = inject(FavoritesStore);
   private notify = inject(NotificationService);
   private gate = inject(PendingActionService);
+  private content = inject(ContentService);
   private recent = inject(RecentlyViewedService);
   private router = inject(Router);
 
@@ -42,6 +44,7 @@ export class HomePageComponent implements OnInit {
   protected popular = signal<Product[]>([]);
   protected saleProduct = signal<Product | null>(null);
   protected recentlyViewed = signal<Product[]>([]);
+  protected contentBlocks = signal<ContentBlock[]>([]);
   protected heroProduct = signal<Product | null>(null);
   protected heroTiles = signal<Product[]>([]);
 
@@ -63,6 +66,7 @@ export class HomePageComponent implements OnInit {
     });
     this.products.newArrivals().subscribe((items) => this.newArrivals.set(items));
     this.products.popular().subscribe((items) => this.popular.set(items));
+    this.content.published().subscribe((blocks) => this.contentBlocks.set(blocks));
     // Recently viewed ids are local-only; resolve them against the catalog.
     const ids = this.recent.list();
     if (ids.length) {
@@ -97,6 +101,13 @@ export class HomePageComponent implements OnInit {
   }
 
   // Dashboard-managed names/descriptions in the visitor's language.
+  protected blockTitle(b: ContentBlock): string {
+    return b.titles?.[this.i18n.currentLang()] ?? b.title;
+  }
+
+  protected blockBody(b: ContentBlock): string {
+    return b.bodies?.[this.i18n.currentLang()] ?? b.body;
+  }
   protected categoryName(c: Category): string {
     return this.products.categoryName(c.id);
   }

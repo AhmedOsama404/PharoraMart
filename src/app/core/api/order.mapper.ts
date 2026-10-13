@@ -32,6 +32,8 @@ export interface BackendOrder {
   status: string;
   createdAt: string;
   userId?: string | null;
+  discount?: number | null;
+  couponCode?: string | null;
 }
 
 export interface BackendPagedOrder {
@@ -74,5 +76,7 @@ export function toOrder(o: BackendOrder): Order {
     status: o.status as OrderStatus,
     createdAt: o.createdAt,
     userId: o.userId ?? undefined,
+    discount: o.discount ?? 0,
+    couponCode: o.couponCode ?? undefined,
   };
 }

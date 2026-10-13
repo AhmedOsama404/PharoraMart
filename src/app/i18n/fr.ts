@@ -41,6 +41,7 @@ export const fr: TranslationDict = {
     promoTitle: 'Soldes de mi-saison jusqu’à -40 %',
     promoSubtitle: 'Best-sellers beauté naturelle et herbes à prix spéciaux. Jusqu’à épuisement des stocks.',
     promoCta: 'Voir les soldes',
+    learnMore: 'Learn more',
     recentlyViewedTitle: 'Vus récemment',
     viewAll: 'Tout voir',
     perksTitle: 'Pourquoi acheter chez nous',
@@ -201,6 +202,9 @@ export const fr: TranslationDict = {
     backToCart: 'Retour au panier',
     orderSuccess: 'Commande passée avec succès',
     duplicateBlocked: 'Votre commande est déjà en cours de traitement. Patientez.',
+    applyCoupon: 'Apply',
+    discount: 'Discount',
+    couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Votre panier est vide. Ajoutez des produits avant de commander.',
   },
   confirmation: {

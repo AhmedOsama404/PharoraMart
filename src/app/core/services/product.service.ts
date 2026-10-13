@@ -44,14 +44,13 @@ export class ProductService {
 
   /**
    * Full catalog snapshot for pages that join local state (cart lines,
-   * favorites, checkout review) against product data. Resolves synchronously
-   * from the in-memory mock set — no artificial latency, so these pages paint
-   * immediately. A real API would resolve line items server-side instead.
+   * favorites, checkout review) against product data. Mock mode resolves
+   * synchronously from the in-memory set; live mode fetches a bounded
+   * snapshot (first 100 active products) so these pages keep working.
    */
   all(): Observable<Product[]> {
     if (!environment.useMockApi) {
-      // Real API would need a different endpoint for this; for now throw
-      return throwError(() => new Error('real-api-not-configured'));
+      return this.list({ page: 1, pageSize: 100 }).pipe(map((r) => r.items));
     }
     return of(this.products());
   }

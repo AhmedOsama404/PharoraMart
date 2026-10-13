@@ -41,6 +41,7 @@ export const ar: TranslationDict = {
     promoTitle: 'تخفيضات منتصف الموسم حتى 40%',
     promoSubtitle: 'الأكثر مبيعًا من منتجات الجمال الطبيعي والأعشاب بأسعار خاصة. حتى نفاد المخزون.',
     promoCta: 'تسوّق التخفيضات',
+    learnMore: 'Learn more',
     recentlyViewedTitle: 'شاهدت مؤخرًا',
     viewAll: 'عرض الكل',
     perksTitle: 'لماذا تتسوق معنا',
@@ -201,6 +202,9 @@ export const ar: TranslationDict = {
     backToCart: 'عودة إلى السلة',
     orderSuccess: 'تم إرسال الطلب بنجاح',
     duplicateBlocked: 'طلبك قيد المعالجة بالفعل. يرجى الانتظار.',
+    applyCoupon: 'Apply',
+    discount: 'Discount',
+    couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'سلتك فارغة. أضف منتجات قبل إتمام الطلب.',
   },
   confirmation: {

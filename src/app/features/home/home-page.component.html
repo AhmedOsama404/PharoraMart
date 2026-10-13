@@ -72,6 +72,21 @@
   }
 </section>
 
+@for (b of contentBlocks(); track b.key) {
+  <section class="promo cms-block">
+    <div>
+      <h2>{{ blockTitle(b) }}</h2>
+      <p>{{ blockBody(b) }}</p>
+      @if (b.linkUrl) {
+        <a [href]="b.linkUrl"><p-button [label]="i18n.t('home.learnMore')" severity="contrast" /></a>
+      }
+    </div>
+    @if (b.imageUrl) {
+      <img [src]="b.imageUrl" [alt]="blockTitle(b)" loading="lazy" (error)="fbImg($event)" />
+    }
+  </section>
+}
+
 <section class="block">
   <app-section-header [title]="i18n.t('home.newTitle')" [subtitle]="i18n.t('home.newSubtitle')"
     link="/products" [linkLabel]="i18n.t('home.viewAll')" />

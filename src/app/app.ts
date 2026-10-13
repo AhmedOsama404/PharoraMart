@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AccountSyncService } from './core/services/account-sync.service';
 
 @Component({
   selector: 'app-root',
@@ -11,4 +12,7 @@ import { RouterOutlet } from '@angular/router';
   template: `<router-outlet />`,
   styles: [],
 })
-export class App {}
+export class App {
+  // Eager instantiation: account sync effects must run for the whole session.
+  constructor(private sync: AccountSyncService) {}
+}

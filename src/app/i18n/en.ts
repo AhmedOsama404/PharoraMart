@@ -43,6 +43,7 @@ export const en: TranslationDict = {
     promoTitle: 'Mid-season sale up to 40% off',
     promoSubtitle: 'Natural beauty and herbal bestsellers at special prices. While stock lasts.',
     promoCta: 'Shop the sale',
+    learnMore: 'Learn more',
     recentlyViewedTitle: 'Recently viewed',
     viewAll: 'View all',
     perksTitle: 'Why shop with us',
@@ -203,6 +204,9 @@ export const en: TranslationDict = {
     backToCart: 'Back to cart',
     orderSuccess: 'Order placed successfully',
     duplicateBlocked: 'Your order is already being processed. Please wait.',
+    applyCoupon: 'Apply',
+    discount: 'Discount',
+    couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Your cart is empty. Add products before checkout.',
   },
   confirmation: {

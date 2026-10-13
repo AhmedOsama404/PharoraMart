@@ -41,6 +41,7 @@ export const it: TranslationDict = {
     promoTitle: 'Saldi di mezza stagione fino al −40 %',
     promoSubtitle: 'Best seller di bellezza naturale ed erbe a prezzi speciali. Fino a esaurimento scorte.',
     promoCta: 'Acquista i saldi',
+    learnMore: 'Learn more',
     recentlyViewedTitle: 'Visti di recente',
     viewAll: 'Vedi tutti',
     perksTitle: 'Perché acquistare da noi',
@@ -201,6 +202,9 @@ export const it: TranslationDict = {
     backToCart: 'Torna al carrello',
     orderSuccess: 'Ordine inviato con successo',
     duplicateBlocked: 'Il tuo ordine è già in elaborazione. Attendi.',
+    applyCoupon: 'Apply',
+    discount: 'Discount',
+    couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Il carrello è vuoto. Aggiungi prodotti prima della cassa.',
   },
   confirmation: {
