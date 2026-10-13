@@ -7,9 +7,9 @@ communication — in **8 languages (EN, AR with full RTL, CS, DE, FR, IT, PL, SK
 
 Guest browsing is public; cart, favorites, checkout and account pages require
 sign-in with a typed return-intent flow (the intended click completes once
-after authentication). Mock implementations are development-only and clearly
-labeled; the typed service layer + `docs/API_CONTRACT.md` prepare the future
-Angular admin dashboard and ASP.NET Core API without storefront rewrites.
+after authentication). Mock mode is the development default; live API mode
+(`useMockApi:false`) calls the real ASP.NET Core backend — see
+`docs/LIVE_API_CUTOVER.md`. A production build refuses to boot in mock mode.
 
 ## Stack
 
@@ -20,7 +20,7 @@ Angular admin dashboard and ASP.NET Core API without storefront rewrites.
   `Intl` formatters, cancellation-aware (`switchMap`) route data loading
 - Centralized `ScrollService` (router scroll restoration intentionally off:
   catalog query-param navigations must not yank the viewport)
-- Karma/Jasmine unit tests (128 specs, ChromeHeadless)
+- Karma/Jasmine unit tests (147 specs, ChromeHeadless)
 
 ## Quick start
 

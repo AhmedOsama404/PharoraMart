@@ -17,6 +17,7 @@ on local mock data, structured for a future ASP.NET Core API.
 8. [Testing](./TESTING.md) — tools, suites, release checklist.
 9. [API Integration](./API_INTEGRATION.md) — connecting the future backend.
    Endpoint reference: [API Contract](./API_CONTRACT.md).
+   Live-mode behavior: [Live API Cutover](./LIVE_API_CUTOVER.md).
 10. [Hosting](./HOSTING.md) — production build and static-hosting checklist.
 11. [Troubleshooting](./TROUBLESHOOTING.md) — symptoms → verified fixes.
 12. [Changelog](./CHANGELOG.md) — what changed, and why.
