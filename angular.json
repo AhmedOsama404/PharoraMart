@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "storefront": {
+    "pharoramart": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -74,10 +74,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "storefront:build:production"
+              "buildTarget": "pharoramart:build:production"
             },
             "development": {
-              "buildTarget": "storefront:build:development"
+              "buildTarget": "pharoramart:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -102,6 +102,12 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "fileReplacements": [
+              {
+                "replace": "src/environments/environment.ts",
+                "with": "src/environments/environment.development.ts"
+              }
             ]
           }
         }

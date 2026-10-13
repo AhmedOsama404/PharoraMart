@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ProductService } from './product.service';
 import { MOCK_CATEGORIES } from '../../data-access/mock-data';
 
@@ -7,7 +9,9 @@ describe('ProductService categories', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     svc = TestBed.inject(ProductService);
   });
 

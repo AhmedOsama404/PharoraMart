@@ -1,15 +1,17 @@
 import { Injectable, signal } from '@angular/core';
-import { Observable, delay, of, throwError } from 'rxjs';
+import { Observable, delay, of, throwError, map } from 'rxjs';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../../data-access/mock-data';
 import { queryProducts } from '../../data-access/catalog.utils';
 import type { CatalogQuery, Category, Product } from '../../models/product.model';
 import { pickLocaleText } from '../../shared/utils/localized.utils';
 import { environment } from '../../../environments/environment';
 import { I18nService } from './i18n.service';
+import { ApiClientService } from '../api/api-client.service';
+import { toProduct, toCategory, suggestToProduct, toProductQueryParams, BackendPaged, BackendProduct, BackendCategory, BackendSuggest } from '../api/catalog.mapper';
 
 /**
  * ProductService — single data-access boundary for products.
- * Mock mode serves local data with simulated latency; real mode would delegate
+ * Mock mode serves local data with simulated latency; real mode delegates
  * to ApiClientService (see docs/API_CONTRACT.md). Components never call HTTP.
  */
 @Injectable({ providedIn: 'root' })
@@ -19,14 +21,23 @@ export class ProductService {
   /** When true, catalog requests fail — used to demo the error state. */
   forceError = signal(false);
 
-  constructor(private i18n: I18nService) {}
+  constructor(
+    private i18n: I18nService,
+    private api: ApiClientService,
+  ) {}
 
   list(query: CatalogQuery = {}): Observable<{ items: Product[]; total: number }> {
     if (this.forceError()) {
       return throwError(() => new Error('mock-catalog-failure')).pipe(delay(400));
     }
     if (!environment.useMockApi) {
-      return throwError(() => new Error('real-api-not-configured')).pipe(delay(200));
+      const params = toProductQueryParams(query);
+      return this.api.get<BackendPaged<BackendProduct>>('products', params).pipe(
+        map((res) => ({
+          items: res.items.map(toProduct),
+          total: res.total,
+        })),
+      );
     }
     return of(queryProducts(this.products(), query)).pipe(delay(350));
   }
@@ -39,12 +50,16 @@ export class ProductService {
    */
   all(): Observable<Product[]> {
     if (!environment.useMockApi) {
+      // Real API would need a different endpoint for this; for now throw
       return throwError(() => new Error('real-api-not-configured'));
     }
     return of(this.products());
   }
 
   getById(id: string): Observable<Product> {
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct>(`products/${id}`).pipe(map(toProduct));
+    }
     const found = this.products().find((p) => p.id === id);
     if (!found) return throwError(() => new Error('not-found')).pipe(delay(250));
     return of(found).pipe(delay(250));
@@ -57,7 +72,9 @@ export class ProductService {
    */
   categories(): Observable<Category[]> {
     if (!environment.useMockApi) {
-      return throwError(() => new Error('real-api-not-configured')).pipe(delay(200));
+      return this.api.get<BackendCategory[]>('categories').pipe(
+        map((items) => items.map(toCategory)),
+      );
     }
     const active = this.categoriesStore()
       .filter((c) => c.isActive)
@@ -82,6 +99,11 @@ export class ProductService {
   }
 
   related(product: Product, limit = 4): Observable<Product[]> {
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct[]>(`products/${product.id}/related`, { limit }).pipe(
+        map((items) => items.map(toProduct)),
+      );
+    }
     const pool = this.products().filter(
       (p) => p.id !== product.id && (p.categoryId === product.categoryId || p.tags.some((t) => product.tags.includes(t))),
     );
@@ -90,26 +112,51 @@ export class ProductService {
   }
 
   featured(): Observable<Product[]> {
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct[]>('products/featured').pipe(
+        map((items) => items.map(toProduct)),
+      );
+    }
     return of(this.products().filter((p) => p.isFeatured).slice(0, 8)).pipe(delay(250));
   }
 
   newArrivals(): Observable<Product[]> {
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct[]>('products/new').pipe(
+        map((items) => items.map(toProduct)),
+      );
+    }
     return of(
       [...this.products()].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0, 8),
     ).pipe(delay(250));
   }
 
   popular(): Observable<Product[]> {
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct[]>('products/popular').pipe(
+        map((items) => items.map(toProduct)),
+      );
+    }
     return of(this.products().filter((p) => p.isPopular).slice(0, 8)).pipe(delay(250));
   }
 
   onSale(): Observable<Product[]> {
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct[]>('products/sale').pipe(
+        map((items) => items.map(toProduct)),
+      );
+    }
     return of(this.products().filter((p) => p.salePrice != null).slice(0, 8)).pipe(delay(250));
   }
 
   suggestions(term: string, limit = 6): Observable<Product[]> {
     const s = term.trim().toLowerCase();
     if (!s) return of([]);
+    if (!environment.useMockApi) {
+      return this.api.get<BackendSuggest[]>('products/suggest', { q: term, limit }).pipe(
+        map((items) => items.map(suggestToProduct)),
+      );
+    }
     return of(
       this.products()
         .filter((p) => `${p.name} ${p.tags.join(' ')}`.toLowerCase().includes(s))

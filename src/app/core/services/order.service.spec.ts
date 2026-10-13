@@ -32,7 +32,7 @@ describe('OrderService (mock)', () => {
 
   it('creates a mock order with number and totals', (done) => {
     svc.create(baseRequest(), 'key-1').subscribe((order) => {
-      expect(order.orderNumber).toMatch(/^NM-/);
+      expect(order.orderNumber).toMatch(/^PM-/);
       expect(order.total).toBe(24.9);
       expect(order.status).toBe('pending');
       expect(order.paymentMethod).toBe('cash_on_delivery');

@@ -55,7 +55,7 @@ export class OrderService {
     const order = {
       ...req,
       id: `ord-${Date.now().toString(36)}`,
-      orderNumber: `NM-${new Date().getFullYear()}-${String(1000 + seq)}`,
+      orderNumber: `PM-${new Date().getFullYear()}-${String(1000 + seq)}`,
       status: 'pending' as const,
       createdAt: new Date().toISOString(),
       userId,

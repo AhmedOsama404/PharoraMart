@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MessageService } from 'primeng/api';
@@ -18,6 +20,8 @@ describe('authGuard', () => {
     localStorage.clear();
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         MessageService,
         provideRouter([
           { path: 'favorites', component: HostComponent, canActivate: [authGuard] },

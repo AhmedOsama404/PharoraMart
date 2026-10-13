@@ -4,7 +4,7 @@ import type { Order } from '../../models/order.model';
 
 const ORDER: Order = {
   id: 'ord-1',
-  orderNumber: 'NM-2026-1001',
+  orderNumber: 'PM-2026-1001',
   status: 'pending',
   createdAt: new Date().toISOString(),
   customer: {
@@ -35,14 +35,14 @@ describe('ContactService', () => {
   it('builds an encoded WhatsApp click-to-chat URL with order details', () => {
     const url = svc.whatsappUrl(ORDER);
     expect(url.startsWith('https://wa.me/')).toBeTrue();
-    expect(url).toContain(encodeURIComponent('NM-2026-1001'));
+    expect(url).toContain(encodeURIComponent('PM-2026-1001'));
     // Message content is URL-encoded, never sent automatically:
     expect(url).toContain('text=');
   });
 
   it('includes hotel, money breakdown and contact in the order message', () => {
     const msg = svc.buildWhatsAppMessage(ORDER);
-    expect(msg).toContain('NM-2026-1001');
+    expect(msg).toContain('PM-2026-1001');
     expect(msg).toContain('Desert Rose Resort');
     expect(msg).toContain('Room 101');
     expect(msg).toContain('Aurora Headphones');
@@ -52,6 +52,6 @@ describe('ContactService', () => {
   it('builds a mailto URL (opens email app, does not send)', () => {
     const url = svc.emailUrl(ORDER);
     expect(url.startsWith('mailto:')).toBeTrue();
-    expect(url).toContain(encodeURIComponent('NM-2026-1001'));
+    expect(url).toContain(encodeURIComponent('PM-2026-1001'));
   });
 });

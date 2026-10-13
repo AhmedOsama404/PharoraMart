@@ -1,4 +1,4 @@
-# NovaMart API Integration Contract (Frontend → Future Backend)
+# PharoraMart API Integration Contract (Frontend → Future Backend)
 
 > Current phase is **frontend-only**. The app runs in **mock mode**
 > (`useMockApi: true` in `src/environments/environment*.ts`) with all data

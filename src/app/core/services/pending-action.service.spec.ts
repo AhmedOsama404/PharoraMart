@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { PendingActionService, safeReturnUrl } from './pending-action.service';
 import { AuthService } from './auth.service';
 import { CartStore } from './cart.store';
@@ -40,6 +42,8 @@ describe('PendingActionService', () => {
     notices.length = 0;
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideRouter([]),
         {
           provide: NotificationService,

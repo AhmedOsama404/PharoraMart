@@ -51,10 +51,10 @@
         @if (cart.count() > 0) { <p-badge [value]="cart.count()" severity="success" /> }
       </a>
       @if (auth.isLoggedIn()) {
-        <button class="icon-btn" (click)="accountMenu.toggle($event)" [attr.aria-label]="i18n.t('nav.account')">
+        <button class="icon-btn" #accountTrigger (click)="accountMenu.toggle($event)" [attr.aria-label]="i18n.t('nav.account')" [attr.aria-expanded]="accountMenu.overlayVisible" [attr.aria-haspopup]="true">
           <i class="pi pi-user"></i>
         </button>
-        <p-menu #accountMenu [popup]="true" [model]="accountItems()" />
+        <p-menu #accountMenu [popup]="true" [model]="accountItems()" appendTo="body" />
       } @else {
         <a routerLink="/auth/login" class="login-link"><i class="pi pi-user"></i><span>{{ i18n.t('nav.login') }}</span></a>
       }
