@@ -6,7 +6,7 @@
     </button>
     <a routerLink="/" class="logo" aria-label="Pharora home">
       <app-brand-logo />
-      <span class="logo-text">{{ i18n.t('app.name') }}</span>
+      <span class="logo-text">{{ storefront.brandName(i18n.t('app.name')) }}</span>
     </a>
     <nav class="links" aria-label="primary">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('nav.home') }}</a>

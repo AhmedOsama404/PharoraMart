@@ -1,5 +1,12 @@
 <p-toast position="top-center" />
 <p-confirmDialog />
 <app-header />
+@if (storefront.announcements().length) {
+  <div class="announcements" role="note">
+    @for (a of storefront.announcements(); track a) {
+      <p>{{ a }}</p>
+    }
+  </div>
+}
 <main class="container page"><router-outlet /></main>
 <app-footer />

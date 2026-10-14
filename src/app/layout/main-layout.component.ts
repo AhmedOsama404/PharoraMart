@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Toast } from 'primeng/toast';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { HeaderComponent } from './header.component';
 import { FooterComponent } from './footer.component';
+import { StorefrontConfigService } from '../core/services/storefront-config.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -13,4 +14,12 @@ import { FooterComponent } from './footer.component';
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
 })
-export class MainLayoutComponent {}
+export class MainLayoutComponent implements OnInit {
+  protected storefront = inject(StorefrontConfigService);
+
+  ngOnInit(): void {
+    // Published storefront config (announcements, footer links, theme).
+    // Safe no-op in mock mode and on failure: built-in defaults apply.
+    this.storefront.load();
+  }
+}

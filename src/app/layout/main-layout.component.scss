@@ -1,1 +1,13 @@
 .page { min-height: 60vh; padding-top: 1.25rem; padding-bottom: 1rem; }
+
+.announcements {
+  background: var(--store-primary, #2e7d52);
+  color: #fff;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+
+  p {
+    margin: 0.15rem 0;
+  }
+}

@@ -203,6 +203,7 @@ export const ar: TranslationDict = {
     orderSuccess: 'تم إرسال الطلب بنجاح',
     duplicateBlocked: 'طلبك قيد المعالجة بالفعل. يرجى الانتظار.',
     applyCoupon: 'Apply',
+    couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'سلتك فارغة. أضف منتجات قبل إتمام الطلب.',

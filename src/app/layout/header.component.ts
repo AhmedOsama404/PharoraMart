@@ -19,6 +19,7 @@ import { FavoritesStore } from '../core/services/favorites.store';
 import { AuthService } from '../core/services/auth.service';
 import { ProductService } from '../core/services/product.service';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
+import { StorefrontConfigService } from '../core/services/storefront-config.service';
 
 @Component({
   selector: 'app-header',
@@ -38,6 +39,7 @@ export class HeaderComponent {
   protected favorites = inject(FavoritesStore);
   protected auth = inject(AuthService);
   private products = inject(ProductService);
+  protected storefront = inject(StorefrontConfigService);
   private router = inject(Router);
 
   protected mobileOpen = signal(false);

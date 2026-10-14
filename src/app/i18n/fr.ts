@@ -203,6 +203,7 @@ export const fr: TranslationDict = {
     orderSuccess: 'Commande passée avec succès',
     duplicateBlocked: 'Votre commande est déjà en cours de traitement. Patientez.',
     applyCoupon: 'Apply',
+    couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Votre panier est vide. Ajoutez des produits avant de commander.',

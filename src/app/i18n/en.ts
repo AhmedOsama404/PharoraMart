@@ -205,6 +205,7 @@ export const en: TranslationDict = {
     orderSuccess: 'Order placed successfully',
     duplicateBlocked: 'Your order is already being processed. Please wait.',
     applyCoupon: 'Apply',
+    couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',
     emptyCart: 'Your cart is empty. Add products before checkout.',

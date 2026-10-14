@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.example.com/api/v1',
+  apiBaseUrl: 'https://localhost:44389/api/v1',
   useMockApi: false,
   // Public business identity (all frontend-bundled values are public by
   // definition — never put secrets here). The future dashboard owns the real

@@ -1,7 +1,7 @@
 <footer class="footer">
   <div class="container grid">
     <div class="brand">
-      <div class="logo"><app-brand-logo /><span>{{ i18n.t('app.name') }}</span></div>
+      <div class="logo"><app-brand-logo /><span>{{ storefront.brandName(i18n.t('app.name')) }}</span></div>
       <p>{{ i18n.t('footer.tagline') }}</p>
       <div class="contact">
         <a [href]="'mailto:' + contact.supportEmail"><i class="pi pi-envelope"></i> {{ contact.supportEmail }}</a>
@@ -21,6 +21,9 @@
       <a routerLink="/orders">{{ i18n.t('nav.orders') }}</a>
       <a routerLink="/checkout">{{ i18n.t('nav.checkout') }}</a>
       <a routerLink="/auth/login">{{ i18n.t('nav.login') }}</a>
+      @for (l of storefront.footerLinks(); track l.url) {
+        <a [href]="l.url">{{ l.label }}</a>
+      }
     </nav>
     <div class="prefs">
       <h4>{{ i18n.t('footer.contact') }}</h4>
