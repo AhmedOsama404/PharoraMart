@@ -4,6 +4,7 @@ import { CartViewService } from './cart-view.service';
 import { CartStore } from './cart.store';
 import { ProductService } from './product.service';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
+import { hermeticApi } from '../../../testing/hermetic-api';
 
 describe('CartViewService (badge/page/checkout agreement)', () => {
   let view: CartViewService;
@@ -14,7 +15,7 @@ describe('CartViewService (badge/page/checkout agreement)', () => {
     localStorage.clear();
     allImpl = () => of(MOCK_PRODUCTS);
     TestBed.configureTestingModule({
-      providers: [{ provide: ProductService, useValue: { all: () => allImpl() } }],
+      providers: [...hermeticApi(), { provide: ProductService, useValue: { all: () => allImpl() } }],
     });
     cart = TestBed.inject(CartStore);
     view = TestBed.inject(CartViewService);
@@ -49,7 +50,7 @@ describe('CartViewService (badge/page/checkout agreement)', () => {
     allImpl = () => gate;
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [{ provide: ProductService, useValue: { all: () => allImpl() } }],
+      providers: [...hermeticApi(), { provide: ProductService, useValue: { all: () => allImpl() } }],
     });
     localStorage.clear();
     const v2 = TestBed.inject(CartViewService);
@@ -63,7 +64,7 @@ describe('CartViewService (badge/page/checkout agreement)', () => {
     allImpl = () => throwError(() => new Error('down'));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [{ provide: ProductService, useValue: { all: () => allImpl() } }],
+      providers: [...hermeticApi(), { provide: ProductService, useValue: { all: () => allImpl() } }],
     });
     localStorage.clear();
     const v2 = TestBed.inject(CartViewService);

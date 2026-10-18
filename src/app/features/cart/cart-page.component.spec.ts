@@ -9,6 +9,7 @@ import { CartStore } from '../../core/services/cart.store';
 import { I18nService } from '../../core/services/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
+import { hermeticApi } from '../../../testing/hermetic-api';
 
 // Regression: the summary heading once asked a nonexistent `checkout.totals`
 // key and rendered the raw key on /cart. Every customer-facing label asserted
@@ -25,6 +26,7 @@ describe('CartPageComponent (translated summary)', () => {
     localStorage.clear();
     await TestBed.configureTestingModule({
       providers: [
+        ...hermeticApi(),
         provideRouter([]),
         provideNoopAnimations(),
         ConfirmationService,

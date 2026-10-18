@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ProductCardComponent } from './product-card.component';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
+import { hermeticApi } from '../../../testing/hermetic-api';
 
 const P = MOCK_PRODUCTS[0];
 
@@ -13,7 +14,7 @@ describe('ProductCardComponent', () => {
   beforeEach(async () => {
     localStorage.clear();
     await TestBed.configureTestingModule({
-      providers: [provideRouter([]), provideNoopAnimations()],
+      providers: [provideRouter([]), provideNoopAnimations(), ...hermeticApi()],
     }).compileComponents();
     fixture = TestBed.createComponent(ProductCardComponent);
     fixture.componentInstance.product = P;

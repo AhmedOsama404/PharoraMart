@@ -9,6 +9,7 @@ import { CartStore } from '../../core/services/cart.store';
 import { FavoritesStore } from '../../core/services/favorites.store';
 import { NotificationService } from '../../core/services/notification.service';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
+import { hermeticApi } from '../../../testing/hermetic-api';
 
 const P = MOCK_PRODUCTS[0];
 
@@ -24,6 +25,7 @@ describe('FavoritesPageComponent (single-mutation entry points)', () => {
     localStorage.clear();
     TestBed.configureTestingModule({
       providers: [
+        ...hermeticApi(),
         provideRouter([{ path: 'favorites', component: FavoritesPageComponent }]),
         {
           provide: ProductService,
