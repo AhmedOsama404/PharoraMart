@@ -1,17 +1,28 @@
 <header class="topbar">
-  <div class="announce">{{ i18n.t('hero.freeShipping') }} · {{ i18n.t('hero.cashOnDelivery') }}</div>
+  @if (announcement()) {
+  <div class="announce">
+      {{ announcement() }}
+  </div>
+  }
   <div class="bar container">
     <button class="icon-btn menu-btn" (click)="mobileOpen.set(true)" [attr.aria-label]="i18n.t('nav.menu')">
       <i class="pi pi-bars"></i>
     </button>
-    <a routerLink="/" class="logo" aria-label="Pharora home">
-      <app-brand-logo />
-      <span class="logo-text">{{ storefront.brandName(i18n.t('app.name')) }}</span>
+    <a routerLink="/" class="logo" [attr.aria-label]="brandName() || null">
+      @if (brandLogoUrl(); as logoUrl) { <img [src]="logoUrl" [alt]="brandName()" /> } @else { <app-brand-logo /> }
+      <span class="logo-text">{{ brandName() }}</span>
     </a>
     <nav class="links" aria-label="primary">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('nav.home') }}</a>
-      <a routerLink="/products" routerLinkActive="active">{{ i18n.t('nav.catalog') }}</a>
-      <a routerLink="/orders" routerLinkActive="active">{{ i18n.t('nav.orders') }}</a>
+      @if (storefront.headerItemVisible('home')) { <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ storefront.headerItemText('home', i18n.currentLang(), i18n.t('nav.home')) }}</a> }
+      @if (storefront.headerItemVisible('catalog')) { <a routerLink="/products" routerLinkActive="active">{{ storefront.headerItemText('catalog', i18n.currentLang(), i18n.t('nav.catalog')) }}</a> }
+      @if (storefront.headerItemVisible('orders')) { <a routerLink="/orders" routerLinkActive="active">{{ storefront.headerItemText('orders', i18n.currentLang(), i18n.t('nav.orders')) }}</a> }
+      @for (link of storefront.headerLinks(); track link.url) {
+        @if (isRelative(link.url)) {
+          <a [routerLink]="link.url" routerLinkActive="active">{{ link.label }}</a>
+        } @else {
+          <a [href]="link.url" target="_blank" rel="noopener">{{ link.label }}</a>
+        }
+      }
     </nav>
     <div class="search">
       <p-iconField iconPosition="left">
@@ -27,8 +38,8 @@
         <div class="suggest" role="listbox">
           @for (p of suggestions(); track p.id) {
             <a [routerLink]="['/products', p.id]" (click)="closeSuggestions()" role="option">
-              <img [src]="p.images[0]" [alt]="p.name" loading="lazy" (error)="imgFallback($event, p.id)" />
-              <span>{{ p.name }}</span>
+              <img [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" (error)="imgFallback($event, p.id)" />
+              <span>{{ p.names | localized: p.name }}</span>
             </a>
           }
           @if (!suggestions().length) {
@@ -40,8 +51,8 @@
     <div class="actions">
       <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value"
         (onChange)="onLang($event.value)" [attr.aria-label]="i18n.t('language.label')" class="lang-select" />
-      <p-select [options]="currencyOptions" [(ngModel)]="currencyModel" optionLabel="label" optionValue="value"
-        (onChange)="onCurrency($event.value)" [attr.aria-label]="i18n.t('currency.label')" class="cur-select" />
+      <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value"
+        (ngModelChange)="onCurrency($event)" [attr.aria-label]="i18n.t('currency.label')" class="cur-select" />
       <a routerLink="/favorites" class="icon-btn" [attr.aria-label]="i18n.t('nav.favorites')">
         <i class="pi pi-heart"></i>
         @if (favorites.count() > 0) { <p-badge [value]="favorites.count()" severity="danger" /> }
@@ -71,11 +82,18 @@
 
 <p-drawer [(visible)]="mobileOpen" [header]="i18n.t('nav.menu')" position="left">
   <nav class="mobile-nav">
-    <a routerLink="/" (click)="mobileOpen.set(false)">{{ i18n.t('nav.home') }}</a>
-    <a routerLink="/products" (click)="mobileOpen.set(false)">{{ i18n.t('nav.catalog') }}</a>
+    @if (storefront.headerItemVisible('home')) { <a routerLink="/" (click)="mobileOpen.set(false)">{{ storefront.headerItemText('home', i18n.currentLang(), i18n.t('nav.home')) }}</a> }
+    @if (storefront.headerItemVisible('catalog')) { <a routerLink="/products" (click)="mobileOpen.set(false)">{{ storefront.headerItemText('catalog', i18n.currentLang(), i18n.t('nav.catalog')) }}</a> }
     <a routerLink="/cart" (click)="mobileOpen.set(false)">{{ i18n.t('nav.cart') }} ({{ cart.count() }})</a>
     <a routerLink="/favorites" (click)="mobileOpen.set(false)">{{ i18n.t('nav.favorites') }} ({{ favorites.count() }})</a>
-    <a routerLink="/orders" (click)="mobileOpen.set(false)">{{ i18n.t('nav.orders') }}</a>
+    @if (storefront.headerItemVisible('orders')) { <a routerLink="/orders" (click)="mobileOpen.set(false)">{{ storefront.headerItemText('orders', i18n.currentLang(), i18n.t('nav.orders')) }}</a> }
+    @for (link of storefront.headerLinks(); track link.url) {
+      @if (isRelative(link.url)) {
+        <a [routerLink]="link.url" (click)="mobileOpen.set(false)">{{ link.label }}</a>
+      } @else {
+        <a [href]="link.url" target="_blank" rel="noopener">{{ link.label }}</a>
+      }
+    }
     @if (auth.isLoggedIn()) {
       <a routerLink="/auth/profile" (click)="mobileOpen.set(false)">{{ i18n.t('nav.profile') }}</a>
       <button class="linklike" (click)="doLogout()">{{ i18n.t('nav.logout') }}</button>
@@ -85,7 +103,7 @@
     }
     <div class="mobile-prefs">
       <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value" (onChange)="onLang($event.value)" [fluid]="true" />
-      <p-select [options]="currencyOptions" [(ngModel)]="currencyModel" optionLabel="label" optionValue="value" (onChange)="onCurrency($event.value)" [fluid]="true" />
+      <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true" />
     </div>
   </nav>
 </p-drawer>

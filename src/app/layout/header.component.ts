@@ -1,4 +1,6 @@
+import { LocalizedPipe } from '../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import type { LocalizedText } from '../models/product.model';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Badge } from 'primeng/badge';
@@ -12,7 +14,7 @@ import type { MenuItem } from 'primeng/api';
 import { debounceTime, distinctUntilChanged, Subject, switchMap, of } from 'rxjs';
 import { I18nService } from '../core/services/i18n.service';
 import { SUPPORTED_LANGS, type SupportedLang } from '../core/config/i18n.config';
-import { CurrencyService, CURRENCIES } from '../core/services/currency.service';
+import { CurrencyService } from '../core/services/currency.service';
 import { handleImgError } from '../shared/utils/image-fallback.utils';
 import { CartStore } from '../core/services/cart.store';
 import { FavoritesStore } from '../core/services/favorites.store';
@@ -20,6 +22,7 @@ import { AuthService } from '../core/services/auth.service';
 import { ProductService } from '../core/services/product.service';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
 import { StorefrontConfigService } from '../core/services/storefront-config.service';
+import { SiteContentService } from '../core/services/site-content.service';
 
 @Component({
   selector: 'app-header',
@@ -28,6 +31,7 @@ import { StorefrontConfigService } from '../core/services/storefront-config.serv
   imports: [
     RouterLink, RouterLinkActive, FormsModule, Badge, Drawer,
     IconField, InputIcon, InputText, Menu, Select, BrandLogoComponent,
+    LocalizedPipe,
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
@@ -40,18 +44,27 @@ export class HeaderComponent {
   protected auth = inject(AuthService);
   private products = inject(ProductService);
   protected storefront = inject(StorefrontConfigService);
+  protected siteContent = inject(SiteContentService);
   private router = inject(Router);
+
+  // Employee-editable brand + announcement (empty until loaded / when cleared).
+  protected brandName = computed(() => this.siteContent.text(this.siteContent.header()?.brandName, this.i18n.currentLang()));
+  protected brandLogoUrl = computed(() => this.siteContent.safeUrl(this.siteContent.header()?.logoUrl));
+  protected announcement = computed(() => {
+    const header = this.siteContent.header();
+    if (!header || header.announcementVisible === false) return '';
+    return this.siteContent.text(header.announcementText, this.i18n.currentLang());
+  });
 
   protected mobileOpen = signal(false);
   protected searchTerm = '';
-  protected suggestions = signal<{ id: string; name: string; images: string[] }[]>([]);
+  protected suggestions = signal<{ id: string; name: string; names?: LocalizedText; images: string[] }[]>([]);
   protected showSuggestions = signal(false);
   // Keystrokes funnel through here so only settled input hits the service.
   private search$ = new Subject<string>();
 
   protected langModel: SupportedLang = this.i18n.currentLang();
-  protected currencyModel: string = this.currency.code();
-  protected currencyOptions = CURRENCIES.map((c) => ({ label: c.code, value: c.code }));
+  protected currencyOptions = computed(() => this.currency.options().map((c) => ({ label: c.code, value: c.code })));
 
   // Memoized option lists: p-select must keep a stable array reference or it
   // resyncs every change-detection cycle (see product-detail root cause).
@@ -114,8 +127,13 @@ export class HeaderComponent {
   }
 
   protected onCurrency(code: string): void {
-    this.currencyModel = code;
     this.currency.setCurrency(code);
+  }
+
+  /** Relative URLs route in-app; absolute http(s) URLs open externally. */
+  protected isRelative(url: string): boolean {
+    const u = url.trim();
+    return u.startsWith('/') && !u.startsWith('//');
   }
 
   protected doLogout(): void {

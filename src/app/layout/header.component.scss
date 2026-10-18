@@ -2,6 +2,7 @@
 .announce { background: var(--primary); color: #fff; text-align: center; font-size: 0.78rem; padding: 0.32rem 1rem; font-weight: 600; }
 .bar { display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 1rem; }
 .logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 850; font-size: 1.25rem; color: var(--text-primary); }
+.logo img { width: 2.25rem; height: 2.25rem; object-fit: contain; }
 .links { display: flex; gap: 1rem; }
 .links a { text-decoration: none; color: var(--text-secondary); font-weight: 600; }
 .links a.active, .links a:hover { color: var(--primary); }
