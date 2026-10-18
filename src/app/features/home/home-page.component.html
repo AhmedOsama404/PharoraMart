@@ -3,40 +3,71 @@
     @case ('hero') {
       <section class="hero">
         <div class="hero-copy">
-          <p-tag [value]="i18n.t('hero.badge')" severity="info" />
-          <h1>{{ i18n.t('hero.title') }}</h1>
-          <p>{{ i18n.t('hero.subtitle') }}</p>
-          <div class="cta">
-            <p-button [label]="i18n.t('hero.shopNow')" icon="pi pi-shopping-bag" (onClick)="go('/products')" />
-            <p-button [label]="i18n.t('hero.hotelCta')" icon="pi pi-building" severity="secondary" [outlined]="true" (onClick)="go('/checkout')" />
-          </div>
-          <ul class="perks">
-            <li><i class="pi pi-truck"></i>{{ i18n.t('hero.freeShipping') }}</li>
-            <li><i class="pi pi-money-bill"></i>{{ i18n.t('hero.cashOnDelivery') }}</li>
-            <li><i class="pi pi-refresh"></i>{{ i18n.t('hero.easyReturns') }}</li>
-          </ul>
+          @if (heroBadge()) {
+            <p-tag [value]="heroBadge()" [icon]="badgeIcon()" severity="info" />
+          }
+          @if (heroHeadline()) {
+            <h1>{{ heroHeadline() }}</h1>
+          }
+          @if (heroDescription()) {
+            <p>{{ heroDescription() }}</p>
+          }
+          @if (heroPrimary() || heroSecondary()) {
+            <div class="cta">
+              @if (heroPrimary(); as primary) {
+                <p-button [label]="siteContent.text(primary.label, i18n.currentLang())" [icon]="siteContent.icon(primary.icon, 'pi pi-shopping-bag')" (onClick)="goTo(siteContent.safeUrl(primary.url) || '/products')" />
+              }
+              @if (heroSecondary(); as secondary) {
+                <p-button [label]="siteContent.text(secondary.label, i18n.currentLang())" [icon]="siteContent.icon(secondary.icon, 'pi pi-building')" severity="secondary" [outlined]="true" (onClick)="goTo(siteContent.safeUrl(secondary.url) || '/checkout')" />
+              }
+            </div>
+          }
+          @if (heroHighlights().length) {
+            <ul class="perks">
+              @for (highlight of heroHighlights(); track $index) {
+                <li><i [class]="siteContent.icon(highlight.icon)"></i>{{ siteContent.text(highlight.text, i18n.currentLang()) }}</li>
+              }
+            </ul>
+          }
         </div>
         <div class="hero-media">
-          @if (heroProduct()) {
-            <a [routerLink]="['/products', heroProduct()!.id]" class="hero-card">
-              <img [src]="heroProduct()!.images[0]" [alt]="heroProduct()!.name" fetchpriority="high" (error)="fbImg($event)" />
-              <span class="hero-info">
-                <span class="hero-name">{{ heroProduct()!.name }}</span>
-                <span class="hero-price">{{ heroProduct()!.salePrice ?? heroProduct()!.price | money }}</span>
-              </span>
-            </a>
-          }
-          <div class="hero-tiles">
-            @for (p of heroTiles(); track p.id) {
-              <a [routerLink]="['/products', p.id]"><img [src]="p.images[0]" [alt]="p.name" loading="lazy" (error)="fbImg($event)" /></a>
+          @if (heroSlotMode()) {
+            @if (heroSlotProducts()[0]; as hero) {
+              <a [routerLink]="['/products', hero.id]" class="hero-card">
+                <img [src]="storefront.sectionSettings('hero')?.imageUrl || hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.name" fetchpriority="high" (error)="fbImg($event)" />
+                <span class="hero-info"><span class="hero-name">{{ hero.name }}</span><span class="hero-price">{{ hero.salePrice ?? hero.price | resolvedMoney: hero.currency }}</span></span>
+              </a>
+            } @else {
+              <div class="hero-card"><img src="/hero-product-fallback.svg" alt="" fetchpriority="high" /></div>
             }
-          </div>
+            <div class="hero-tiles">
+              @for (product of heroSlotProducts().slice(1); track $index) {
+                @if (product) {
+                  <a [routerLink]="['/products', product.id]"><img [src]="product.images[0] || '/hero-product-fallback.svg'" [alt]="product.names | localized: product.name" loading="lazy" (error)="fbImg($event)" /></a>
+                } @else {
+                  <div><img src="/hero-product-fallback.svg" alt="" loading="lazy" /></div>
+                }
+              }
+            </div>
+          } @else {
+            @if (heroProduct()) {
+              <a [routerLink]="['/products', heroProduct()!.id]" class="hero-card">
+                <img [src]="storefront.sectionSettings('hero')?.imageUrl || heroProduct()!.images[0]" [alt]="heroProduct()!.names | localized: heroProduct()!.name" fetchpriority="high" (error)="fbImg($event)" />
+                <span class="hero-info"><span class="hero-name">{{ heroProduct()!.name }}</span><span class="hero-price">{{ heroProduct()!.salePrice ?? heroProduct()!.price | resolvedMoney: heroProduct()!.currency }}</span></span>
+              </a>
+            }
+            <div class="hero-tiles">
+              @for (p of heroTiles(); track p.id) {
+                <a [routerLink]="['/products', p.id]"><img [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" (error)="fbImg($event)" /></a>
+              }
+            </div>
+          }
         </div>
       </section>
     }
     @case ('categories') {
       <section #catsEl class="block">
-        <app-section-header [title]="i18n.t('home.categoriesTitle')" [subtitle]="i18n.t('home.categoriesSubtitle')" />
+        <app-section-header [title]="siteContent.text(siteContent.categoriesSection()?.sectionTitle, i18n.currentLang())" [subtitle]="siteContent.text(siteContent.categoriesSection()?.sectionBody, i18n.currentLang())" />
         @if (loading()) {
           <div class="cat-grid">@for (i of [1,2,3,4,5]; track i) { <p-skeleton height="12rem" borderRadius="1rem" /> }</div>
         } @else {
@@ -52,30 +83,34 @@
       </section>
     }
     @case ('featured') {
-      <section class="block">
-        <app-section-header [title]="i18n.t('home.featuredTitle')" [subtitle]="i18n.t('home.featuredSubtitle')"
-          link="/products" [linkLabel]="i18n.t('home.viewAll')" />
-        @if (loading()) {
-          <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
-        } @else {
-          <div class="grid">
-            @for (p of featured(); track p.id) {
-              <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
-            }
-          </div>
-        }
-      </section>
+      @if (sectionVisible('featured')) {
+        <section class="block">
+          <app-section-header [title]="sectionTitle('featured')" [subtitle]="sectionBody('featured')"
+            [link]="sectionViewAllUrl('featured')" [linkLabel]="sectionViewAll('featured')" />
+          @if (loading()) {
+            <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+          } @else {
+            <div class="grid">
+              @for (p of featured(); track p.id) {
+                <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+              }
+            </div>
+          }
+        </section>
+      }
     }
     @case ('promo') {
       @if (storefront.isFeatureEnabled('promoBanners')) {
         <section class="promo">
           <div>
-            <h2>{{ i18n.t('home.promoTitle') }}</h2>
-            <p>{{ i18n.t('home.promoSubtitle') }}</p>
-            <p-button [label]="i18n.t('home.promoCta')" severity="contrast" (onClick)="goSale()" />
+            <h2>{{ storefront.sectionText('promo', 'title', i18n.currentLang()) || i18n.t('home.promoTitle') }}</h2>
+            <p>{{ storefront.sectionText('promo', 'subtitle', i18n.currentLang()) || i18n.t('home.promoSubtitle') }}</p>
+            @if (storefront.sectionCtaVisible('promo')) {
+              <p-button [label]="storefront.sectionText('promo', 'ctaLabel', i18n.currentLang()) || i18n.t('home.promoCta')" severity="contrast" (onClick)="goTo(storefront.sectionCtaUrl('promo') || '/products?sale=1')" />
+            }
           </div>
           @if (saleProduct()) {
-            <a [routerLink]="['/products', saleProduct()!.id]"><img [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.name" loading="lazy" (error)="fbImg($event)" /></a>
+            <a [routerLink]="['/products', saleProduct()!.id]"><img [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.names | localized: saleProduct()!.name" loading="lazy" (error)="fbImg($event)" /></a>
           }
         </section>
       }
@@ -97,23 +132,25 @@
       }
     }
     @case ('newArrivals') {
-      <section class="block">
-        <app-section-header [title]="i18n.t('home.newTitle')" [subtitle]="i18n.t('home.newSubtitle')"
-          link="/products" [linkLabel]="i18n.t('home.viewAll')" />
-        @if (!loading()) {
-          <p-carousel [value]="newArrivals()" [numVisible]="4" [numScroll]="2" [responsiveOptions]="carouselOpts" [showIndicators]="false">
-            <ng-template let-p #item>
-              <div class="car-item"><app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" /></div>
-            </ng-template>
-          </p-carousel>
-        }
-      </section>
+      @if (sectionVisible('newArrivals')) {
+        <section class="block">
+          <app-section-header [title]="sectionTitle('newArrivals')" [subtitle]="sectionBody('newArrivals')"
+            [link]="sectionViewAllUrl('newArrivals')" [linkLabel]="sectionViewAll('newArrivals')" />
+          @if (!loading()) {
+            <p-carousel [value]="newArrivals()" [numVisible]="4" [numScroll]="2" [responsiveOptions]="carouselOpts" [showIndicators]="false">
+              <ng-template let-p #item>
+                <div class="car-item"><app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" /></div>
+              </ng-template>
+            </p-carousel>
+          }
+        </section>
+      }
     }
     @case ('popular') {
-      @if (storefront.isFeatureEnabled('bestSellers')) {
+      @if (storefront.isFeatureEnabled('bestSellers') && sectionVisible('popular')) {
         <section class="block">
-          <app-section-header [title]="i18n.t('home.popularTitle')" [subtitle]="i18n.t('home.popularSubtitle')"
-            link="/products" [linkLabel]="i18n.t('home.viewAll')" />
+          <app-section-header [title]="sectionTitle('popular')" [subtitle]="sectionBody('popular')"
+            [link]="sectionViewAllUrl('popular')" [linkLabel]="sectionViewAll('popular')" />
           @if (!loading()) {
             <div class="grid">
               @for (p of popular(); track p.id) {
