@@ -92,7 +92,7 @@ export class CatalogPageComponent implements OnInit {
     { label: this.i18n.t('catalog.allCategories'), value: '' },
     // Rendered from the data source (active categories only), never hardcoded:
     // the future dashboard can add, rename or deactivate categories freely.
-    ...this.categories().map((c) => ({ label: this.products.categoryName(c.id), value: c.id })),
+    ...this.categories().map((c) => ({ label: this.products.categoryLabel(c), value: c.id })),
   ]);
 
   protected availOptions = computed(() => [
@@ -105,7 +105,7 @@ export class CatalogPageComponent implements OnInit {
   protected activeChips = computed(() => {
     const chips: { key: string; label: string }[] = [];
     if (this.draft.q()) chips.push({ key: 'q', label: `“${this.draft.q()}”` });
-    if (this.draft.category()) chips.push({ key: 'category', label: this.draft.category() });
+    if (this.draft.category()) chips.push({ key: 'category', label: this.products.categoryName(this.draft.category()!) });
     if (this.draft.minPrice() > 0) chips.push({ key: 'min', label: `≥ ${this.draft.minPrice()}` });
     if (this.draft.maxPrice() < this.maxPrice) chips.push({ key: 'max', label: `≤ ${this.draft.maxPrice()}` });
     if (this.draft.availability() !== 'all') chips.push({ key: 'avail', label: this.draft.availability() });

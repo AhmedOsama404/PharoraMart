@@ -1,22 +1,3 @@
-.hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 2rem; align-items: center;
-  background: linear-gradient(135deg, #edf4ea, #fdf8ea 55%, #f7efdb); border: 1px solid var(--surface-border);
-  border-radius: 1.4rem; padding: 2.2rem; margin-bottom: 2.2rem; }
-.hero h1 { font-size: clamp(1.8rem, 4vw, 2.9rem); line-height: 1.1; margin: 0.9rem 0 0.6rem; letter-spacing: -0.02em; color: var(--text-primary); }
-.hero-copy p { color: var(--text-secondary); font-size: 1.05rem; }
-.cta { display: flex; gap: 0.7rem; margin: 1.2rem 0; flex-wrap: wrap; }
-.perks { list-style: none; display: flex; gap: 1.1rem; flex-wrap: wrap; padding: 0; margin: 0; color: var(--text-primary); font-weight: 600; font-size: 0.9rem; }
-.perks i { color: var(--primary); margin-inline-end: 0.35rem; }
-.hero-media { display: grid; gap: 0.8rem; }
-.hero-card { position: relative; display: block; border-radius: 1.1rem; overflow: hidden; box-shadow: var(--shadow-md); }
-.hero-card img { width: 100%; height: 21rem; object-fit: cover; display: block; }
-.hero-info { position: absolute; inset-inline: 1rem; bottom: 1rem; display: flex; justify-content: space-between; align-items: center;
-  background: color-mix(in srgb, #fff 88%, transparent); backdrop-filter: blur(8px); border-radius: 0.9rem; padding: 0.6rem 0.9rem; font-weight: 700; color: var(--text-primary); }
-/* The card is a visited link after the first click: without their own color
-   the name would inherit the browser's visited purple. */
-.hero-name { color: var(--text-primary); }
-.hero-price { color: var(--primary); }
-.hero-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
-.hero-tiles img { width: 100%; height: 6.5rem; object-fit: cover; border-radius: 0.9rem; }
 .block { margin: 2.2rem 0; }
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; }
 .cat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; }
@@ -31,6 +12,6 @@
 .promo p { opacity: 0.9; }
 .promo img { width: 100%; height: 13rem; object-fit: cover; border-radius: 1rem; }
 .car-item { padding: 0.4rem; }
-@media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } .cat-grid { grid-template-columns: repeat(3, 1fr); } .hero { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .grid { grid-template-columns: repeat(2, 1fr); } .cat-grid { grid-template-columns: repeat(2, 1fr); } .promo { grid-template-columns: 1fr; } .hero { padding: 1.3rem; } }
+@media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } .cat-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr); } .cat-grid { grid-template-columns: repeat(2, 1fr); } .promo { grid-template-columns: 1fr; } }
 @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }

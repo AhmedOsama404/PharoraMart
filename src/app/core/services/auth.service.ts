@@ -71,7 +71,9 @@ export class AuthService {
 
   login(req: LoginRequest): Observable<AuthResponse> {
     if (!environment.useMockApi) {
-      return this.api.post<AuthResponse>('auth/login', req).pipe(
+      // Auth pages render the failure inline next to the form, so the global
+      // error toast stays quiet (no duplicate "something went wrong").
+      return this.api.post<AuthResponse>('auth/login', req, undefined, { silent: true }).pipe(
         tap((auth) => {
           this.session.set(auth);
           this.persist(auth);
@@ -82,7 +84,12 @@ export class AuthService {
     const users = readUsers();
     const found = users.find((u) => u.email.toLowerCase() === email);
     if (!found || found.password !== req.password) {
-      return throwError(() => ({ status: 401, message: 'invalid-credentials' })).pipe(delay(500));
+      // Same problem shape the live API returns, so both modes localize alike.
+      return throwError(() => ({
+        status: 401,
+        code: 'auth_invalid_credentials',
+        detail: 'Mock sign-in rejected: unknown email or wrong password.',
+      })).pipe(delay(500));
     }
     const { password: _omit, ...user } = found;
     const auth: AuthResponse = { user, token: `mock.${user.id}.${Date.now()}` };
@@ -93,7 +100,7 @@ export class AuthService {
 
   register(req: RegisterRequest): Observable<AuthResponse> {
     if (!environment.useMockApi) {
-      return this.api.post<AuthResponse>('auth/register', req).pipe(
+      return this.api.post<AuthResponse>('auth/register', req, undefined, { silent: true }).pipe(
         tap((auth) => {
           this.session.set(auth);
           this.persist(auth);
@@ -103,7 +110,11 @@ export class AuthService {
     const email = req.email.trim().toLowerCase();
     const users = readUsers();
     if (users.some((u) => u.email.toLowerCase() === email)) {
-      return throwError(() => ({ status: 409, message: 'email-taken' })).pipe(delay(500));
+      return throwError(() => ({
+        status: 409,
+        code: 'auth_email_taken',
+        detail: 'Mock sign-up rejected: email already registered.',
+      })).pipe(delay(500));
     }
     const user: User = {
       id: `u-${Date.now().toString(36)}`,
@@ -138,7 +149,13 @@ export class AuthService {
       return this.api.get<User>('auth/me');
     }
     const user = this.session()?.user;
-    return user ? of(user) : throwError(() => ({ status: 401, message: 'unauthorized' }));
+    return user
+      ? of(user)
+      : throwError(() => ({
+          status: 401,
+          code: 'unauthorized',
+          detail: 'No mock session to read.',
+        }));
   }
 
   /** Demo password reset — never sends email; resolves after a delay. */

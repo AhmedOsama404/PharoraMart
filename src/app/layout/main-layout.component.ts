@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Toast } from 'primeng/toast';
 import { ConfirmDialog } from 'primeng/confirmdialog';
@@ -25,5 +25,16 @@ export class MainLayoutComponent implements OnInit {
     this.storefront.load();
     // Employee-editable content (header, hero, categories, home sections, footer).
     this.siteContent.load();
+  }
+
+  @HostListener('window:focus')
+  @HostListener('document:visibilitychange')
+  protected refreshPublishedContent(): void {
+    // Tab switches within the same browser window do not reliably fire
+    // window:focus. Refresh when this tab becomes visible so a CMS publish is
+    // picked up immediately without requiring a full reload.
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    this.storefront.load(true);
+    this.siteContent.load(true);
   }
 }

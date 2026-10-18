@@ -60,8 +60,10 @@ export class OrderService {
     if (!environment.useMockApi) {
       // Server is authoritative for money, stock and coupons; client totals
       // are cross-checked input. The userId travels in the JWT, not the body.
+      // `silent` because checkout renders the exact, localized reason inline
+      // (coupon already used, out of stock, …) instead of a generic toast.
       return this.api
-        .post<BackendOrder>('orders', req, { 'Idempotency-Key': idempotencyKey })
+        .post<BackendOrder>('orders', req, { 'Idempotency-Key': idempotencyKey }, { silent: true })
         .pipe(map(toOrder));
     }
     if (!req.items.length) {

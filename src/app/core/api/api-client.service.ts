@@ -1,7 +1,22 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { SILENT_ERROR_TOAST } from './problem-details';
+
+/**
+ * Per-request switches. `silent` suppresses the global error toast so the
+ * caller can render its own contextual, inline message (checkout coupon,
+ * sign-in form, …) without a duplicate notification.
+ */
+export interface ApiRequestOptions {
+  readonly silent?: boolean;
+}
+
+function options(silent: boolean | undefined, headers?: Record<string, string>) {
+  const context = silent ? new HttpContext().set(SILENT_ERROR_TOAST, true) : undefined;
+  return { headers, context };
+}
 
 /**
  * Centralized HTTP layer. Feature services must use this instead of
@@ -18,6 +33,7 @@ export class ApiClientService {
   get<T>(
     path: string,
     params?: Record<string, string | number | boolean | string[] | null | undefined>,
+    optionsIn?: ApiRequestOptions,
   ): Observable<T> {
     let httpParams = new HttpParams();
     for (const [k, v] of Object.entries(params ?? {})) {
@@ -29,22 +45,46 @@ export class ApiClientService {
         httpParams = httpParams.set(k, String(v));
       }
     }
-    return this.http.get<T>(`${this.baseUrl}/${path.replace(/^\//, '')}`, { params: httpParams });
+    return this.http.get<T>(`${this.baseUrl}/${path.replace(/^\//, '')}`, {
+      params: httpParams,
+      ...options(optionsIn?.silent),
+    });
   }
 
-  post<T>(path: string, body: unknown, headers?: Record<string, string>): Observable<T> {
-    return this.http.post<T>(`${this.baseUrl}/${path.replace(/^\//, '')}`, body, { headers });
+  post<T>(
+    path: string,
+    body: unknown,
+    headers?: Record<string, string>,
+    optionsIn?: ApiRequestOptions,
+  ): Observable<T> {
+    return this.http.post<T>(
+      `${this.baseUrl}/${path.replace(/^\//, '')}`,
+      body,
+      options(optionsIn?.silent, headers),
+    );
   }
 
-  put<T>(path: string, body: unknown, headers?: Record<string, string>): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}/${path.replace(/^\//, '')}`, body, { headers });
+  put<T>(
+    path: string,
+    body: unknown,
+    headers?: Record<string, string>,
+    optionsIn?: ApiRequestOptions,
+  ): Observable<T> {
+    return this.http.put<T>(
+      `${this.baseUrl}/${path.replace(/^\//, '')}`,
+      body,
+      options(optionsIn?.silent, headers),
+    );
   }
 
-  delete<T>(path: string, headers?: Record<string, string>): Observable<T> {
-    return this.http.delete<T>(`${this.baseUrl}/${path.replace(/^\//, '')}`, { headers });
-  }
-
-  private url(path: string): string {
-    return `${this.baseUrl}/${path.replace(/^\//, '')}`;
+  delete<T>(
+    path: string,
+    headers?: Record<string, string>,
+    optionsIn?: ApiRequestOptions,
+  ): Observable<T> {
+    return this.http.delete<T>(
+      `${this.baseUrl}/${path.replace(/^\//, '')}`,
+      options(optionsIn?.silent, headers),
+    );
   }
 }

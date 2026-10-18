@@ -5,6 +5,7 @@ import { ProductService } from './product.service';
 import { CartStore } from './cart.store';
 import { FavoritesStore } from './favorites.store';
 import { NotificationService } from './notification.service';
+import { environment } from '../../../environments/environment';
 
 // Reasons double as `gate.*` translation keys for the friendly explanation.
 export type GateReason = 'addToCart' | 'addToFavorites' | 'checkout' | 'account';
@@ -77,7 +78,11 @@ export class PendingActionService {
         this.cart.add(p.id, action.qty, action.variantKey, action.variantLabel, p.stock);
         this.notify.success('notifications.addedToCart');
       },
-      error: () => this.notify.error('errors.notFound'),
+      error: () => {
+        // Live mode: the global interceptor already surfaced the localized
+        // reason exactly once. Mock mode never touches HTTP, so explain here.
+        if (environment.useMockApi) this.notify.error('errors.notFound');
+      },
     });
   }
 

@@ -10,7 +10,7 @@ import { ProductService } from '../../core/services/product.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ScrollService } from '../../core/services/scroll.service';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
-import type { Product } from '../../models/product.model';
+import type { Category, Product } from '../../models/product.model';
 
 const A = MOCK_PRODUCTS[0];
 const B = MOCK_PRODUCTS[1];
@@ -33,6 +33,8 @@ describe('ProductDetailPageComponent (regression)', () => {
       return of([]);
     },
     categoryName: (id: string) => id,
+    categoryLabel: (category: Category) => category.name,
+    preloadCategories: () => undefined,
   };
 
   function controllableBackend(): void {

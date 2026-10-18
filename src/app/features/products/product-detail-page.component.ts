@@ -133,6 +133,10 @@ export class ProductDetailPageComponent {
   private variantOptionCache = new Map<string, { label: string; value: string }[]>();
 
   constructor() {
+    // Breadcrumb category label resolves from the live catalogue (dashboard
+    // data), not the bundled demo set; the name is a computed, so it re-renders
+    // as soon as the categories arrive.
+    this.products.preloadCategories();
     // Reset per-product UI on navigation. The loader above already drops stale
     // DATA via unsubscription; the scroll reset below handles the reused
     // component instance: without it, selecting a related product keeps the

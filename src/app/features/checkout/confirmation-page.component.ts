@@ -14,6 +14,8 @@ import type { Order } from '../../models/order.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { SiteContentService } from '../../core/services/site-content.service';
+import type { SiteOrderConfirmationContent } from '../../models/site-content.model';
 
 @Component({
   selector: 'app-confirmation-page',
@@ -25,6 +27,7 @@ import { handleImgError } from '../../shared/utils/image-fallback.utils';
 })
 export class ConfirmationPageComponent implements OnInit {
   protected i18n = inject(I18nService);
+  protected siteContent = inject(SiteContentService);
   private currency = inject(CurrencyService);
   private orders = inject(OrderService);
   protected contact = inject(ContactService);
@@ -52,6 +55,15 @@ export class ConfirmationPageComponent implements OnInit {
 
   protected dateOf(iso: string): string {
     return this.currency.formatDate(iso);
+  }
+
+  protected copy(key: keyof SiteOrderConfirmationContent, fallbackKey: string): string {
+    const content = this.siteContent.orderConfirmation();
+    return this.siteContent.text(content?.[key] as import('../../models/product.model').LocalizedText | undefined, this.i18n.currentLang()) || this.i18n.t(fallbackKey);
+  }
+
+  protected show(key: 'showNextSteps' | 'showWhatsAppButton' | 'showEmailButton' | 'showDemoNotice'): boolean {
+    return this.siteContent.orderConfirmation()?.[key] !== false;
   }
 
   // Receipt thumbnails share the two-stage recovery (see CartPageComponent).

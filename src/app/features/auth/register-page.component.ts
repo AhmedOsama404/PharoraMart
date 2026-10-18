@@ -7,6 +7,7 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Password } from 'primeng/password';
 import { I18nService } from '../../core/services/i18n.service';
+import { ApiErrorService } from '../../core/services/api-error.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService, safeReturnUrl } from '../../core/services/pending-action.service';
@@ -25,6 +26,7 @@ export class RegisterPageComponent implements OnInit {
   protected i18n = inject(I18nService);
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  private apiError = inject(ApiErrorService);
   private notify = inject(NotificationService);
   private pending = inject(PendingActionService);
   private router = inject(Router);
@@ -80,11 +82,11 @@ export class RegisterPageComponent implements OnInit {
         this.notify.success('auth.registerSuccess', { name: res.user.name });
         this.completeSignUp();
       },
-      error: (e: { status?: number }) => {
+      error: (err: unknown) => {
         this.busy.set(false);
-        // 409 = address already registered: say so instead of a generic error.
-        this.serverError.set(e?.status === 409 ? 'email-taken' : this.i18n.t('errors.generic'));
-        this.notify.error('notifications.loadFailed');
+        // 409 (auth_email_taken) becomes "this email is already registered";
+        // any other cause resolves to its own localized sentence.
+        this.serverError.set(this.apiError.message(err));
       },
     });
   }

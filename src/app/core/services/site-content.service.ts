@@ -7,10 +7,12 @@ import type { LocalizedText } from '../../models/product.model';
 import type {
   SiteCategoriesSection,
   SiteContent,
+  SiteCheckoutContent,
   SiteFooter,
   SiteHeader,
   SiteHero,
   SiteHomeSection,
+  SiteOrderConfirmationContent,
 } from '../../models/site-content.model';
 
 /** PrimeIcons classes editable content may use (mirrors PharoraMart.Domain.SiteIcons). */
@@ -51,11 +53,16 @@ export class SiteContentService {
   private readonly api = inject(ApiClientService);
   private readonly payload = signal<SiteContent | null>(null);
   private loaded = false;
+  private readonly contentLoaded = signal(false);
+  readonly ready = this.contentLoaded.asReadonly();
+  private lastRequestAt = 0;
 
   readonly header = computed<SiteHeader | null>(() => this.payload()?.header ?? null);
   readonly hero = computed<SiteHero | null>(() => this.payload()?.hero ?? null);
   readonly categoriesSection = computed<SiteCategoriesSection | null>(() => this.payload()?.categoriesSection ?? null);
   readonly footer = computed<SiteFooter | null>(() => this.payload()?.footer ?? null);
+  readonly checkout = computed<SiteCheckoutContent | null>(() => this.payload()?.checkout ?? null);
+  readonly orderConfirmation = computed<SiteOrderConfirmationContent | null>(() => this.payload()?.orderConfirmation ?? null);
 
   /** The home-section card (featured / new-arrivals / popular), or null. */
   homeSection(key: HomeSectionKey): SiteHomeSection | null {
@@ -107,15 +114,23 @@ export class SiteContentService {
     return trimmed.startsWith('/') && !trimmed.startsWith('//');
   }
 
-  /** Fetches once per session; a failure simply leaves the content empty. */
-  load(): void {
-    if (this.loaded || environment.useMockApi) return;
+  /** Loads on startup and refreshes promptly on tab focus without request churn. */
+  load(refresh = false): void {
+    const now = Date.now();
+    if (environment.useMockApi) {
+      this.contentLoaded.set(true);
+      return;
+    }
+    if (this.loaded && (!refresh || now - this.lastRequestAt < 2_000)) return;
     this.loaded = true;
+    this.lastRequestAt = now;
     this.api
       .get<SiteContent>('site-content')
       .pipe(catchError(() => of(null)))
       .subscribe((res) => {
         if (res && typeof res === 'object') this.payload.set(res);
+        else this.loaded = false;
+        this.contentLoaded.set(true);
       });
   }
 

@@ -31,6 +31,7 @@ export interface SiteHero {
   primaryButton: SiteButton;
   secondaryButton: SiteButton;
   highlights: SiteHighlight[];
+  productIds: (string | null)[];
 }
 
 export interface SiteCategoriesSection {
@@ -50,6 +51,40 @@ export interface SiteHomeSections {
   featured: SiteHomeSection;
   newArrivals: SiteHomeSection;
   popular: SiteHomeSection;
+}
+
+export interface SiteCheckoutContent {
+  title: LocalizedText;
+  subtitle: LocalizedText;
+  contactTitle: LocalizedText;
+  addressTitle: LocalizedText;
+  paymentTitle: LocalizedText;
+  paymentMethodTitle: LocalizedText;
+  paymentMethodBody: LocalizedText;
+  reviewTitle: LocalizedText;
+  placeOrderLabel: LocalizedText;
+  backToCartLabel: LocalizedText;
+  showCouponEntry: boolean;
+}
+
+export interface SiteOrderConfirmationContent {
+  title: LocalizedText;
+  subtitle: LocalizedText;
+  deliveryTitle: LocalizedText;
+  nextStepsTitle: LocalizedText;
+  nextStepOne: LocalizedText;
+  nextStepTwo: LocalizedText;
+  nextStepThree: LocalizedText;
+  whatsAppButtonLabel: LocalizedText;
+  whatsAppHint: LocalizedText;
+  emailButtonLabel: LocalizedText;
+  emailHint: LocalizedText;
+  continueShoppingLabel: LocalizedText;
+  viewOrdersLabel: LocalizedText;
+  showNextSteps: boolean;
+  showWhatsAppButton: boolean;
+  showEmailButton: boolean;
+  showDemoNotice: boolean;
 }
 
 export interface SiteFooterContact {
@@ -84,4 +119,6 @@ export interface SiteContent {
   categoriesSection: SiteCategoriesSection;
   homeSections: SiteHomeSections;
   footer: SiteFooter;
+  checkout: SiteCheckoutContent;
+  orderConfirmation: SiteOrderConfirmationContent;
 }

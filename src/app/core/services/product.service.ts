@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Observable, delay, of, throwError, map } from 'rxjs';
+import { Observable, delay, of, throwError, map, tap } from 'rxjs';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../../data-access/mock-data';
 import { queryProducts } from '../../data-access/catalog.utils';
 import type { CatalogQuery, Category, Product } from '../../models/product.model';
@@ -18,6 +18,15 @@ import { toProduct, toCategory, suggestToProduct, toProductQueryParams, BackendP
 export class ProductService {
   private products = signal<Product[]>(MOCK_PRODUCTS);
   private categoriesStore = signal<Category[]>(MOCK_CATEGORIES);
+  /**
+   * Active categories fetched from the live API, retained so synchronous
+   * lookups (category cards, breadcrumbs, catalog filters) resolve the
+   * dashboard-managed names/descriptions/images instead of falling back to the
+   * bundled demo catalogue — dashboard category edits must surface here.
+   */
+  private liveCategories = signal<Category[]>([]);
+  /** Guards preloadCategories() so a page load issues at most one request. */
+  private categoriesLoaded = false;
   /** When true, catalog requests fail — used to demo the error state. */
   forceError = signal(false);
 
@@ -55,9 +64,9 @@ export class ProductService {
     return of(this.products());
   }
 
-  getById(id: string): Observable<Product> {
+  getById(id: string, optionsIn?: { readonly silent?: boolean }): Observable<Product> {
     if (!environment.useMockApi) {
-      return this.api.get<BackendProduct>(`products/${id}`).pipe(map(toProduct));
+      return this.api.get<BackendProduct>(`products/${encodeURIComponent(id)}`, undefined, optionsIn).pipe(map(toProduct));
     }
     const found = this.products().find((p) => p.id === id);
     if (!found) return throwError(() => new Error('not-found')).pipe(delay(250));
@@ -67,12 +76,17 @@ export class ProductService {
   /**
    * Active categories in dashboard order. Inactive or removed categories never
    * reach navigation or filters; products pointing at them still render with
-   * a graceful id fallback (see categoryName).
+   * a graceful id fallback (see categoryName). The live response is cached so
+   * synchronous lookups resolve dashboard data (see categoryById).
    */
   categories(): Observable<Category[]> {
     if (!environment.useMockApi) {
       return this.api.get<BackendCategory[]>('categories').pipe(
         map((items) => items.map(toCategory)),
+        tap((items) => {
+          this.liveCategories.set(items);
+          this.categoriesLoaded = true;
+        }),
       );
     }
     const active = this.categoriesStore()
@@ -81,15 +95,41 @@ export class ProductService {
     return of(active).pipe(delay(200));
   }
 
+  /**
+   * Loads the active categories once per session so pages that only render a
+   * category name (e.g. the product-detail breadcrumb) resolve it from the
+   * dashboard data. Idempotent; a failed load leaves the flag clear so the next
+   * caller may retry.
+   */
+  preloadCategories(): void {
+    if (this.categoriesLoaded || environment.useMockApi) return;
+    this.categories().subscribe({ error: () => (this.categoriesLoaded = false) });
+  }
+
+  /**
+   * The live set once it has loaded (even when empty), else the bundled demo
+   * set — so mock mode and a not-yet-loaded live catalogue both keep resolving
+   * names, and a real (possibly empty) catalogue never resurrects demo names.
+   */
+  private categorySource(): Category[] {
+    const live = this.liveCategories();
+    return this.categoriesLoaded ? live : this.categoriesStore();
+  }
+
   categoryById(id: string): Category | undefined {
-    return this.categoriesStore().find((c) => c.id === id);
+    return this.categorySource().find((c) => c.id === id);
+  }
+
+  /** Localized label for a category the caller already holds. */
+  categoryLabel(category: Category): string {
+    return pickLocaleText(category.names, this.i18n.currentLang()) || category.name;
   }
 
   /** Localized display name for the active language, English fallback. */
   categoryName(id: string): string {
     const found = this.categoryById(id);
     if (!found) return id;
-    return pickLocaleText(found.names, this.i18n.currentLang()) || found.name;
+    return this.categoryLabel(found);
   }
 
   /** Localized description for category cards. */

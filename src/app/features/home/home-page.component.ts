@@ -1,5 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Carousel } from 'primeng/carousel';
@@ -20,7 +21,7 @@ import type { Category, Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of, retry, throwError, timer } from 'rxjs';
 
 @Component({
   selector: 'app-home-page',
@@ -33,7 +34,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 })
 export class HomePageComponent implements OnInit {
   // The hero badge icon stays a config-owned bare PrimeIcons name (hero product
-  // slots remain in the versioned storefront config).
+  // slots come from Website Content, with the versioned config as a fallback).
   private static readonly BADGE_ICONS = new Set(['leaf', 'tag', 'shopping-bag', 'building', 'truck', 'money-bill', 'refresh', 'check-circle', 'heart']);
   protected i18n = inject(I18nService);
   private products = inject(ProductService);
@@ -46,6 +47,60 @@ export class HomePageComponent implements OnInit {
   protected siteContent = inject(SiteContentService);
   private recent = inject(RecentlyViewedService);
   private router = inject(Router);
+
+  constructor() {
+    let resolvedSlotKey = '';
+    effect((onCleanup) => {
+      if (!this.siteContent.ready()) return;
+      const heroSettings = this.storefront.sectionSettings('hero');
+      const siteProductIds = this.siteContent.hero()?.productIds;
+      // Website Content is the active CMS editor for hero products. Prefer its
+      // catalog IDs when populated; keep the versioned config as a compatibility
+      // fallback for stores that have not selected products in Website Content.
+      const hasSiteProductSelection = Array.isArray(siteProductIds) && siteProductIds.some(
+        (id) => typeof id === 'string' && id.trim().length > 0,
+      );
+      const productSlots = hasSiteProductSelection ? siteProductIds : heroSettings?.heroProductSlots;
+      if (!Array.isArray(productSlots)) {
+        resolvedSlotKey = '';
+        this.heroSlotMode.set(false);
+        this.heroSlotProducts.set([null, null, null, null]);
+        return;
+      }
+
+      this.heroSlotMode.set(true);
+      const ids = Array.from({ length: 4 }, (_, index) => {
+        const id = productSlots[index];
+        return typeof id === 'string' && id.trim() ? id.trim() : null;
+      });
+      const slotKey = JSON.stringify(ids);
+      if (slotKey === resolvedSlotKey) return;
+      resolvedSlotKey = slotKey;
+
+      const subscription = forkJoin([
+        ...ids.map((id) => {
+          if (!id) return of(null);
+          return this.products.getById(id, { silent: true }).pipe(
+            retry({
+              count: 2,
+              delay: (error, retryCount) => {
+                const transient = error instanceof HttpErrorResponse &&
+                  (error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500);
+                return transient ? timer(retryCount * 250) : throwError(() => error);
+              },
+            }),
+            catchError(() => of(null)),
+          );
+        }),
+      ]).subscribe((items) => {
+        // Keep the CMS slot order and empty slots exactly. Filling a failed or
+        // intentionally empty slot from the featured feed made unrelated
+        // products appear in the hero and hid CMS selection errors.
+        this.heroSlotProducts.set(items as (Product | null)[]);
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
 
   // Employee-editable hero copy (empty until loaded / when cleared).
   protected heroBadge = computed(() => this.siteContent.text(this.siteContent.hero()?.badge, this.i18n.currentLang()));
@@ -90,23 +145,14 @@ export class HomePageComponent implements OnInit {
         this.featured.set(items.slice(0, featuredSettings?.maxItems ?? 8));
       }
 
+      if (!this.siteContent.ready()) return;
       const heroSettings = this.storefront.sectionSettings('hero');
-      this.heroSlotMode.set(Array.isArray(heroSettings?.heroProductSlots));
-      if (Array.isArray(heroSettings?.heroProductSlots)) {
-        const ids = Array.from({ length: 4 }, (_, slot) => {
-          const id = heroSettings.heroProductSlots?.[slot];
-          return typeof id === 'string' && id.trim() ? id : null;
-        });
-        forkJoin(ids.map((id) => id
-          ? this.products.getById(id).pipe(catchError(() => of(null)))
-          : of(null),
-        )).subscribe((slots) => {
-          const selectedIds = new Set(ids.filter((id): id is string => !!id));
-          const fallbackProducts = items.filter((product) => !selectedIds.has(product.id));
-          let nextFallback = 0;
-          this.heroSlotProducts.set(slots.map((product) => product ?? fallbackProducts[nextFallback++] ?? null));
-        });
-      } else {
+      const siteProductIds = this.siteContent.hero()?.productIds;
+      const hasSiteProductSelection = Array.isArray(siteProductIds) && siteProductIds.some(
+        (id) => typeof id === 'string' && id.trim().length > 0,
+      );
+      // Resolve the old product fields only when neither CMS slot source is set.
+      if (!hasSiteProductSelection && !Array.isArray(heroSettings?.heroProductSlots)) {
         if (heroSettings?.mainProductId) {
           this.products.getById(heroSettings.mainProductId).pipe(catchError(() => of(null))).subscribe((product) => {
             this.heroProduct.set(product);
@@ -224,7 +270,9 @@ export class HomePageComponent implements OnInit {
     return b.bodies?.[this.i18n.currentLang()] ?? b.body;
   }
   protected categoryName(c: Category): string {
-    return this.products.categoryName(c.id);
+    // Use the live category object directly so the card reflects dashboard
+    // name edits without waiting on a separate id lookup.
+    return this.products.categoryLabel(c);
   }
 
   protected categoryDescription(c: Category): string {

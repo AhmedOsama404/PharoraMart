@@ -34,18 +34,16 @@
           @if (heroSlotMode()) {
             @if (heroSlotProducts()[0]; as hero) {
               <a [routerLink]="['/products', hero.id]" class="hero-card">
-                <img [src]="storefront.sectionSettings('hero')?.imageUrl || hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.name" fetchpriority="high" (error)="fbImg($event)" />
-                <span class="hero-info"><span class="hero-name">{{ hero.name }}</span><span class="hero-price">{{ hero.salePrice ?? hero.price | resolvedMoney: hero.currency }}</span></span>
+                <img [src]="hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.names | localized: hero.name" fetchpriority="high" (error)="fbImg($event)" />
+                <span class="hero-info"><span class="hero-name">{{ hero.names | localized: hero.name }}</span><span class="hero-price">{{ hero.salePrice ?? hero.price | resolvedMoney: hero.currency }}</span></span>
               </a>
             } @else {
               <div class="hero-card"><img src="/hero-product-fallback.svg" alt="" fetchpriority="high" /></div>
             }
             <div class="hero-tiles">
               @for (product of heroSlotProducts().slice(1); track $index) {
-                @if (product) {
-                  <a [routerLink]="['/products', product.id]"><img [src]="product.images[0] || '/hero-product-fallback.svg'" [alt]="product.names | localized: product.name" loading="lazy" (error)="fbImg($event)" /></a>
-                } @else {
-                  <div><img src="/hero-product-fallback.svg" alt="" loading="lazy" /></div>
+                @if (product; as selectedProduct) {
+                  <a [routerLink]="['/products', selectedProduct.id]"><img [src]="selectedProduct.images[0] || '/hero-product-fallback.svg'" [alt]="selectedProduct.names | localized: selectedProduct.name" loading="lazy" (error)="fbImg($event)" /></a>
                 }
               }
             </div>

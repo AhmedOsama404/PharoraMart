@@ -7,6 +7,7 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Password } from 'primeng/password';
 import { I18nService } from '../../core/services/i18n.service';
+import { ApiErrorService } from '../../core/services/api-error.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService, safeReturnUrl } from '../../core/services/pending-action.service';
@@ -25,6 +26,7 @@ export class LoginPageComponent implements OnInit {
   protected i18n = inject(I18nService);
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  private apiError = inject(ApiErrorService);
   private notify = inject(NotificationService);
   private pending = inject(PendingActionService);
   private router = inject(Router);
@@ -77,10 +79,12 @@ export class LoginPageComponent implements OnInit {
         this.notify.success('auth.loginSuccess', { name: res.user.name });
         this.completeSignIn();
       },
-      error: () => {
+      error: (err: unknown) => {
         this.busy.set(false);
-        this.serverError.set(this.i18n.t('validation.email'));
-        this.notify.error('notifications.loadFailed');
+        // One localized sentence from the backend's business code
+        // (auth_invalid_credentials / too many attempts / offline) — shown
+        // inline, so no extra toast is fired.
+        this.serverError.set(this.apiError.message(err));
       },
     });
   }

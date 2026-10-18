@@ -19,6 +19,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { DeliveryService } from '../../core/services/delivery.service';
 import { ScrollService } from '../../core/services/scroll.service';
 import { ApiClientService } from '../../core/api/api-client.service';
+import { ApiErrorService } from '../../core/services/api-error.service';
 import { firstErrorKey, phoneValidator } from '../../shared/utils/validators';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import type { CreateOrderRequest } from '../../models/order.model';
@@ -28,6 +29,8 @@ import { EmptyStateComponent } from '../../shared/components/empty-state.compone
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { PriceResolverService } from '../../core/services/price-resolver.service';
 import { ExchangeRatesService } from '../../core/services/exchange-rates.service';
+import { SiteContentService } from '../../core/services/site-content.service';
+import type { SiteCheckoutContent } from '../../models/site-content.model';
 
 @Component({
   selector: 'app-checkout-page',
@@ -42,6 +45,7 @@ import { ExchangeRatesService } from '../../core/services/exchange-rates.service
 })
 export class CheckoutPageComponent implements OnInit {
   protected i18n = inject(I18nService);
+  protected siteContent = inject(SiteContentService);
   private currency = inject(CurrencyService);
   private prices = inject(PriceResolverService);
   private rates = inject(ExchangeRatesService);
@@ -53,6 +57,7 @@ export class CheckoutPageComponent implements OnInit {
   private notify = inject(NotificationService);
   private delivery = inject(DeliveryService);
   private api = inject(ApiClientService);
+  private apiError = inject(ApiErrorService);
   private router = inject(Router);
   private scroll = inject(ScrollService);
 
@@ -86,6 +91,7 @@ export class CheckoutPageComponent implements OnInit {
   protected couponApplied = signal('');
   protected couponDiscount = signal(0);
   protected couponError = signal('');
+  protected couponBusy = signal(false);
   private quoteSequence = 0;
 
   // Memoized so p-select keeps a referentially stable options array.
@@ -159,8 +165,13 @@ export class CheckoutPageComponent implements OnInit {
   }
 
   private hotelFeeLabel(hotel: Hotel): string {
-    const resolved = this.prices.resolve(hotel.deliveryFee, hotel.deliveryFeeCurrency ?? 'USD');
-    return resolved ? this.currency.format(resolved.amount, resolved.currency) : this.i18n.t('errors.generic');
+    const source = hotel.deliveryFeeCurrency ?? 'USD';
+    const resolved = this.prices.resolve(hotel.deliveryFee, source);
+    // Rates may still be loading: show the quote in its own currency rather
+    // than an error sentence where a price belongs.
+    return resolved
+      ? this.currency.format(resolved.amount, resolved.currency)
+      : this.currency.format(hotel.deliveryFee, source);
   }
 
   // Asks the quote boundary for the hotel fee and publishes it. Unknown or
@@ -181,12 +192,18 @@ export class CheckoutPageComponent implements OnInit {
         if (seq !== this.quoteSequence) return;
         this.quotedFee.set(null);
         this.quoteFailed.set(true);
-        this.notify.error('notifications.loadFailed');
+        // The interceptor already shows the localized reason once; the inline
+        // state blocks submit until a fee can be trusted again.
       },
     });
   }
 
-  /** Validates the coupon against the live backend (mock mode has no coupons). */
+  /**
+   * Validates the coupon against the live backend (mock mode has no coupons).
+   * The backend answers 200 with a stable `code` (+ `args`) for ineligible
+   * codes, or ProblemDetails on transport/auth failures; both are turned into
+   * one localized, customer-readable line — never the generic fallback.
+   */
   protected applyCoupon(): void {
     const code = this.couponControl.value.trim();
     this.couponError.set('');
@@ -195,23 +212,34 @@ export class CheckoutPageComponent implements OnInit {
       this.couponError.set(this.i18n.t('checkout.couponInvalid'));
       return;
     }
+    this.couponBusy.set(true);
     this.api
-      .post<{ valid: boolean; discount: number; reason?: string | null }>('coupons/validate', {
-        code,
-        subtotal: this.subtotal(),
-      })
+      .post<CouponValidationResponse>(
+        'coupons/validate',
+        { code, subtotal: this.subtotal() },
+        undefined,
+        { silent: true },
+      )
       .subscribe({
         next: (res) => {
+          this.couponBusy.set(false);
           if (res.valid) {
             this.couponApplied.set(code.toUpperCase());
             this.couponDiscount.set(res.discount);
-          } else {
-            this.couponApplied.set('');
-            this.couponDiscount.set(0);
-            this.couponError.set(res.reason ?? this.i18n.t('checkout.couponInvalid'));
+            return;
           }
+          // Ineligible (already used, expired, min order, …): show the exact,
+          // localized reason and keep no discount applied.
+          this.couponApplied.set('');
+          this.couponDiscount.set(0);
+          this.couponError.set(this.apiError.messageForCode(res.code, res.args));
         },
-        error: () => this.couponError.set(this.i18n.t('checkout.couponInvalid')),
+        error: (err: unknown) => {
+          this.couponBusy.set(false);
+          this.couponApplied.set('');
+          this.couponDiscount.set(0);
+          this.couponError.set(this.apiError.message(err));
+        },
       });
   }
 
@@ -254,6 +282,11 @@ export class CheckoutPageComponent implements OnInit {
     handleImgError(ev, seed);
   }
 
+  protected copy(key: keyof SiteCheckoutContent, fallbackKey: string): string {
+    const content = this.siteContent.checkout();
+    return this.siteContent.text(content?.[key] as import('../../models/product.model').LocalizedText | undefined, this.i18n.currentLang()) || this.i18n.t(fallbackKey);
+  }
+
   protected go(path: string): void {
     this.router.navigate([path]);
   }
@@ -278,7 +311,7 @@ export class CheckoutPageComponent implements OnInit {
     if (this.quoteFailed() || this.quotedFee() == null) {
       // No trustworthy fee (unknown hotel or failed quote): block instead of
       // charging a guessed amount.
-      this.submitError.set(this.i18n.t('errors.generic'));
+      this.submitError.set(this.i18n.t('errors.deliveryFeeUnavailable'));
       return;
     }
     this.placing.set(true);
@@ -323,11 +356,27 @@ export class CheckoutPageComponent implements OnInit {
         this.notify.success('checkout.orderSuccess');
         this.router.navigate(['/checkout/confirmation', order.id]);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.placing.set(false);
-        this.submitError.set(this.i18n.t('errors.generic'));
-        this.notify.error('notifications.loadFailed');
+        const resolved = this.apiError.resolve(err);
+        this.submitError.set(this.i18n.t(resolved.key, resolved.params));
+        // A coupon rejection is actionable and terminal: drop it so the next
+        // attempt can succeed, leaving the exact reason on screen.
+        if (resolved.code?.startsWith('coupon_')) {
+          this.couponApplied.set('');
+          this.couponDiscount.set(0);
+          this.submittedKey = null;
+        }
       },
     });
   }
+}
+
+/** 200-shaped response from `POST coupons/validate`. */
+interface CouponValidationResponse {
+  readonly valid: boolean;
+  readonly discount: number;
+  readonly reason?: string | null;
+  readonly code?: string | null;
+  readonly args?: Record<string, unknown> | null;
 }

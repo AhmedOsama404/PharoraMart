@@ -1,5 +1,5 @@
-<h1>{{ i18n.t('checkout.title') }}</h1>
-<p class="sub">{{ i18n.t('checkout.subtitle') }}</p>
+<h1>{{ copy('title', 'checkout.title') }}</h1>
+<p class="sub">{{ copy('subtitle', 'checkout.subtitle') }}</p>
 @if (!cart.lines().length) {
   <app-empty-state icon="pi-shopping-cart" [title]="i18n.t('checkout.emptyCart')"
     [actionLabel]="i18n.t('cart.startShopping')" (actionClick)="go('/products')" />
@@ -7,7 +7,7 @@
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="layout">
     <div class="col">
       <p-card>
-        <h2>{{ i18n.t('checkout.contactTitle') }}</h2>
+        <h2>{{ copy('contactTitle', 'checkout.contactTitle') }}</h2>
         <div class="grid2">
           <div class="field">
             <label for="fullName">{{ i18n.t('checkout.fullName') }}</label>
@@ -31,7 +31,7 @@
         </div>
       </p-card>
       <p-card>
-        <h2>{{ i18n.t('checkout.addressTitle') }}</h2>
+        <h2>{{ copy('addressTitle', 'checkout.addressTitle') }}</h2>
         <div class="grid2">
           <div class="field">
             <label for="city">{{ i18n.t('checkout.city') }}</label>
@@ -57,16 +57,16 @@
         </div>
       </p-card>
       <p-card>
-        <h2>{{ i18n.t('checkout.paymentTitle') }}</h2>
+        <h2>{{ copy('paymentTitle', 'checkout.paymentTitle') }}</h2>
         <label class="cod">
           <span class="cod-check"><i class="pi pi-check-circle"></i></span>
           <span class="cod-icon"><i class="pi pi-money-bill"></i></span>
-          <span><strong>{{ i18n.t('checkout.codTitle') }}</strong><small>{{ i18n.t('checkout.codSubtitle') }}</small></span>
+          <span><strong>{{ copy('paymentMethodTitle', 'checkout.codTitle') }}</strong><small>{{ copy('paymentMethodBody', 'checkout.codSubtitle') }}</small></span>
         </label>
       </p-card>
     </div>
     <p-card class="summary">
-      <h2>{{ i18n.t('checkout.reviewTitle') }}</h2>
+      <h2>{{ copy('reviewTitle', 'checkout.reviewTitle') }}</h2>
       <ul class="items">
         @for (l of lines(); track l.key) {
           <li>
@@ -83,10 +83,13 @@
         }
       </ul>
       <div class="t-row"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ subtotal() | money }}</strong></div>
-      <div class="coupon-row">
-        <input pInputText [formControl]="couponControl" [placeholder]="i18n.t('checkout.couponCode')" [attr.aria-label]="i18n.t('checkout.couponCode')" />
-        <p-button [label]="couponApplied() ? couponApplied() : i18n.t('checkout.applyCoupon')" severity="secondary" (onClick)="applyCoupon()" />
-      </div>
+      @if (siteContent.checkout()?.showCouponEntry !== false) {
+        <div class="coupon-row">
+          <input pInputText [formControl]="couponControl" [placeholder]="i18n.t('checkout.couponCode')" [attr.aria-label]="i18n.t('checkout.couponCode')" />
+          <p-button [label]="couponApplied() ? couponApplied() : i18n.t('checkout.applyCoupon')" severity="secondary"
+            [loading]="couponBusy()" [disabled]="couponBusy()" (onClick)="applyCoupon()" />
+        </div>
+      }
       @if (couponError()) { <p-message severity="error" [text]="couponError()" /> }
       @if (couponDiscount() > 0) {
         <div class="t-row"><span>{{ i18n.t('checkout.discount') }} ({{ couponApplied() }})</span><strong>−{{ couponDiscount() | money }}</strong></div>
@@ -101,9 +104,9 @@
       <p-divider />
       <div class="t-row grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ total() | money }}</strong></div>
       @if (submitError()) { <p-message severity="error" [text]="submitError()" /> }
-      <p-button type="submit" [label]="placing() ? i18n.t('checkout.placing') : i18n.t('checkout.placeOrder')"
+      <p-button type="submit" [label]="placing() ? i18n.t('checkout.placing') : copy('placeOrderLabel', 'checkout.placeOrder')"
         icon="pi pi-check" [loading]="placing()" [disabled]="placing()" [fluid]="true" />
-      <p-button [label]="i18n.t('checkout.backToCart')" severity="secondary" [text]="true" [fluid]="true" (onClick)="go('/cart')" />
+      <p-button [label]="copy('backToCartLabel', 'checkout.backToCart')" severity="secondary" [text]="true" [fluid]="true" (onClick)="go('/cart')" />
     </p-card>
   </form>
 }

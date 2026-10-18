@@ -5,9 +5,9 @@
     [actionLabel]="i18n.t('notFound.backHome')" (actionClick)="go('/')" />
 } @else {
   <div class="hero-ok"><i class="pi pi-check-circle"></i>
-    <div><h1>{{ i18n.t('confirmation.title') }}</h1><p>{{ i18n.t('confirmation.subtitle') }}</p></div>
+    <div><h1>{{ copy('title', 'confirmation.title') }}</h1><p>{{ copy('subtitle', 'confirmation.subtitle') }}</p></div>
   </div>
-  <p-message severity="info" size="small" [text]="i18n.t('confirmation.mockNotice')" />
+  @if (show('showDemoNotice')) { <p-message severity="info" size="small" [text]="i18n.t('confirmation.mockNotice')" /> }
   <div class="layout">
     <p-card>
       <div class="kv"><span>{{ i18n.t('confirmation.orderNumber') }}</span><strong>{{ order()!.orderNumber }}</strong></div>
@@ -30,26 +30,28 @@
     </p-card>
     <div class="side">
       <p-card>
-        <h2>{{ i18n.t('confirmation.deliveryTo') }}</h2>
+        <h2>{{ copy('deliveryTitle', 'confirmation.deliveryTo') }}</h2>
         <p>{{ order()!.customer.fullName }}<br />{{ order()!.customer.phone }}<br />
           {{ order()!.customer.hotelName }}, {{ order()!.customer.city }}
           @if (order()!.customer.room) { <br />{{ order()!.customer.room }} }
         </p>
-        <h2>{{ i18n.t('confirmation.nextSteps') }}</h2>
-        <ol><li>{{ i18n.t('confirmation.next1') }}</li><li>{{ i18n.t('confirmation.next2') }}</li><li>{{ i18n.t('confirmation.next3') }}</li></ol>
+        @if (show('showNextSteps')) {
+          <h2>{{ copy('nextStepsTitle', 'confirmation.nextSteps') }}</h2>
+          <ol><li>{{ copy('nextStepOne', 'confirmation.next1') }}</li><li>{{ copy('nextStepTwo', 'confirmation.next2') }}</li><li>{{ copy('nextStepThree', 'confirmation.next3') }}</li></ol>
+        }
       </p-card>
       <p-card>
-        @if (contact.mode !== 'email') {
-          <p-button [label]="i18n.t('confirmation.whatsappButton')" icon="pi pi-whatsapp" severity="success" [fluid]="true" (onClick)="wa()" />
-          <small class="hint">{{ i18n.t('confirmation.whatsappHint') }}</small>
+        @if (contact.mode !== 'email' && show('showWhatsAppButton')) {
+          <p-button [label]="copy('whatsAppButtonLabel', 'confirmation.whatsappButton')" icon="pi pi-whatsapp" severity="success" [fluid]="true" (onClick)="wa()" />
+          <small class="hint">{{ copy('whatsAppHint', 'confirmation.whatsappHint') }}</small>
         }
-        @if (contact.mode !== 'whatsapp') {
-          <p-button [label]="i18n.t('confirmation.emailButton')" icon="pi pi-envelope" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="mail()" />
-          <small class="hint">{{ i18n.t('confirmation.emailHint') }}</small>
+        @if (contact.mode !== 'whatsapp' && show('showEmailButton')) {
+          <p-button [label]="copy('emailButtonLabel', 'confirmation.emailButton')" icon="pi pi-envelope" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="mail()" />
+          <small class="hint">{{ copy('emailHint', 'confirmation.emailHint') }}</small>
         }
         <div class="row">
-          <p-button [label]="i18n.t('confirmation.continueShopping')" [text]="true" (onClick)="go('/products')" />
-          <p-button [label]="i18n.t('confirmation.viewOrders')" severity="secondary" [outlined]="true" (onClick)="go('/orders')" />
+          <p-button [label]="copy('continueShoppingLabel', 'confirmation.continueShopping')" [text]="true" (onClick)="go('/products')" />
+          <p-button [label]="copy('viewOrdersLabel', 'confirmation.viewOrders')" severity="secondary" [outlined]="true" (onClick)="go('/orders')" />
         </div>
       </p-card>
     </div>

@@ -59,6 +59,7 @@ export class StorefrontConfigService {
   private readonly api = inject(ApiClientService);
   private readonly payload = signal<Record<string, unknown>>({});
   private loaded = false;
+  private lastRequestAt = 0;
 
   readonly announcements = computed(() => {
     const list = this.payload()['announcements'];
@@ -135,16 +136,21 @@ export class StorefrontConfigService {
     return features[flag] === true;
   }
 
-  /** Fetches once per session; applies theme tokens as CSS variables. */
-  load(): void {
-    if (this.loaded || environment.useMockApi) return;
+  /** Loads on startup and refreshes promptly on tab focus without request churn. */
+  load(refresh = false): void {
+    const now = Date.now();
+    if (environment.useMockApi || (this.loaded && (!refresh || now - this.lastRequestAt < 2_000))) return;
     this.loaded = true;
+    this.lastRequestAt = now;
     this.api
       .get<PublishedConfigResponse>('storefront/config')
       .pipe(catchError(() => of(null)))
       .subscribe((res) => {
         const config = res?.config;
-        if (!config || typeof config !== 'object') return;
+        if (!config || typeof config !== 'object') {
+          this.loaded = false;
+          return;
+        }
         this.payload.set(config as Record<string, unknown>);
         this.applyTheme(config as Record<string, unknown>);
         this.applySeo(config as Record<string, unknown>);

@@ -4,7 +4,7 @@ export const environment = {
   // (Development live mode is configured separately in
   // environment.development.ts and never affects this file.)
   apiBaseUrl: 'http://localhost:5086/api/v1',
-  useMockApi: true,
+  useMockApi: false,
   appName: 'Pharora',
   defaultLang: 'en' as const,
   defaultCurrency: 'USD' as const,
