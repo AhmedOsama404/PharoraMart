@@ -4,7 +4,10 @@ export const environment = {
   // (Development live mode is configured separately in
   // environment.development.ts and never affects this file.)
   apiBaseUrl: 'http://localhost:5086/api/v1',
-  useMockApi: false,
+  // Mock mode, per the comment above: the unit suite must not depend on a
+  // running backend. Commit 1c31940 flipped this to `false` (a live-mode
+  // change for the hero-product fix) which left 37 hermetic specs hanging.
+  useMockApi: true,
   appName: 'Pharora',
   defaultLang: 'en' as const,
   defaultCurrency: 'USD' as const,
