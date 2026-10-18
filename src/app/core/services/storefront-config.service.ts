@@ -6,10 +6,37 @@ import { ApiClientService } from '../api/api-client.service';
 export interface StorefrontLink {
   label: string;
   url: string;
+  visible?: boolean;
 }
 
 export interface StorefrontSection {
   type: string;
+  visible?: boolean;
+  maxItems?: number;
+  selectionMode?: 'manual' | 'automatic';
+  productId?: string;
+  mainProductId?: string;
+  supportingProductIds?: string[];
+  heroProductSlots?: (string | null)[];
+  heroIcons?: { badge?: string; primaryCta?: string; secondaryCta?: string; trustItems?: string[] };
+  productIds?: string[];
+  categoryIds?: string[];
+  categoryOverrides?: Record<string, { title?: Partial<Record<string, string>>; description?: Partial<Record<string, string>>; imageUrl?: string; imageAlt?: Partial<Record<string, string>> }>;
+
+  title?: Partial<Record<string, string>>;
+  subtitle?: Partial<Record<string, string>>;
+  description?: Partial<Record<string, string>>;
+  badge?: Partial<Record<string, string>>;
+  imageAlt?: Partial<Record<string, string>>;
+  imageUrl?: string;
+  trustItems?: Partial<Record<string, string>>[];
+  ctaLabel?: Partial<Record<string, string>>;
+  ctaUrl?: string;
+  ctaVisible?: boolean;
+  secondaryCtaLabel?: Partial<Record<string, string>>;
+  secondaryCtaUrl?: string;
+  secondaryCtaVisible?: boolean;
+  [key: string]: unknown;
 }
 
 interface PublishedConfigResponse {
@@ -38,36 +65,74 @@ export class StorefrontConfigService {
     return Array.isArray(list) ? list.filter((s): s is string => typeof s === 'string' && s.trim() !== '') : [];
   });
 
-  readonly footerLinks = computed<StorefrontLink[]>(() => this.linksOf('footerLinks'));
   readonly headerLinks = computed<StorefrontLink[]>(() => this.linksOf('headerLinks'));
 
-  /** Homepage section types in dashboard order (unknown types dropped). */
+  headerItemVisible(key: 'home' | 'catalog' | 'orders'): boolean {
+    const visibility = this.section('navigation')['headerVisibility'];
+    if (visibility === null || typeof visibility !== 'object' || Array.isArray(visibility)) return true;
+    return (visibility as Record<string, unknown>)[key] !== false;
+  }
+
+  headerItemText(key: 'home' | 'catalog' | 'orders', locale: string, fallback: string): string {
+    const labels = this.section('navigation')['headerLabels'];
+    if (labels === null || typeof labels !== 'object' || Array.isArray(labels)) return fallback;
+    const item = (labels as Record<string, unknown>)[key];
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) return fallback;
+    const localized = item as Record<string, unknown>;
+    const text = localized[locale] ?? localized['en'];
+    return typeof text === 'string' && text.trim() ? text.trim() : fallback;
+  }
+
+  /** Use configured order, then restore any default sections missing from an incomplete config. */
   readonly sectionOrder = computed<string[]>(() => {
     const home = this.section('homepage');
     const raw = home['sections'];
-    if (!Array.isArray(raw)) return DEFAULT_ORDER;
-    const ordered = raw
-      .map((s) => (typeof s === 'object' && s !== null ? String((s as Record<string, unknown>)['type'] ?? '') : ''))
-      .filter((t) => DEFAULT_ORDER.includes(t));
-    const missing = DEFAULT_ORDER.filter((t) => !ordered.includes(t));
-    return [...ordered, ...missing];
+    if (!Array.isArray(raw)) return [...DEFAULT_ORDER];
+    const configured = raw.filter((s): s is Record<string, unknown> => typeof s === 'object' && s !== null);
+    const declared = new Set(configured.map((s) => String(s['type'] ?? '')).filter((type) => DEFAULT_ORDER.includes(type)));
+    const visible = configured
+      .filter((s) => s['visible'] !== false)
+      .map((s) => String(s['type'] ?? ''))
+      .filter((type) => DEFAULT_ORDER.includes(type));
+    const uniqueVisible = [...new Set(visible)];
+    const missingDefaults = DEFAULT_ORDER.filter((type) => !declared.has(type));
+    return [...uniqueVisible, ...missingDefaults];
   });
 
-  /** Whether a homepage section renders (promo/content also need their data). */
-  showSection(type: string): boolean {
-    if (type === 'promo' || type === 'content' || type === 'recentlyViewed') return true;
-    return this.sectionOrder().includes(type);
+  /** Type-specific published settings for one homepage section. */
+  sectionSettings(type: string): StorefrontSection | null {
+    const raw = this.section('homepage')['sections'];
+    if (!Array.isArray(raw)) return null;
+    const found = raw.find((item) => typeof item === 'object' && item !== null &&
+      (item as Record<string, unknown>)['type'] === type) as Record<string, unknown> | undefined;
+    return found ? found as StorefrontSection : null;
+  }
+
+  sectionText(type: string, field: 'title' | 'subtitle' | 'description' | 'badge' | 'imageAlt' | 'ctaLabel' | 'secondaryCtaLabel', locale: string): string | null {
+    const text = this.sectionSettings(type)?.[field];
+    if (!text) return null;
+    const value = text[locale]?.trim() || text['en']?.trim() || null;
+    // Ignore known demo copy accidentally saved by the previous editor preview.
+    if (type === 'hero' && value && (value.toLowerCase() === 'hello' || /^test\s+(?:section|description)\b/i.test(value))) return null;
+    return value;
+  }
+
+  sectionCtaUrl(type: string, secondary = false): string | null {
+    const settings = this.sectionSettings(type);
+    const url = secondary ? settings?.secondaryCtaUrl : settings?.ctaUrl;
+    return typeof url === 'string' && StorefrontConfigService.isSafeUrl(url) ? url : null;
+  }
+
+  sectionCtaVisible(type: string, secondary = false): boolean {
+    const settings = this.sectionSettings(type);
+    const value = secondary ? settings?.secondaryCtaVisible : settings?.ctaVisible;
+    return value !== false;
   }
 
   isFeatureEnabled(flag: string): boolean {
     const features = this.section('features');
     if (!(flag in features)) return true;
     return features[flag] === true;
-  }
-
-  brandName(fallback: string): string {
-    const name = this.section('branding')['storeName'];
-    return typeof name === 'string' && name.trim() ? name : fallback;
   }
 
   /** Fetches once per session; applies theme tokens as CSS variables. */
@@ -82,6 +147,7 @@ export class StorefrontConfigService {
         if (!config || typeof config !== 'object') return;
         this.payload.set(config as Record<string, unknown>);
         this.applyTheme(config as Record<string, unknown>);
+        this.applySeo(config as Record<string, unknown>);
       });
   }
 
@@ -103,8 +169,8 @@ export class StorefrontConfigService {
           typeof (l as Record<string, unknown>)['label'] === 'string' &&
           typeof (l as Record<string, unknown>)['url'] === 'string',
       )
-      .map((l) => ({ label: (l as unknown as StorefrontLink).label, url: (l as unknown as StorefrontLink).url }))
-      .filter((l) => l.label.trim() && StorefrontConfigService.isSafeUrl(l.url));
+      .map((l) => ({ label: (l as unknown as StorefrontLink).label, url: (l as unknown as StorefrontLink).url, visible: (l as unknown as StorefrontLink).visible }))
+      .filter((l) => l.visible !== false && l.label.trim() && StorefrontConfigService.isSafeUrl(l.url));
   }
 
   private applyTheme(config: Record<string, unknown>): void {
@@ -123,6 +189,35 @@ export class StorefrontConfigService {
     } catch {
       /* theme is decorative: never break the shop */
     }
+  }
+
+  private applySeo(config: Record<string, unknown>): void {
+    if (typeof document === 'undefined') return;
+    const seo = config['seo'];
+    if (seo === null || typeof seo !== 'object' || Array.isArray(seo)) return;
+    const values = seo as Record<string, unknown>;
+    const title = typeof values['title'] === 'string' ? values['title'].trim() : '';
+    const description = typeof values['description'] === 'string' ? values['description'].trim() : '';
+    const keywords = typeof values['keywords'] === 'string' ? values['keywords'].trim() : '';
+    if (title) {
+      document.title = title;
+      this.setMeta('og:title', title, 'property');
+    }
+    if (description) {
+      this.setMeta('description', description, 'name');
+      this.setMeta('og:description', description, 'property');
+    }
+    if (keywords) this.setMeta('keywords', keywords, 'name');
+  }
+
+  private setMeta(key: string, content: string, selector: 'name' | 'property'): void {
+    let element = document.head.querySelector<HTMLMetaElement>(`meta[${selector}="${key}"]`);
+    if (!element) {
+      element = document.createElement('meta');
+      element.setAttribute(selector, key);
+      document.head.appendChild(element);
+    }
+    element.content = content;
   }
 
   private static isSafeUrl(url: string): boolean {
