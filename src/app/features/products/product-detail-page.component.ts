@@ -237,11 +237,11 @@ export class ProductDetailPageComponent {
     this.notify.success(nowFav ? 'notifications.addedToFav' : 'notifications.removedFromFav');
   }
 
-  protected quickAdd(p: Product): void {
+  protected quickAdd({ product: p, quantity }: { product: Product; quantity: number }): void {
     // Related-product shortcut: the guest returns here (product A) while the
     // action adds the related product B they actually clicked.
-    if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: 1 })) return;
-    this.cart.add(p.id, 1, undefined, undefined, p.stock);
+    if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: quantity })) return;
+    this.cart.add(p.id, quantity, undefined, undefined, p.stock);
     this.notify.success('notifications.addedToCart');
   }
 

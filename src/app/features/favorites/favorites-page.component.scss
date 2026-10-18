@@ -1,5 +1,7 @@
-h1 { margin: 0; } .sub { color: var(--text-secondary); margin: 0.3rem 0 1.2rem; }
-.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; }
+:host { display: block; }
+h1 { margin: 0; font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.2; letter-spacing: -0.035em; }
+.sub { color: var(--text-secondary); margin: 0.45rem 0 1.7rem; font-size: 1.02rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 1.25rem; align-items: stretch; }
 @media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 700px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 460px) { .grid { grid-template-columns: 1fr; } }

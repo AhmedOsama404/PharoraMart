@@ -52,51 +52,51 @@ export class HomePageComponent implements OnInit {
     let resolvedSlotKey = '';
     effect((onCleanup) => {
       if (!this.siteContent.ready()) return;
-      const heroSettings = this.storefront.sectionSettings('hero');
       const siteProductIds = this.siteContent.hero()?.productIds;
-      // Website Content is the active CMS editor for hero products. Prefer its
-      // catalog IDs when populated; keep the versioned config as a compatibility
-      // fallback for stores that have not selected products in Website Content.
-      const hasSiteProductSelection = Array.isArray(siteProductIds) && siteProductIds.some(
-        (id) => typeof id === 'string' && id.trim().length > 0,
-      );
-      const productSlots = hasSiteProductSelection ? siteProductIds : heroSettings?.heroProductSlots;
-      if (!Array.isArray(productSlots)) {
+      // Website Content is the single source of truth for hero products.
+      // Empty or unavailable CMS data must not resurrect stale product IDs
+      // from the older versioned storefront configuration.
+      if (!Array.isArray(siteProductIds)) {
         resolvedSlotKey = '';
-        this.heroSlotMode.set(false);
+        this.heroSlotMode.set(true);
         this.heroSlotProducts.set([null, null, null, null]);
+        this.heroProductsLoading.set(false);
         return;
       }
 
       this.heroSlotMode.set(true);
       const ids = Array.from({ length: 4 }, (_, index) => {
-        const id = productSlots[index];
+        const id = siteProductIds[index];
         return typeof id === 'string' && id.trim() ? id.trim() : null;
       });
       const slotKey = JSON.stringify(ids);
       if (slotKey === resolvedSlotKey) return;
       resolvedSlotKey = slotKey;
 
-      const subscription = forkJoin([
-        ...ids.map((id) => {
-          if (!id) return of(null);
-          return this.products.getById(id, { silent: true }).pipe(
-            retry({
-              count: 2,
-              delay: (error, retryCount) => {
-                const transient = error instanceof HttpErrorResponse &&
-                  (error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500);
-                return transient ? timer(retryCount * 250) : throwError(() => error);
-              },
-            }),
-            catchError(() => of(null)),
-          );
+      const selectedIds = ids.filter((id): id is string => id !== null);
+      this.heroProductsLoading.set(true);
+      const subscription = this.products.getByIds(selectedIds, { silent: true }).pipe(
+        retry({
+          count: 2,
+          delay: (error, retryCount) => {
+            const transient = error instanceof HttpErrorResponse &&
+              (error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500);
+            return transient ? timer(retryCount * 250) : throwError(() => error);
+          },
         }),
-      ]).subscribe((items) => {
+        catchError(() => {
+          // Allow a later content refresh (for example when the tab returns to
+          // focus) to try this same selection again after a prolonged outage.
+          resolvedSlotKey = '';
+          return of([]);
+        }),
+      ).subscribe((items) => {
         // Keep the CMS slot order and empty slots exactly. Filling a failed or
         // intentionally empty slot from the featured feed made unrelated
         // products appear in the hero and hid CMS selection errors.
-        this.heroSlotProducts.set(items as (Product | null)[]);
+        const byId = new Map(items.map((product) => [product.id, product]));
+        this.heroSlotProducts.set(ids.map((id) => id ? byId.get(id) ?? null : null));
+        this.heroProductsLoading.set(false);
       });
       onCleanup(() => subscription.unsubscribe());
     });
@@ -109,6 +109,8 @@ export class HomePageComponent implements OnInit {
   protected heroPrimary = computed(() => this.siteContent.hero()?.primaryButton ?? null);
   protected heroSecondary = computed(() => this.siteContent.hero()?.secondaryButton ?? null);
   protected heroHighlights = computed(() => this.siteContent.hero()?.highlights ?? []);
+  protected heroProductsLoading = signal(true);
+  protected heroLoading = computed(() => !this.siteContent.ready() || this.heroProductsLoading());
 
   protected loading = signal(true);
   protected categories = signal<Category[]>([]);
@@ -146,26 +148,6 @@ export class HomePageComponent implements OnInit {
       }
 
       if (!this.siteContent.ready()) return;
-      const heroSettings = this.storefront.sectionSettings('hero');
-      const siteProductIds = this.siteContent.hero()?.productIds;
-      const hasSiteProductSelection = Array.isArray(siteProductIds) && siteProductIds.some(
-        (id) => typeof id === 'string' && id.trim().length > 0,
-      );
-      // Resolve the old product fields only when neither CMS slot source is set.
-      if (!hasSiteProductSelection && !Array.isArray(heroSettings?.heroProductSlots)) {
-        if (heroSettings?.mainProductId) {
-          this.products.getById(heroSettings.mainProductId).pipe(catchError(() => of(null))).subscribe((product) => {
-            this.heroProduct.set(product);
-          });
-        } else {
-          this.heroProduct.set(items[0] ?? null);
-        }
-        if (heroSettings?.supportingProductIds) {
-          this.resolveProducts(heroSettings.supportingProductIds, (selected) => this.heroTiles.set(selected.slice(0, 6)));
-        } else {
-          this.heroTiles.set(items.slice(1, 4));
-        }
-      }
       const promoSettings = this.storefront.sectionSettings('promo');
       if (promoSettings?.productId) {
         this.products.getById(promoSettings.productId).pipe(catchError(() => of(null))).subscribe((product) => this.saleProduct.set(product));
@@ -205,12 +187,12 @@ export class HomePageComponent implements OnInit {
       .subscribe((items) => next(items.filter((item): item is Product => !!item)));
   }
 
-  protected addToCart(p: Product): void {
+  protected addToCart({ product: p, quantity }: { product: Product; quantity: number }): void {
     if (p.stock <= 0) return;
     // Account-required action: guests are routed through sign-in first and
     // the add completes automatically on return (see PendingActionService).
-    if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: 1 })) return;
-    this.cart.add(p.id, 1, undefined, undefined, p.stock);
+    if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: quantity })) return;
+    this.cart.add(p.id, quantity, undefined, undefined, p.stock);
     this.notify.success('notifications.addedToCart');
   }
 

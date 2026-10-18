@@ -1,7 +1,29 @@
 @for (section of storefront.sectionOrder(); track section) {
   @switch (section) {
     @case ('hero') {
-      <section class="hero">
+      <section class="hero" [attr.aria-busy]="heroLoading()">
+        @if (heroLoading()) {
+          <div class="hero-skeleton-copy" aria-hidden="true">
+            <p-skeleton width="9rem" height="1.8rem" borderRadius="999px" />
+            <p-skeleton width="88%" height="3.2rem" borderRadius="0.8rem" />
+            <p-skeleton width="70%" height="3.2rem" borderRadius="0.8rem" />
+            <p-skeleton width="92%" height="1rem" borderRadius="999px" />
+            <p-skeleton width="76%" height="1rem" borderRadius="999px" />
+            <div class="hero-skeleton-actions">
+              <p-skeleton width="8.5rem" height="2.6rem" borderRadius="0.6rem" />
+              <p-skeleton width="8.5rem" height="2.6rem" borderRadius="0.6rem" />
+            </div>
+            <div class="hero-skeleton-highlights">
+              @for (i of [1, 2, 3]; track i) { <p-skeleton width="6rem" height="0.8rem" borderRadius="999px" /> }
+            </div>
+          </div>
+          <div class="hero-skeleton-media" aria-hidden="true">
+            <p-skeleton height="22rem" borderRadius="1.35rem" />
+            <div class="hero-skeleton-tiles">
+              @for (i of [1, 2, 3]; track i) { <p-skeleton height="6rem" borderRadius="0.95rem" /> }
+            </div>
+          </div>
+        } @else {
         <div class="hero-copy">
           @if (heroBadge()) {
             <p-tag [value]="heroBadge()" [icon]="badgeIcon()" severity="info" />
@@ -61,10 +83,11 @@
             </div>
           }
         </div>
+        }
       </section>
     }
     @case ('categories') {
-      <section #catsEl class="block">
+      <section #catsEl class="block home-section categories-section">
         <app-section-header [title]="siteContent.text(siteContent.categoriesSection()?.sectionTitle, i18n.currentLang())" [subtitle]="siteContent.text(siteContent.categoriesSection()?.sectionBody, i18n.currentLang())" />
         @if (loading()) {
           <div class="cat-grid">@for (i of [1,2,3,4,5]; track i) { <p-skeleton height="12rem" borderRadius="1rem" /> }</div>
@@ -82,7 +105,7 @@
     }
     @case ('featured') {
       @if (sectionVisible('featured')) {
-        <section class="block">
+        <section class="block home-section featured-section">
           <app-section-header [title]="sectionTitle('featured')" [subtitle]="sectionBody('featured')"
             [link]="sectionViewAllUrl('featured')" [linkLabel]="sectionViewAll('featured')" />
           @if (loading()) {
@@ -99,12 +122,12 @@
     }
     @case ('promo') {
       @if (storefront.isFeatureEnabled('promoBanners')) {
-        <section class="promo">
+        <section class="promo offer-promo">
           <div>
             <h2>{{ storefront.sectionText('promo', 'title', i18n.currentLang()) || i18n.t('home.promoTitle') }}</h2>
             <p>{{ storefront.sectionText('promo', 'subtitle', i18n.currentLang()) || i18n.t('home.promoSubtitle') }}</p>
             @if (storefront.sectionCtaVisible('promo')) {
-              <p-button [label]="storefront.sectionText('promo', 'ctaLabel', i18n.currentLang()) || i18n.t('home.promoCta')" severity="contrast" (onClick)="goTo(storefront.sectionCtaUrl('promo') || '/products?sale=1')" />
+              <p-button [label]="storefront.sectionText('promo', 'ctaLabel', i18n.currentLang()) || i18n.t('home.promoCta')" icon="pi pi-arrow-up-right" class="promo-cta" (onClick)="goTo(storefront.sectionCtaUrl('promo') || '/products?sale=1')" />
             }
           </div>
           @if (saleProduct()) {
@@ -131,7 +154,7 @@
     }
     @case ('newArrivals') {
       @if (sectionVisible('newArrivals')) {
-        <section class="block">
+        <section class="block home-section arrivals-section">
           <app-section-header [title]="sectionTitle('newArrivals')" [subtitle]="sectionBody('newArrivals')"
             [link]="sectionViewAllUrl('newArrivals')" [linkLabel]="sectionViewAll('newArrivals')" />
           @if (!loading()) {
@@ -146,7 +169,7 @@
     }
     @case ('popular') {
       @if (storefront.isFeatureEnabled('bestSellers') && sectionVisible('popular')) {
-        <section class="block">
+        <section class="block home-section popular-section">
           <app-section-header [title]="sectionTitle('popular')" [subtitle]="sectionBody('popular')"
             [link]="sectionViewAllUrl('popular')" [linkLabel]="sectionViewAll('popular')" />
           @if (!loading()) {
@@ -161,7 +184,7 @@
     }
     @case ('recentlyViewed') {
       @if (recentlyViewed().length) {
-        <section class="block">
+        <section class="block home-section recently-section">
           <app-section-header [title]="i18n.t('home.recentlyViewedTitle')" />
           <div class="grid">
             @for (p of recentlyViewed(); track p.id) {

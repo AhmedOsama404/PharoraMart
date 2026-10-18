@@ -1,14 +1,14 @@
-.hero-ok { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
-.hero-ok i { font-size: 2.6rem; color: var(--success); }
-h1 { margin: 0; font-size: 1.6rem; } .hero-ok p { margin: 0.2rem 0 0; color: var(--text-secondary); }
-.layout { display: grid; grid-template-columns: 1fr 22rem; gap: 1.4rem; margin-top: 1rem; align-items: start; }
+.hero-ok { display: flex; gap: 1.1rem; align-items: center; margin-bottom: 1.5rem; padding: 1.2rem 1.35rem; border: 1px solid color-mix(in srgb, var(--success) 22%, var(--surface-border)); border-radius: 1.25rem; background: linear-gradient(110deg, #f1f8f0 0%, #fff 76%); box-shadow: var(--shadow-card); }
+.hero-ok i { display: grid; place-items: center; width: 3.4rem; height: 3.4rem; flex: 0 0 auto; border: 1px solid rgb(47 132 89 / 16%); border-radius: 50%; background: #e4f2e7; font-size: 1.8rem; color: var(--success); }
+h1 { margin: 0; font-size: clamp(1.55rem, 2.5vw, 2rem); line-height: 1.25; } .hero-ok p { margin: 0.25rem 0 0; color: var(--text-secondary); }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; margin-top: 1rem; align-items: start; }
 .side { display: grid; gap: 1rem; }
 .kv { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; }
-.kv span { color: var(--text-secondary); } .grand { font-size: 1.2rem; }
+.kv span { color: var(--text-secondary); } .grand { font-size: 1.2rem; color: var(--primary); }
 h2 { font-size: 1rem; margin: 0.8rem 0 0.5rem; }
 .items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
 .items li { display: grid; grid-template-columns: 3rem 1fr auto; gap: 0.6rem; align-items: center; }
-.items img { width: 3rem; height: 2.6rem; object-fit: cover; border-radius: 0.5rem; }
+.items img { width: 3.3rem; height: 3.1rem; object-fit: cover; border-radius: 0.7rem; background: #f3f0e8; }
 .items small { color: var(--text-secondary); }
 ol { padding-inline-start: 1.2rem; display: grid; gap: 0.4rem; color: var(--text-primary); }
 .hint { display: block; color: var(--text-secondary); font-size: 0.78rem; margin: 0.4rem 0 0.8rem; }

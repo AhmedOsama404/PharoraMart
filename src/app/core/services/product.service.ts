@@ -73,6 +73,21 @@ export class ProductService {
     return of(found).pipe(delay(250));
   }
 
+  getByIds(ids: readonly string[], optionsIn?: { readonly silent?: boolean }): Observable<Product[]> {
+    const orderedIds = ids.filter((id, index) => !!id && ids.indexOf(id) === index);
+    if (!orderedIds.length) return of([]);
+    if (this.forceError()) {
+      return throwError(() => new Error('mock-catalog-failure')).pipe(delay(400));
+    }
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct[]>('products/by-ids', { ids: orderedIds }, optionsIn).pipe(
+        map((items) => items.map(toProduct)),
+      );
+    }
+    const byId = new Map(this.products().map((product) => [product.id, product]));
+    return of(orderedIds.map((id) => byId.get(id)).filter((product): product is Product => !!product));
+  }
+
   /**
    * Active categories in dashboard order. Inactive or removed categories never
    * reach navigation or filters; products pointing at them still render with

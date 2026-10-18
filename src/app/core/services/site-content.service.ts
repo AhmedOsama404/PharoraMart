@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { catchError, of } from 'rxjs';
+import { catchError, of, retry, throwError, timer } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ApiClientService } from '../api/api-client.service';
 import { resolveMediaUrl } from '../../shared/utils/media-url.utils';
@@ -126,6 +127,14 @@ export class SiteContentService {
     this.lastRequestAt = now;
     this.api
       .get<SiteContent>('site-content')
+      .pipe(retry({
+        count: 2,
+        delay: (error, retryCount) => {
+          const transient = error instanceof HttpErrorResponse &&
+            (error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500);
+          return transient ? timer(retryCount * 250) : throwError(() => error);
+        },
+      }))
       .pipe(catchError(() => of(null)))
       .subscribe((res) => {
         if (res && typeof res === 'object') this.payload.set(res);

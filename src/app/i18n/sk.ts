@@ -77,8 +77,6 @@ export const sk: TranslationDict = {
     new: 'Novinka',
     popular: 'Populárne',
     off: 'Zľava {percent} %',
-    reviews: '{count} hodnotení',
-    sold: '{count} predaných',
     breadcrumbsHome: 'Domov',
     breadcrumbsCatalog: 'Obchod',
     maxStock: 'K dispozícii len {count} ks',

@@ -1,4 +1,4 @@
-.page { min-height: 60vh; padding-top: 1.25rem; padding-bottom: 1rem; }
+.page { min-height: 60vh; padding-top: clamp(1.5rem, 3vw, 2.75rem); padding-bottom: clamp(3rem, 6vw, 5rem); }
 
 .announcements {
   background: var(--store-primary, #2e7d52);

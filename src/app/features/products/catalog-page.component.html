@@ -17,7 +17,8 @@
       [placeholder]="i18n.t('catalog.searchPlaceholder')" [attr.aria-label]="i18n.t('catalog.searchLabel')" />
   </p-iconField>
   <p-select [options]="sortOptions()" [ngModel]="draft.sort()" (onChange)="setSort($event.value)"
-    optionLabel="label" optionValue="value" [attr.aria-label]="i18n.t('catalog.sortLabel')" class="t-sort" />
+    optionLabel="label" optionValue="value" [attr.aria-label]="i18n.t('catalog.sortLabel')" class="t-sort"
+    appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
 </div>
 
 @if (activeChips().length) {
@@ -34,10 +35,28 @@
   <aside class="filters" aria-label="filters">
     <ng-container *ngTemplateOutlet="filterBody" />
   </aside>
-  <section class="results" aria-live="polite">
-    <p class="count">{{ i18n.t('catalog.results', { count: total() }) }}</p>
-    @if (state() === 'loading') {
-      <div class="grid">@for (i of [1,2,3,4,5,6,7,8]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+  <section class="results" aria-live="polite" [attr.aria-busy]="state() === 'loading' || priceInputPending()">
+    <p class="count">
+      @if (state() === 'loading' || priceInputPending()) {
+        <p-skeleton width="5.5rem" height="1rem" borderRadius="999px" />
+      } @else {
+        {{ i18n.t('catalog.results', { count: total() }) }}
+      }
+    </p>
+    @if (state() === 'loading' || priceInputPending()) {
+      <div class="grid skeleton-grid" aria-label="Loading products">
+        @for (i of [1,2,3,4,5,6]; track i) {
+          <article class="product-skeleton" aria-hidden="true">
+            <p-skeleton class="skeleton-media" height="auto" borderRadius="0" />
+            <div class="skeleton-body">
+              <p-skeleton width="88%" height="1rem" borderRadius="0.45rem" />
+              <p-skeleton width="58%" height="0.72rem" borderRadius="999px" />
+              <p-skeleton width="38%" height="1.25rem" borderRadius="0.45rem" />
+              <p-skeleton width="100%" height="2rem" borderRadius="0.55rem" />
+            </div>
+          </article>
+        }
+      </div>
     } @else if (state() === 'error') {
       <app-empty-state icon="pi-exclamation-triangle" [title]="i18n.t('catalog.errorTitle')"
         [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="reload()" />
@@ -65,21 +84,27 @@
   <div class="f-group">
     <label>{{ i18n.t('catalog.categoryLabel') }}</label>
     <p-select [options]="categoryOptions()" [ngModel]="draft.category()" (onChange)="setCategory($event.value)"
-      optionLabel="label" optionValue="value" [fluid]="true" />
+      optionLabel="label" optionValue="value" [fluid]="true" appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
   </div>
   <div class="f-group">
-    <label>{{ i18n.t('catalog.priceRange') }}: {{ i18n.t('catalog.maxPrice') }} {{ draft.maxPrice() }}</label>
-    <p-slider [ngModel]="draft.maxPrice()" (onChange)="setMaxPrice($event.value)" [min]="10" [max]="maxPrice" [step]="5" />
+    <label>{{ i18n.t('catalog.priceRange') }}: {{ i18n.t('catalog.maxPrice') }} {{ currency.format(displayPriceLimit(), filterCurrency()) }}</label>
+    <p-slider [ngModel]="displayMaxPrice()" (onChange)="setMaxPrice($event.value)" [min]="0"
+      [max]="displayPriceLimit()" [step]="displayPriceStep()" [disabled]="!priceConversionAvailable()" />
     <div class="price-inputs">
-      <input pInputText type="number" [ngModel]="draft.minPrice()" (ngModelChange)="setMinPrice($event)" [attr.aria-label]="i18n.t('catalog.minPrice')" [min]="0" [max]="maxPrice" />
+      <input pInputText type="number" step="0.01" [ngModel]="minPriceInput()" (ngModelChange)="onPriceInput('min', $event)"
+        (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.minPrice')"
+        [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
       <span>–</span>
-      <input pInputText type="number" [ngModel]="draft.maxPrice()" (ngModelChange)="setMaxPrice($event)" [attr.aria-label]="i18n.t('catalog.maxPrice')" [min]="0" [max]="maxPrice" />
+      <input pInputText type="number" step="0.01" [ngModel]="maxPriceInput()" (ngModelChange)="onPriceInput('max', $event)"
+        (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.maxPrice')"
+        [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
     </div>
+    @if (!priceConversionAvailable()) { <small class="conversion-hint">{{ i18n.t('currency.conversionUnavailable') }}</small> }
   </div>
   <div class="f-group">
     <label>{{ i18n.t('catalog.availabilityLabel') }}</label>
     <p-select [options]="availOptions()" [ngModel]="draft.availability()" (onChange)="setAvail($event.value)"
-      optionLabel="label" optionValue="value" [fluid]="true" />
+      optionLabel="label" optionValue="value" [fluid]="true" appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
   </div>
   <div class="f-group check">
     <p-checkbox [binary]="true" [ngModel]="draft.sale()" (onChange)="setSale($event.checked)" inputId="saleOnly" />

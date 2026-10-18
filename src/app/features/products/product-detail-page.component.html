@@ -33,9 +33,6 @@
       </div>
       <h1>{{ product()!.names | localized: product()!.name }}</h1>
       <div class="meta">
-        <span class="rating">★ {{ product()!.rating.toFixed(1) }}</span>
-        <span>{{ i18n.t('product.reviews', { count: product()!.reviewsCount }) }}</span>·
-        <span>{{ i18n.t('product.sold', { count: product()!.soldCount }) }}</span>·
         <span>{{ i18n.t('product.sku') }}: {{ product()!.sku }}</span>
       </div>
       <div class="price-row">
@@ -55,7 +52,8 @@
           <div class="variant">
             <label [attr.for]="'variant-' + v.id">{{ v.name }}</label>
             <p-select [inputId]="'variant-' + v.id" [options]="variantOptions(v.id, v.options)" [(ngModel)]="selectedVariants[v.id]"
-              [placeholder]="i18n.t('product.selectVariant')" optionLabel="label" optionValue="value" [fluid]="true" />
+              [placeholder]="i18n.t('product.selectVariant')" optionLabel="label" optionValue="value" [fluid]="true"
+              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
           </div>
         }
       }

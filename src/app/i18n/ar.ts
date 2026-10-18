@@ -77,8 +77,6 @@ export const ar: TranslationDict = {
     new: 'جديد',
     popular: 'رائج',
     off: 'خصم {percent}%',
-    reviews: '{count} تقييم',
-    sold: '{count} مبيعًا',
     breadcrumbsHome: 'الرئيسية',
     breadcrumbsCatalog: 'تسوّق',
     maxStock: 'المتاح {count} فقط',

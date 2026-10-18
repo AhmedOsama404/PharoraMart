@@ -38,9 +38,9 @@ export class FavoritesPageComponent {
     return this.catalog().filter((p) => ids.has(p.id));
   });
 
-  protected moveToCart(p: Product): void {
+  protected moveToCart({ product: p, quantity }: { product: Product; quantity: number }): void {
     if (p.stock > 0) {
-      this.cart.add(p.id, 1, undefined, undefined, p.stock);
+      this.cart.add(p.id, quantity, undefined, undefined, p.stock);
       this.notify.success('notifications.addedToCart');
     }
   }

@@ -79,8 +79,6 @@ export const en: TranslationDict = {
     new: 'New',
     popular: 'Popular',
     off: '{percent}% off',
-    reviews: '{count} reviews',
-    sold: '{count} sold',
     breadcrumbsHome: 'Home',
     breadcrumbsCatalog: 'Shop',
     maxStock: 'Only {count} available',

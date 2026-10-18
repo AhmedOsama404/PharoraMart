@@ -1,5 +1,5 @@
 import { LocalizedPipe } from '../pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -9,12 +9,13 @@ import { FavoritesStore } from '../../core/services/favorites.store';
 import { handleImgError } from '../utils/image-fallback.utils';
 import { discountPercent, effectivePrice, type Product } from '../../models/product.model';
 import { ResolvedMoneyPipe } from '../pipes/resolved-money.pipe';
+import { QtySelectorComponent } from './qty-selector.component';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Button, Tag, Tooltip, ResolvedMoneyPipe,
+  imports: [RouterLink, Button, Tag, Tooltip, ResolvedMoneyPipe, QtySelectorComponent,
     LocalizedPipe,
   ],
   templateUrl: './product-card.component.html',
@@ -23,13 +24,14 @@ import { ResolvedMoneyPipe } from '../pipes/resolved-money.pipe';
 export class ProductCardComponent {
   // The product to render. Always provided by catalog, home and related lists.
   @Input({ required: true }) product!: Product;
-  // Bubbles up so the owning page can update cart + toast state in one place.
-  @Output() add = new EventEmitter<Product>();
+  // Bubbles the selected quantity up so the owning page can update cart + toast state.
+  @Output() add = new EventEmitter<{ product: Product; quantity: number }>();
   // Same for favorites: the page owns the store, the card only reports intent.
   @Output() favToggle = new EventEmitter<Product>();
 
   protected i18n = inject(I18nService);
   protected favorites = inject(FavoritesStore);
+  protected quantity = signal(1);
 
   protected effective(): number {
     return effectivePrice(this.product);
@@ -37,6 +39,12 @@ export class ProductCardComponent {
 
   protected discount(): number {
     return discountPercent(this.product);
+  }
+
+  protected addToCart(): void {
+    if (this.quantity() < 1 || this.product.stock <= 0) return;
+    this.add.emit({ product: this.product, quantity: this.quantity() });
+    this.quantity.set(1);
   }
 
   protected onFav(ev: Event): void {

@@ -6,7 +6,7 @@
 } @else {
   <div class="grid">
     @for (p of items(); track p.id) {
-      <app-product-card [product]="p" (add)="moveToCart(p)" (favToggle)="remove(p)" />
+      <app-product-card [product]="p" (add)="moveToCart($event)" (favToggle)="remove($event)" />
     }
   </div>
 }

@@ -77,8 +77,6 @@ export const pl: TranslationDict = {
     new: 'Nowość',
     popular: 'Popularne',
     off: '{percent} % taniej',
-    reviews: '{count} opinii',
-    sold: 'Sprzedano: {count}',
     breadcrumbsHome: 'Start',
     breadcrumbsCatalog: 'Sklep',
     maxStock: 'Dostępne tylko {count}',

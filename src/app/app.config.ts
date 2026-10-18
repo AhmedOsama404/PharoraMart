@@ -26,6 +26,7 @@ export const appConfig: ApplicationConfig = {
           cssLayer: false,
         },
       },
+      overlayAppendTo: 'body',
       ripple: true,
     }),
     MessageService,

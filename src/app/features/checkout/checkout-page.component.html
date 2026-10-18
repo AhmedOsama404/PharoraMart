@@ -26,7 +26,8 @@
           </div>
           <div class="field">
             <label>{{ i18n.t('checkout.contactMethod') }}</label>
-            <p-select [options]="contactOptions()" formControlName="contactMethod" optionLabel="label" optionValue="value" [fluid]="true" />
+            <p-select [options]="contactOptions()" formControlName="contactMethod" optionLabel="label" optionValue="value" [fluid]="true"
+              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
           </div>
         </div>
       </p-card>
@@ -36,14 +37,16 @@
           <div class="field">
             <label for="city">{{ i18n.t('checkout.city') }}</label>
             <p-select id="city" formControlName="city" [options]="cityOptions()" optionLabel="label" optionValue="value"
-              [placeholder]="i18n.t('checkout.city')" [fluid]="true" (onChange)="onCityChange($event.value)" />
+              [placeholder]="i18n.t('checkout.city')" [fluid]="true" (onChange)="onCityChange($event.value)"
+              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
             @if (err('city'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">
             <label for="hotel">{{ i18n.t('checkout.hotel') }}</label>
             <p-select id="hotel" formControlName="hotelId" [options]="hotelOptions()" optionLabel="label" optionValue="value"
               [placeholder]="i18n.t('checkout.selectHotel')" [filter]="true" [filterPlaceholder]="i18n.t('checkout.searchHotel')"
-              [emptyMessage]="i18n.t('checkout.noHotels')" [fluid]="true" (onChange)="onHotelChange($event.value)" />
+              [emptyMessage]="i18n.t('checkout.noHotels')" [fluid]="true" (onChange)="onHotelChange($event.value)"
+              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
             @if (err('hotelId'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">

@@ -18,8 +18,10 @@
   --radius-lg: 1rem;
   --radius-md: 0.7rem;
   --radius-sm: 0.5rem;
-  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
-  --shadow-md: 0 12px 32px -12px rgb(15 23 42 / 0.22);
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05), 0 8px 22px -16px rgb(16 41 31 / 0.2);
+  --shadow-md: 0 16px 36px -18px rgb(16 41 31 / 0.3);
+  --shadow-card: 0 1px 2px rgb(16 41 31 / 0.04), 0 12px 28px -22px rgb(16 41 31 / 0.24);
+  --shadow-card-hover: 0 14px 32px -20px rgb(16 41 31 / 0.26);
   --font-stack: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Noto Kufi Arabic', 'Noto Sans Arabic', Tahoma, sans-serif;
 
   /* Typography scale (body 1rem; card titles stay smaller by context) */
@@ -129,10 +131,56 @@ input:focus-visible,
   font-weight: 700;
 }
 
+/* Keep Select overlays above sticky headers, drawers and card overflow, while
+   giving every option list the same calm, polished storefront treatment. */
+.premium-select-panel.p-select-overlay {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 82%, #d7c99f);
+  border-radius: 0.9rem;
+  background: var(--surface-card);
+  box-shadow: 0 1rem 2.5rem rgb(16 41 31 / 16%), 0 2px 6px rgb(16 41 31 / 6%);
+  padding: 0.35rem;
+}
+
+/* Keep header dropdowns below the sticky navigation when the page is scrolled.
+   PrimeNG may otherwise choose an upward placement when its full option list
+   is taller than the remaining viewport. */
+.header-select-panel .p-select-list-container {
+  max-height: min(16rem, calc(100dvh - 8rem)) !important;
+}
+
+.premium-select-panel .p-select-list { padding: 0; }
+.premium-select-panel .p-select-option {
+  min-height: 2.65rem;
+  margin: 0.1rem 0;
+  padding: 0.62rem 0.75rem;
+  border-radius: 0.58rem;
+  color: var(--text-primary);
+  font-weight: 550;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.premium-select-panel .p-select-option:not(.p-select-option-selected):not(.p-disabled):hover,
+.premium-select-panel .p-select-option.p-focus:not(.p-select-option-selected) {
+  background: color-mix(in srgb, var(--primary) 8%, white);
+  color: var(--primary);
+}
+.premium-select-panel .p-select-option.p-select-option-selected {
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  color: var(--primary);
+  font-weight: 700;
+}
+.premium-select-panel .p-select-option.p-select-option-selected.p-focus {
+  background: color-mix(in srgb, var(--primary) 17%, white);
+}
+.premium-select-panel .p-select-option:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, white);
+  outline-offset: -2px;
+}
+
 .p-card {
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid color-mix(in srgb, var(--surface-border) 84%, #d7c99f);
+  border-radius: 1.15rem;
+  box-shadow: var(--shadow-card);
 }
 
 .p-tag {
@@ -185,6 +233,13 @@ img {
 .hero { position:relative; isolation:isolate; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.02fr); gap:clamp(2rem,5vw,4.5rem); align-items:center; overflow:hidden; background:radial-gradient(ellipse at 12% 12%,rgb(230 242 229 / 80%),transparent 42%),linear-gradient(118deg,#fbfaf2 0%,#fffdf6 47%,#f6eed9 100%); border:1px solid color-mix(in srgb,#8a7742 18%,var(--surface-border)); border-radius:clamp(1.25rem,2vw,2rem); padding:clamp(1.4rem,4vw,3.3rem); margin-bottom:clamp(2rem,5vw,3.5rem); box-shadow:0 1.5rem 4rem rgb(36 48 36 / 7%); }
 .hero::before { position:absolute; z-index:-1; inset-inline-end:-8rem; top:-12rem; width:26rem; height:26rem; border:1px solid rgb(49 129 91 / 9%); border-radius:50%; content:''; box-shadow:0 0 0 2.5rem rgb(49 129 91 / 3%),0 0 0 5rem rgb(49 129 91 / 2%); pointer-events:none; }
 .hero-copy { min-width:0; max-width:38rem; }
+.hero-skeleton-copy,.hero-skeleton-media { display:grid; gap:1rem; min-width:0; }
+.hero-skeleton-copy { max-width:38rem; }
+.hero-skeleton-actions,.hero-skeleton-highlights { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; }
+.hero-skeleton-media { gap:.85rem; }
+.hero-skeleton-tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; }
+.hero .p-skeleton { background:rgb(255 255 255 / 15%); }
+.hero .p-skeleton::after { background:linear-gradient(90deg,transparent,rgb(255 255 255 / 18%),transparent); }
 .hero h1 { max-width:13ch; font-size:clamp(2.1rem,4.2vw,3.65rem); line-height:1.08; margin:1rem 0 .85rem; letter-spacing:-.035em; color:var(--text-primary); text-wrap:balance; }
 .hero-copy>p { max-width:42rem; color:var(--text-secondary); font-size:clamp(1rem,1.15vw,1.15rem); line-height:1.8; }
 .cta { display:flex; gap:.75rem; margin:1.5rem 0; flex-wrap:wrap; }
@@ -237,7 +292,26 @@ img {
   border-color: rgb(255 255 255 / 42%);
   color: #fffdf5;
 }
-.hero .p-button.p-button-outlined:hover { background: rgb(255 255 255 / 12%); }
+.hero .cta .p-button {
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease,
+    box-shadow 180ms ease, transform 180ms ease;
+}
+.hero .cta .p-button:not(.p-button-outlined):hover {
+  background: #e0c36c;
+  border-color: #e8d28d;
+  color: #14271d;
+  box-shadow: 0 0.25rem 0.65rem rgb(11 34 23 / 12%), inset 0 1px 0 rgb(255 255 255 / 30%);
+  transform: none;
+}
+.hero .cta .p-button.p-button-outlined:hover {
+  background: rgb(226 199 127 / 10%);
+  border-color: rgb(233 207 133 / 72%);
+  color: #fffdf5;
+  box-shadow: 0 0.2rem 0.55rem rgb(0 0 0 / 10%);
+  transform: none;
+}
+.hero .cta .p-button:active { transform: translateY(0); }
+.hero .cta .p-button:focus-visible { outline: 3px solid #e2c77f; outline-offset: 3px; }
 .hero-copy p-tag .p-tag {
   background: rgb(232 242 221 / 14%);
   border: 1px solid rgb(232 242 221 / 20%);

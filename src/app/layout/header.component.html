@@ -50,9 +50,11 @@
     </div>
     <div class="actions">
       <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value"
-        (onChange)="onLang($event.value)" [attr.aria-label]="i18n.t('language.label')" class="lang-select" />
+        (onChange)="onLang($event.value)" (onShow)="alignHeaderSelect('language')" [attr.aria-label]="i18n.t('language.label')" class="lang-select"
+        appendTo="body" panelStyleClass="premium-select-panel header-select-panel" scrollHeight="16rem" />
       <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value"
-        (ngModelChange)="onCurrency($event)" [attr.aria-label]="i18n.t('currency.label')" class="cur-select" />
+        (ngModelChange)="onCurrency($event)" (onShow)="alignHeaderSelect('currency')" [attr.aria-label]="i18n.t('currency.label')" class="cur-select"
+        appendTo="body" panelStyleClass="premium-select-panel header-select-panel" scrollHeight="16rem" />
       <a routerLink="/favorites" class="icon-btn" [attr.aria-label]="i18n.t('nav.favorites')">
         <i class="pi pi-heart"></i>
         @if (favorites.count() > 0) { <p-badge [value]="favorites.count()" severity="danger" /> }
@@ -102,8 +104,10 @@
       <a routerLink="/auth/register" (click)="mobileOpen.set(false)">{{ i18n.t('nav.register') }}</a>
     }
     <div class="mobile-prefs">
-      <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value" (onChange)="onLang($event.value)" [fluid]="true" />
-      <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true" />
+      <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value" (onChange)="onLang($event.value)" [fluid]="true"
+        appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
+      <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true"
+        appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
     </div>
   </nav>
 </p-drawer>

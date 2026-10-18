@@ -43,7 +43,8 @@
     <div class="prefs">
       <h4>{{ i18n.t('footer.contact') }}</h4>
       <label>{{ i18n.t('footer.currencyLabel') }}</label>
-      <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true" />
+      <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true"
+        appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
     </div>
   </div>
   @if (footer()) {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +15,8 @@ import { Skeleton } from 'primeng/skeleton';
 import { Slider } from 'primeng/slider';
 import { MAX_CATALOG_PRICE } from '../../data-access/mock-data';
 import { I18nService } from '../../core/services/i18n.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { PriceResolverService } from '../../core/services/price-resolver.service';
 import { ProductService } from '../../core/services/product.service';
 import { CartStore } from '../../core/services/cart.store';
 import { FavoritesStore } from '../../core/services/favorites.store';
@@ -44,6 +46,8 @@ interface SortOption {
 })
 export class CatalogPageComponent implements OnInit {
   protected i18n = inject(I18nService);
+  protected currency = inject(CurrencyService);
+  private prices = inject(PriceResolverService);
   private products = inject(ProductService);
   private cart = inject(CartStore);
   private favorites = inject(FavoritesStore);
@@ -54,8 +58,27 @@ export class CatalogPageComponent implements OnInit {
   private router = inject(Router);
 
   protected maxPrice = Math.ceil(MAX_CATALOG_PRICE / 50) * 50;
+  protected priceConversionAvailable = computed(() =>
+    this.prices.convert(1, this.currency.code(), 'USD') != null,
+  );
+  protected filterCurrency = computed(() =>
+    this.priceConversionAvailable() ? this.currency.code() : 'USD',
+  );
+  protected displayPriceLimit = computed(() =>
+    this.prices.convert(this.maxPrice, 'USD', this.filterCurrency()) ?? this.maxPrice,
+  );
+  protected displayMinPrice = computed(() =>
+    this.prices.convert(this.draft.minPrice(), 'USD', this.filterCurrency()) ?? this.draft.minPrice(),
+  );
+  protected displayMaxPrice = computed(() =>
+    this.prices.convert(this.draft.maxPrice(), 'USD', this.filterCurrency()) ?? this.maxPrice,
+  );
+  protected displayPriceStep = computed(() => Math.max(1, Math.round(this.displayPriceLimit() / 100)));
   protected pageSize = environment.pageSize;
   protected drawer = signal(false);
+  protected minPriceInput = signal<number | string>(0);
+  protected maxPriceInput = signal<number | string>(this.maxPrice);
+  protected priceInputPending = signal(false);
 
   // Draft filter state. Applied to the URL (debounced for search) so listings
   // stay bookmarkable and survive refresh/back-forward navigation.
@@ -76,7 +99,16 @@ export class CatalogPageComponent implements OnInit {
   // Active categories from the data source (drives the filter, never hardcoded).
   protected categories = signal<Category[]>([]);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private priceInputTimer: ReturnType<typeof setTimeout> | null = null;
   private syncingFromUrl = false;
+
+  constructor() {
+    effect(() => {
+      this.currency.code();
+      this.minPriceInput.set(this.displayMinPrice());
+      this.maxPriceInput.set(this.displayMaxPrice());
+    });
+  }
 
   // Memoized option lists keep stable references for PrimeNG selects.
   protected sortOptions = computed<SortOption[]>(() => [
@@ -106,8 +138,8 @@ export class CatalogPageComponent implements OnInit {
     const chips: { key: string; label: string }[] = [];
     if (this.draft.q()) chips.push({ key: 'q', label: `“${this.draft.q()}”` });
     if (this.draft.category()) chips.push({ key: 'category', label: this.products.categoryName(this.draft.category()!) });
-    if (this.draft.minPrice() > 0) chips.push({ key: 'min', label: `≥ ${this.draft.minPrice()}` });
-    if (this.draft.maxPrice() < this.maxPrice) chips.push({ key: 'max', label: `≤ ${this.draft.maxPrice()}` });
+    if (this.draft.minPrice() > 0) chips.push({ key: 'min', label: `≥ ${this.currency.format(this.displayMinPrice(), this.filterCurrency())}` });
+    if (this.draft.maxPrice() < this.maxPrice) chips.push({ key: 'max', label: `≤ ${this.currency.format(this.displayMaxPrice(), this.filterCurrency())}` });
     if (this.draft.availability() !== 'all') chips.push({ key: 'avail', label: this.draft.availability() });
     if (this.draft.sale()) chips.push({ key: 'sale', label: this.i18n.t('catalog.onSaleOnly') });
     return chips;
@@ -127,6 +159,8 @@ export class CatalogPageComponent implements OnInit {
       this.draft.category.set(params.get('category') ?? '');
       this.draft.minPrice.set(Number(params.get('min') ?? 0) || 0);
       this.draft.maxPrice.set(Number(params.get('max') ?? this.maxPrice) || this.maxPrice);
+      this.minPriceInput.set(this.displayMinPrice());
+      this.maxPriceInput.set(this.displayMaxPrice());
       this.draft.availability.set((params.get('avail') as 'all' | Availability) ?? 'all');
       this.draft.sale.set(params.get('sale') === '1');
       this.draft.sort.set((params.get('sort') as SortKey) ?? 'recommended');
@@ -163,6 +197,7 @@ export class CatalogPageComponent implements OnInit {
         category: this.draft.category() || null,
         min: this.draft.minPrice() || null,
         max: this.draft.maxPrice() < this.maxPrice ? this.draft.maxPrice() : null,
+        priceMode: null,
         avail: this.draft.availability() !== 'all' ? this.draft.availability() : null,
         sale: this.draft.sale() ? 1 : null,
         sort: this.draft.sort() !== 'recommended' ? this.draft.sort() : null,
@@ -208,18 +243,61 @@ export class CatalogPageComponent implements OnInit {
     this.refresh();
   }
 
-  protected setMaxPrice(v: number | number[] | undefined): void {
+  protected setMaxPrice(v: number | string | number[] | undefined): void {
     const n = Array.isArray(v) ? v[0] : Number(v);
     if (!Number.isFinite(n)) return;
-    this.draft.maxPrice.set(Math.max(0, Math.min(this.maxPrice, Math.round(n))));
+    const displayValue = Math.max(0, Math.min(this.displayPriceLimit(), n));
+    const baseValue = this.prices.convertPrecise(displayValue, this.currency.code(), 'USD');
+    if (baseValue == null) return;
+    const maxPrice = Math.max(this.draft.minPrice(), Math.min(this.maxPrice, baseValue));
+    this.draft.maxPrice.set(maxPrice);
+    this.maxPriceInput.set(this.prices.convert(maxPrice, 'USD', this.filterCurrency()) ?? displayValue);
     this.refresh();
   }
 
-  protected setMinPrice(v: number | string): void {
-    const n = Math.round(Number(v));
-    if (!Number.isFinite(n)) return;
-    this.draft.minPrice.set(Math.max(0, Math.min(this.maxPrice, n)));
-    this.refresh();
+  protected onPriceInput(bound: 'min' | 'max', value: number | string): void {
+    if (bound === 'min') this.minPriceInput.set(value);
+    else this.maxPriceInput.set(value);
+    this.priceInputPending.set(true);
+    if (this.priceInputTimer) clearTimeout(this.priceInputTimer);
+    this.priceInputTimer = setTimeout(() => {
+      this.priceInputTimer = null;
+      this.applyPriceRange();
+    }, 350);
+  }
+
+  protected applyPriceRange(): void {
+    if (this.priceInputTimer) clearTimeout(this.priceInputTimer);
+    this.priceInputTimer = null;
+
+    const minRaw = String(this.minPriceInput()).trim();
+    const maxRaw = String(this.maxPriceInput()).trim();
+    const minDisplay = minRaw === '' ? 0 : Number(minRaw);
+    const maxDisplay = maxRaw === '' ? this.displayPriceLimit() : Number(maxRaw);
+    if (!Number.isFinite(minDisplay) || !Number.isFinite(maxDisplay)) {
+      this.priceInputPending.set(false);
+      return;
+    }
+
+    const limit = this.displayPriceLimit();
+    const normalizedMin = Math.max(0, Math.min(limit, minDisplay));
+    const normalizedMax = Math.max(normalizedMin, Math.min(limit, maxDisplay));
+    const minPrice = this.prices.convertPrecise(normalizedMin, this.filterCurrency(), 'USD');
+    const maxPrice = this.prices.convertPrecise(normalizedMax, this.filterCurrency(), 'USD');
+    if (minPrice == null || maxPrice == null) {
+      this.priceInputPending.set(false);
+      return;
+    }
+
+    const nextMin = Math.max(0, Math.min(this.maxPrice, minPrice));
+    const nextMax = Math.max(nextMin, Math.min(this.maxPrice, maxPrice));
+    const changed = nextMin !== this.draft.minPrice() || nextMax !== this.draft.maxPrice();
+    this.draft.minPrice.set(nextMin);
+    this.draft.maxPrice.set(nextMax);
+    this.minPriceInput.set(this.prices.convert(nextMin, 'USD', this.filterCurrency()) ?? normalizedMin);
+    this.maxPriceInput.set(this.prices.convert(nextMax, 'USD', this.filterCurrency()) ?? normalizedMax);
+    this.priceInputPending.set(false);
+    if (changed) this.refresh();
   }
 
   protected setAvail(v: 'all' | Availability): void {
@@ -252,6 +330,9 @@ export class CatalogPageComponent implements OnInit {
   }
 
   protected clearAll(): void {
+    if (this.priceInputTimer) clearTimeout(this.priceInputTimer);
+    this.priceInputTimer = null;
+    this.priceInputPending.set(false);
     this.draft.q.set('');
     this.draft.category.set('');
     this.draft.minPrice.set(0);
@@ -263,9 +344,9 @@ export class CatalogPageComponent implements OnInit {
     this.refresh();
   }
 
-  protected addToCart(p: Product): void {
-    if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: 1 })) return;
-    this.cart.add(p.id, 1, undefined, undefined, p.stock);
+  protected addToCart({ product: p, quantity }: { product: Product; quantity: number }): void {
+    if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: quantity })) return;
+    this.cart.add(p.id, quantity, undefined, undefined, p.stock);
     this.notify.success('notifications.addedToCart');
   }
 

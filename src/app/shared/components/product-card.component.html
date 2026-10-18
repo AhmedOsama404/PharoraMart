@@ -29,30 +29,31 @@
   </a>
   <div class="body">
     <a class="name" [routerLink]="['/products', product.id]">{{ product.names | localized: product.name }}</a>
-    <div class="meta">
-      <span class="rating" aria-label="rating">★ {{ product.rating.toFixed(1) }}</span>
-      <span class="dot">·</span>
-      <span class="sold">{{ i18n.t('product.sold', { count: product.soldCount }) }}</span>
-      <span class="dot">·</span>
-      <span class="stock" [class.out]="product.stock <= 0" [class.low]="product.stock > 0 && product.stock <= 5">
+    <div class="purchase-meta" [class.sale-price]="product.salePrice != null">
+      <div class="stock-status" [class.out]="product.stock <= 0" [class.low]="product.stock > 0 && product.stock <= 5">
+        <span class="status-dot" aria-hidden="true"></span>
         @if (product.stock <= 0) { {{ i18n.t('product.outOfStock') }} }
         @else if (product.stock <= 5) { {{ i18n.t('product.lowStock', { count: product.stock }) }} }
         @else { {{ i18n.t('product.inStock') }} }
-      </span>
+      </div>
+      <div class="price-row">
+        <span class="price">{{ effective() | resolvedMoney: product.currency }}</span>
+        @if (product.salePrice != null) {
+          <span class="old">{{ product.price | resolvedMoney: product.currency }}</span>
+        }
+      </div>
     </div>
-    <div class="price-row">
-      <span class="price">{{ effective() | resolvedMoney: product.currency }}</span>
-      @if (product.salePrice != null) {
-        <span class="old">{{ product.price | resolvedMoney: product.currency }}</span>
-      }
+    <div class="cart-action-row">
+      <app-qty-selector [qty]="quantity()" [min]="0" [max]="product.stock > 0 ? product.stock : 1"
+        [ariaLabel]="i18n.t('product.qty')" (qtyChange)="quantity.set($event)" />
+      <p-button
+        [label]="i18n.t('product.addToCart')"
+        icon="pi pi-shopping-cart"
+        size="small"
+        [fluid]="true"
+        [disabled]="product.stock <= 0 || quantity() === 0"
+        (onClick)="addToCart()"
+      />
     </div>
-    <p-button
-      [label]="i18n.t('product.addToCart')"
-      icon="pi pi-shopping-cart"
-      size="small"
-      [fluid]="true"
-      [disabled]="product.stock <= 0"
-      (onClick)="add.emit(product)"
-    />
   </div>
 </article>
