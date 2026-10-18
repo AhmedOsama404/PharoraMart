@@ -1,9 +1,9 @@
-<article class="product-card" [attr.aria-label]="product.name">
-  <a class="media img-frame" [routerLink]="['/products', product.id]" [attr.aria-label]="product.name">
+<article class="product-card" [attr.aria-label]="product.names | localized: product.name">
+  <a class="media img-frame" [routerLink]="['/products', product.id]" [attr.aria-label]="product.names | localized: product.name">
     <i class="pi pi-image img-fallback" aria-hidden="true"></i>
     <img
       [src]="product.images[0]"
-      [alt]="product.name"
+      [alt]="product.names | localized: product.name"
       loading="lazy"
       (error)="onImgError($event)"
     />
@@ -28,7 +28,7 @@
     </button>
   </a>
   <div class="body">
-    <a class="name" [routerLink]="['/products', product.id]">{{ product.name }}</a>
+    <a class="name" [routerLink]="['/products', product.id]">{{ product.names | localized: product.name }}</a>
     <div class="meta">
       <span class="rating" aria-label="rating">★ {{ product.rating.toFixed(1) }}</span>
       <span class="dot">·</span>
@@ -41,9 +41,9 @@
       </span>
     </div>
     <div class="price-row">
-      <span class="price">{{ effective() | money }}</span>
+      <span class="price">{{ effective() | resolvedMoney: product.currency }}</span>
       @if (product.salePrice != null) {
-        <span class="old">{{ product.price | money }}</span>
+        <span class="old">{{ product.price | resolvedMoney: product.currency }}</span>
       }
     </div>
     <p-button

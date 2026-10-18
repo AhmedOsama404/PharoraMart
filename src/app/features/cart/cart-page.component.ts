@@ -12,6 +12,7 @@ import { CartStore } from '../../core/services/cart.store';
 import { CartViewService } from '../../core/services/cart-view.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { environment } from '../../../environments/environment';
+import { PriceResolverService } from '../../core/services/price-resolver.service';
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
@@ -30,6 +31,7 @@ export class CartPageComponent {
   protected currency = inject(CurrencyService);
   protected cart = inject(CartStore);
   protected view = inject(CartViewService);
+  private prices = inject(PriceResolverService);
   private notify = inject(NotificationService);
   private confirm = inject(ConfirmationService);
   private router = inject(Router);
@@ -44,9 +46,11 @@ export class CartPageComponent {
   protected freeShipHint = computed(() => {
     const sub = this.subtotal();
     if (sub <= 0) return null;
-    if (sub >= environment.freeShippingThreshold)
+    const threshold = this.prices.resolve(environment.freeShippingThreshold, 'USD')?.amount;
+    if (threshold == null) return null;
+    if (sub >= threshold)
       return { free: true, text: this.i18n.t('cart.freeShippingDone') };
-    const missing = environment.freeShippingThreshold - sub;
+    const missing = threshold - sub;
     return { free: false, text: this.i18n.t('cart.freeShippingHint', { amount: this.currency.format(missing) }) };
   });
 

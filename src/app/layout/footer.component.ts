@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
@@ -24,7 +24,11 @@ export class FooterComponent {
   // Employee-editable footer copy (empty until loaded / when cleared).
   protected footer = this.siteContent.footer;
   protected brandName = computed(() => this.siteContent.text(this.siteContent.footer()?.brandName, this.i18n.currentLang()));
-  protected logoUrl = computed(() => this.siteContent.safeUrl(this.siteContent.footer()?.logoUrl));
+  // Vector mark is the fallback when the edited logo is missing/unreachable.
+  protected logoFailed = signal(false);
+  protected logoUrl = computed(() =>
+    this.logoFailed() ? '' : this.siteContent.mediaUrl(this.siteContent.footer()?.logoUrl),
+  );
   protected tagline = computed(() => this.siteContent.text(this.siteContent.footer()?.tagline, this.i18n.currentLang()));
   protected copyrightText = computed(() => this.siteContent.text(this.siteContent.footer()?.copyrightText, this.i18n.currentLang()));
   protected noticeText = computed(() => this.siteContent.text(this.siteContent.footer()?.noticeText, this.i18n.currentLang()));
@@ -47,5 +51,10 @@ export class FooterComponent {
 
   protected onCurrency(code: string): void {
     this.currency.setCurrency(code);
+  }
+
+  /** A logo that fails to load falls back to the vector brand mark. */
+  protected onLogoError(): void {
+    this.logoFailed.set(true);
   }
 }

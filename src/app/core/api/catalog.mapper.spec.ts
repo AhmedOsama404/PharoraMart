@@ -5,10 +5,13 @@ import {
   toProductQueryParams,
 } from './catalog.mapper';
 import type { BackendCategory, BackendProduct } from './catalog.mapper';
+import { environment } from '../../../environments/environment';
 
 // These verify the single typed boundary between the ASP.NET Core DTOs and the
 // storefront models — the correctness half of the real-API integration — without
 // needing a running backend.
+
+const origin = new URL(environment.apiBaseUrl).origin;
 
 const baseProduct: BackendProduct = {
   id: 'argan-oil',
@@ -38,9 +41,28 @@ describe('catalog.mapper', () => {
     const p = toProduct(baseProduct);
     expect(p.id).toBe('argan-oil');
     expect(p.salePrice).toBe(19);
-    expect(p.images).toEqual(['a.jpg', 'b.jpg']);
+    expect(p.images).toEqual([`${origin}/a.jpg`, `${origin}/b.jpg`]);
     expect(p.variants?.[0].options).toEqual(['50 ml', '100 ml']);
     expect(p.attributes).toEqual([{ name: 'Volume', value: '100 ml' }]);
+  });
+
+  it('resolves server-relative media paths against the API origin', () => {
+    const p = toProduct(baseProduct);
+    // The API returns /media/... paths; binding them from the storefront
+    // origin 404s, so the mapper must make them absolute.
+    expect(p.images[0]).toBe(`${origin}/a.jpg`);
+    const absolute = toProduct({ ...baseProduct, images: ['https://cdn.example.com/a.jpg'] });
+    expect(absolute.images).toEqual(['https://cdn.example.com/a.jpg']);
+  });
+
+  it('passes localized product text through for language-aware rendering', () => {
+    const p = toProduct({
+      ...baseProduct,
+      names: { en: 'Cold-Pressed Argan Oil', ar: 'زيت أرغان' },
+      descriptions: { en: 'Fragrance-free.', ar: 'خالٍ من العطور.' },
+    });
+    expect(p.names?.ar).toBe('زيت أرغان');
+    expect(p.descriptions?.en).toBe('Fragrance-free.');
   });
 
   it('normalizes nullish collections and drops null variants/salePrice', () => {
@@ -78,7 +100,7 @@ describe('catalog.mapper', () => {
 
   it('wraps a header suggestion as a minimal Product with one image', () => {
     const p = suggestToProduct({ id: 'x', name: 'X', image: 'x.jpg' });
-    expect(p.images).toEqual(['x.jpg']);
+    expect(p.images).toEqual([`${origin}/x.jpg`]);
     expect(p.name).toBe('X');
     expect(suggestToProduct({ id: 'y', name: 'Y', image: '' }).images).toEqual([]);
   });

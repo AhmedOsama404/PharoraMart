@@ -49,7 +49,12 @@ export class HeaderComponent {
 
   // Employee-editable brand + announcement (empty until loaded / when cleared).
   protected brandName = computed(() => this.siteContent.text(this.siteContent.header()?.brandName, this.i18n.currentLang()));
-  protected brandLogoUrl = computed(() => this.siteContent.safeUrl(this.siteContent.header()?.logoUrl));
+  // Falls back to the vector mark if the edited logo is missing/unreachable, so
+  // a dead upload never shows a broken-image icon in the header.
+  protected logoFailed = signal(false);
+  protected brandLogoUrl = computed(() =>
+    this.logoFailed() ? '' : this.siteContent.mediaUrl(this.siteContent.header()?.logoUrl),
+  );
   protected announcement = computed(() => {
     const header = this.siteContent.header();
     if (!header || header.announcementVisible === false) return '';
@@ -119,6 +124,11 @@ export class HeaderComponent {
   // Suggestion thumbnails share the two-stage recovery (fixed-size box).
   protected imgFallback(ev: Event, seed: string): void {
     handleImgError(ev, seed);
+  }
+
+  /** A logo that fails to load falls back to the vector brand mark. */
+  protected onLogoError(): void {
+    this.logoFailed.set(true);
   }
 
   protected onLang(lang: SupportedLang): void {

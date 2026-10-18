@@ -27,6 +27,8 @@ export interface Hotel {
    * only displays what the quote returns (see DeliveryService).
    */
   deliveryFee: number;
+  /** Original currency of the configured fee; mock fixtures default to USD. */
+  deliveryFeeCurrency?: string;
   /** Optional notes/restrictions shown at checkout, e.g. gate delivery hours. */
   notes?: string;
   coordinates?: { lat: number; lng: number };
@@ -39,5 +41,6 @@ export interface DeliveryQuote {
   fee: number;
   currency: string;
   source: 'sample' | 'api';
+  exchangeRateDate?: string;
   etaDays?: string;
 }

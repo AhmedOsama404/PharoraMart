@@ -12,14 +12,14 @@
     <div class="gallery">
       <div class="img-frame main-frame">
         <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-        <img class="main" [src]="images()[activeImg()]" [alt]="product()!.name" (error)="fbImg($event, 'novamart-detail')" />
+        <img class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name" (error)="fbImg($event, 'novamart-detail')" />
       </div>
       <div class="thumbs" role="tablist" aria-label="product images">
         @for (src of images(); track src; let i = $index) {
           <button [class.active]="i === activeImg()" (click)="activeImg.set(i)" [attr.aria-label]="'image ' + (i + 1)">
             <span class="img-frame thumb-frame">
               <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-              <img [src]="src" [alt]="product()!.name" loading="lazy" (error)="fbImg($event, 'novamart-thumb-' + i)" />
+              <img [src]="src" [alt]="product()!.names | localized: product()!.name" loading="lazy" (error)="fbImg($event, 'novamart-thumb-' + i)" />
             </span>
           </button>
         }
@@ -31,7 +31,7 @@
         @if (product()!.isNew) { <p-tag severity="info" [value]="i18n.t('product.new')" /> }
         @if (product()!.isPopular) { <p-tag severity="warn" [value]="i18n.t('product.popular')" /> }
       </div>
-      <h1>{{ product()!.name }}</h1>
+      <h1>{{ product()!.names | localized: product()!.name }}</h1>
       <div class="meta">
         <span class="rating">★ {{ product()!.rating.toFixed(1) }}</span>
         <span>{{ i18n.t('product.reviews', { count: product()!.reviewsCount }) }}</span>·
@@ -39,8 +39,8 @@
         <span>{{ i18n.t('product.sku') }}: {{ product()!.sku }}</span>
       </div>
       <div class="price-row">
-        <span class="price">{{ effective() | money }}</span>
-        @if (product()!.salePrice != null) { <span class="old">{{ product()!.price | money }}</span> }
+        <span class="price">{{ effective() | resolvedMoney: product()!.currency }}</span>
+        @if (product()!.salePrice != null) { <span class="old">{{ product()!.price | resolvedMoney: product()!.currency }}</span> }
       </div>
       <p class="stock" [class.out]="availability() === 'out_of_stock'">
         @if (availability() === 'out_of_stock') { {{ i18n.t('product.outOfStock') }} }
@@ -80,7 +80,7 @@
           <p-tab value="1">{{ i18n.t('product.attributes') }}</p-tab>
         </p-tablist>
         <p-tabpanels>
-          <p-tabpanel value="0"><p class="desc">{{ product()!.description }}</p></p-tabpanel>
+          <p-tabpanel value="0"><p class="desc">{{ product()!.descriptions | localized: product()!.description }}</p></p-tabpanel>
           <p-tabpanel value="1">
             @if (product()!.attributes && product()!.attributes.length) {
               <dl class="attrs">

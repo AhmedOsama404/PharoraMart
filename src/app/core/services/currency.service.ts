@@ -5,46 +5,46 @@ import { I18nService } from './i18n.service';
 
 export interface CurrencyOption {
   code: string;
+  name: string;
   symbol: string;
-  rate: number;
+  decimalPlaces: number;
+  isActive: boolean;
 }
 
-/** Rates are relative to USD base prices in mock data. Configurable. */
-export const CURRENCIES: CurrencyOption[] = [
-  { code: 'USD', symbol: '$', rate: 1 },
-  { code: 'EUR', symbol: '€', rate: 0.92 },
-  { code: 'CZK', symbol: 'Kč', rate: 23.2 },
-  { code: 'EGP', symbol: 'E£', rate: 48.5 },
+/** Mirrors the supported-currency endpoint. Prices stay in their saved currency; this is not an FX table. */
+const CURRENCIES: CurrencyOption[] = [
+  { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', decimalPlaces: 2, isActive: true },
+  { code: 'EUR', name: 'Euro', symbol: '€', decimalPlaces: 2, isActive: true },
+  { code: 'USD', name: 'US Dollar', symbol: '$', decimalPlaces: 2, isActive: true },
+  { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč', decimalPlaces: 2, isActive: true },
 ];
 
 const STORAGE_KEY = 'novamart.currency';
 
 @Injectable({ providedIn: 'root' })
 export class CurrencyService {
+  readonly options = signal<CurrencyOption[]>(CURRENCIES);
   readonly code = signal<string>('USD');
-  readonly current = computed(() => CURRENCIES.find((c) => c.code === this.code()) ?? CURRENCIES[0]);
+  readonly current = computed(() => this.options().find((c) => c.code === this.code()) ?? CURRENCIES[2]);
 
   constructor(private i18n: I18nService) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && CURRENCIES.some((c) => c.code === saved)) this.code.set(saved);
+      if (this.options().some((currency) => currency.code === saved)) this.code.set(saved!);
     } catch {
       /* ignore */
     }
-  }
 
+  }
   setCurrency(code: string): void {
-    if (!CURRENCIES.some((c) => c.code === code)) return;
-    this.code.set(code);
+    const normalized = code.toUpperCase();
+    if (!this.options().some((currency) => currency.code === normalized)) return;
+    this.code.set(normalized);
     try {
-      localStorage.setItem(STORAGE_KEY, code);
+      localStorage.setItem(STORAGE_KEY, normalized);
     } catch {
       /* ignore */
     }
-  }
-
-  convert(usdValue: number): number {
-    return usdValue * this.current().rate;
   }
 
   // Intl formatters are expensive to construct and prices re-render on every
@@ -59,21 +59,25 @@ export class CurrencyService {
       f = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: code,
-        maximumFractionDigits: code === 'CZK' || code === 'EGP' ? 0 : 2,
+        maximumFractionDigits: this.options().find((currency) => currency.code === code)?.decimalPlaces ?? 2,
       });
       this.formatterCache.set(key, f);
     }
     return f;
   }
 
-  format(usdValue: number): string {
+  format(amount: number, currencyCode?: string): string {
     const lang: SupportedLang = this.i18n.currentLang();
     const locale = LANG_LOCALES[lang];
-    const { code, rate } = this.current();
+    const normalizedCode = currencyCode?.toUpperCase();
+    const code = normalizedCode
+      ? this.options().some((currency) => currency.code === normalizedCode) ? normalizedCode : null
+      : this.current().code;
+    if (!code) return `${amount.toFixed(2)} ${normalizedCode}`;
     try {
-      return this.formatter(locale, code).format(usdValue * rate);
+      return this.formatter(locale, code).format(amount);
     } catch {
-      return `${(usdValue * rate).toFixed(2)} ${code}`;
+      return `${amount.toFixed(2)} ${code}`;
     }
   }
 

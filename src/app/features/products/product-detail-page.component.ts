@@ -1,3 +1,4 @@
+import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -23,7 +24,7 @@ import { ProductCardComponent } from '../../shared/components/product-card.compo
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
-import { MoneyPipe } from '../../shared/pipes/money.pipe';
+import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
 
 // Stable RouterLinkActive options shared by every breadcrumb item below.
@@ -55,7 +56,8 @@ const LOADING_STATE: ProductDetailState = { status: 'loading', product: null, re
   imports: [
     RouterLink, FormsModule, Breadcrumb, Button, Select, Skeleton,
     Tabs, TabList, Tab, TabPanels, TabPanel, Tag,
-    ProductCardComponent, QtySelectorComponent, SectionHeaderComponent, EmptyStateComponent, MoneyPipe,
+    ProductCardComponent, QtySelectorComponent, SectionHeaderComponent, EmptyStateComponent, ResolvedMoneyPipe,
+    LocalizedPipe,
   ],
   templateUrl: './product-detail-page.component.html',
   styleUrl: './product-detail-page.component.scss',

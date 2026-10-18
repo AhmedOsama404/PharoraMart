@@ -14,17 +14,24 @@ describe('CurrencyService', () => {
     expect(svc.format(10)).toContain('10');
   });
 
-  it('converts and persists currency independently of language', () => {
-    svc.setCurrency('CZK');
-    expect(svc.code()).toBe('CZK');
-    expect(localStorage.getItem('novamart.currency')).toBe('CZK');
-    const czk = svc.format(10);
-    svc.setCurrency('USD');
-    expect(svc.format(10)).not.toBe(czk);
+  it('formats the backend amount without applying an invented exchange rate', () => {
+    expect(svc.format(10)).toContain('10');
+    expect(svc.current().code).toBe('USD');
+    expect(svc.format(10, 'EUR')).toBe(
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(10),
+    );
   });
 
-  it('ignores unknown currency codes', () => {
+  it('does not relabel amounts when the backend returns an unsupported currency', () => {
+    expect(svc.format(10, 'GBP')).toBe('10.00 GBP');
+  });
+
+  it('accepts supported currencies and ignores unknown currency codes', () => {
+    svc.setCurrency('EUR');
+    expect(svc.code()).toBe('EUR');
+    expect(localStorage.getItem('novamart.currency')).toBe('EUR');
     svc.setCurrency('XXX');
-    expect(svc.code()).toBe('USD');
+    expect(svc.code()).toBe('EUR');
+    expect(localStorage.getItem('novamart.currency')).toBe('EUR');
   });
 });

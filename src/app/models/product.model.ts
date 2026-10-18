@@ -14,8 +14,13 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   sku: string;
+  /** English display name (convenience mirror of names.en when present). */
   name: string;
   description: string;
+  /** Dashboard-managed localized names; the storefront renders these when set. */
+  names?: LocalizedText;
+  /** Dashboard-managed localized descriptions. */
+  descriptions?: LocalizedText;
   categoryId: string;
   price: number;
   salePrice?: number;

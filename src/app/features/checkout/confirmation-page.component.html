@@ -19,14 +19,14 @@
         @for (i of order()!.items; track i.productId + (i.variantLabel ?? '')) {
           <li><img [src]="i.image" [alt]="i.productName" loading="lazy" (error)="imgFallback($event, i.productId)" />
             <span>{{ i.productName }} @if (i.variantLabel) { <small>({{ i.variantLabel }})</small> } <small>× {{ i.qty }}</small></span>
-            <strong>{{ i.unitPrice * i.qty | money }}</strong></li>
+            <strong>{{ i.unitPrice * i.qty | money: order()!.currency }}</strong></li>
         }
       </ul>
       <p-divider />
-      <div class="kv"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ order()!.subtotal | money }}</strong></div>
+      <div class="kv"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ order()!.subtotal | money: order()!.currency }}</strong></div>
       <div class="kv"><span>{{ i18n.t('checkout.delivery') }}</span>
-        <strong>@if (order()!.deliveryFee === 0) { {{ i18n.t('cart.free') }} } @else { {{ order()!.deliveryFee | money }} }</strong></div>
-      <div class="kv grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ order()!.total | money }}</strong></div>
+        <strong>@if (order()!.deliveryFee === 0) { {{ i18n.t('cart.free') }} } @else { {{ order()!.deliveryFee | money: order()!.currency }} }</strong></div>
+      <div class="kv grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ order()!.total | money: order()!.currency }}</strong></div>
     </p-card>
     <div class="side">
       <p-card>

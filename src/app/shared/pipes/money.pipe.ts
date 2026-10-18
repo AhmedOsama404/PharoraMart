@@ -4,8 +4,8 @@ import { CurrencyService } from '../../core/services/currency.service';
 @Pipe({ name: 'money', standalone: true, pure: false })
 export class MoneyPipe implements PipeTransform {
   constructor(private currency: CurrencyService) {}
-  transform(usdValue: number | null | undefined): string {
-    if (usdValue == null || Number.isNaN(usdValue)) return '';
-    return this.currency.format(usdValue);
+  transform(amount: number | null | undefined, currencyCode?: string): string {
+    if (amount == null || Number.isNaN(amount)) return '';
+    return this.currency.format(amount, currencyCode);
   }
 }

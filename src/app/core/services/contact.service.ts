@@ -42,12 +42,12 @@ export class ContactService {
       '',
       ...order.items.map(
         (i) =>
-          `• ${i.productName}${i.variantLabel ? ` (${i.variantLabel})` : ''} × ${i.qty} — ${this.currency.format(i.unitPrice * i.qty)}`,
+          `• ${i.productName}${i.variantLabel ? ` (${i.variantLabel})` : ''} × ${i.qty} — ${this.currency.format(i.unitPrice * i.qty, order.currency)}`,
       ),
       '',
-      `${this.i18n.t('checkout.subtotal')}: ${this.currency.format(order.subtotal)}`,
-      `${this.i18n.t('checkout.delivery')}: ${this.currency.format(order.deliveryFee)}`,
-      `${this.i18n.t('checkout.total')}: ${this.currency.format(order.total)}`,
+      `${this.i18n.t('checkout.subtotal')}: ${this.currency.format(order.subtotal, order.currency)}`,
+      `${this.i18n.t('checkout.delivery')}: ${this.currency.format(order.deliveryFee, order.currency)}`,
+      `${this.i18n.t('checkout.total')}: ${this.currency.format(order.total, order.currency)}`,
       `${this.i18n.t('confirmation.cashOnDelivery')}`,
       '',
       `${c.fullName} — ${c.phone}`,

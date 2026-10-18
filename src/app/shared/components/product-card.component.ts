@@ -1,3 +1,4 @@
+import { LocalizedPipe } from '../pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
@@ -7,13 +8,15 @@ import { I18nService } from '../../core/services/i18n.service';
 import { FavoritesStore } from '../../core/services/favorites.store';
 import { handleImgError } from '../utils/image-fallback.utils';
 import { discountPercent, effectivePrice, type Product } from '../../models/product.model';
-import { MoneyPipe } from '../pipes/money.pipe';
+import { ResolvedMoneyPipe } from '../pipes/resolved-money.pipe';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Button, Tag, Tooltip, MoneyPipe],
+  imports: [RouterLink, Button, Tag, Tooltip, ResolvedMoneyPipe,
+    LocalizedPipe,
+  ],
   templateUrl: './product-card.component.html',
   styleUrl: './product-card.component.scss',
 })

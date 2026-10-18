@@ -4,6 +4,7 @@ import type { DeliveryQuote, Hotel } from '../../models/hotel.model';
 import { environment } from '../../../environments/environment';
 import { ApiClientService } from '../api/api-client.service';
 import { toHotel, type BackendHotel, type BackendDeliveryQuote } from '../api/delivery.mapper';
+import { PriceResolverService } from './price-resolver.service';
 
 // Sample hotel directory for Marsa Alam and Hurghada (mock data only).
 // Fees are illustrative samples, NOT real delivery prices. The future
@@ -38,7 +39,7 @@ export class DeliveryService {
   /** Live-mode directory cache (populated by hotels(); mock mode uses HOTELS). */
   private liveHotels: Hotel[] | null = null;
 
-  constructor(private api: ApiClientService) {}
+  constructor(private api: ApiClientService, private prices: PriceResolverService) {}
 
   /** Active hotels in dashboard order. */
   hotels(): Observable<Hotel[]> {
@@ -85,7 +86,7 @@ export class DeliveryService {
     if (!environment.useMockApi) {
       return this.api
         .post<BackendDeliveryQuote>('delivery/quote', { hotelId, subtotal, currency })
-        .pipe(map((q) => ({ hotelId: q.hotelId, fee: q.fee, currency: q.currency, source: 'api' as const })));
+        .pipe(map((q) => ({ hotelId: q.hotelId, fee: q.fee, currency: q.currency, source: 'api' as const, exchangeRateDate: q.exchangeRateDate ?? undefined })));
     }
     const hotel = this.hotelById(hotelId);
     if (!hotel) {
@@ -93,11 +94,15 @@ export class DeliveryService {
       // charging a wrong fee.
       return throwError(() => new Error('unknown-hotel'));
     }
+    const fee = this.prices.resolve(hotel.deliveryFee, hotel.deliveryFeeCurrency ?? 'USD');
+    const threshold = this.prices.resolve(75, 'USD');
+    if (!fee || !threshold) return throwError(() => new Error('exchange-rates-unavailable'));
     return of({
       hotelId,
-      fee: hotel.deliveryFee,
-      currency: 'USD',
+      fee: subtotal >= threshold.amount ? 0 : fee.amount,
+      currency: fee.currency,
       source: 'sample' as const,
+      exchangeRateDate: this.prices.exchangeRateDate(),
     }).pipe(delay(250));
   }
 }

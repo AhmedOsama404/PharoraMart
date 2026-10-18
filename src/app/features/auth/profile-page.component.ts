@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
-import { Message } from 'primeng/message';
 import { I18nService } from '../../core/services/i18n.service';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -10,7 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-profile-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Button, Card, Message],
+  imports: [Button, Card],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.scss',
 })

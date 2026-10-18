@@ -15,7 +15,7 @@
             <div class="meta">{{ dateOf(o.createdAt) }} · {{ itemCount(o) }} items · {{ i18n.t('confirmation.cashOnDelivery') }}</div>
           </div>
           <p-tag [value]="statusLabel(o.status)" [severity]="statusSeverity(o.status)" />
-          <strong>{{ o.total | money }}</strong>
+          <strong>{{ o.total | money: o.currency }}</strong>
           <p-button [label]="i18n.t('orders.view')" size="small" [outlined]="true" [routerLink]="['/orders', o.id]" />
         </div>
       </p-card>

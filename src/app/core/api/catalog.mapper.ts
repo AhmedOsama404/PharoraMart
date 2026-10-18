@@ -1,4 +1,5 @@
 import type { CatalogQuery, Category, Product, ProductAttribute, ProductVariant } from '../../models/product.model';
+import { resolveMediaUrl } from '../../shared/utils/media-url.utils';
 
 /**
  * Single typed boundary between the ASP.NET Core DTOs (docs/API_CONTRACT.md)
@@ -39,6 +40,8 @@ export interface BackendProduct {
   tags: string[] | null;
   attributes: ProductAttribute[] | null;
   variants?: ProductVariant[] | null;
+  names?: BackendLocalizedText | null;
+  descriptions?: BackendLocalizedText | null;
   createdAt: string;
 }
 
@@ -82,7 +85,7 @@ export function toProduct(p: BackendProduct): Product {
     price: p.price,
     salePrice: p.salePrice ?? undefined,
     currency: p.currency ?? undefined,
-    images: arr(p.images),
+    images: arr(p.images).map(resolveMediaUrl),
     rating: p.rating,
     reviewsCount: p.reviewsCount,
     soldCount: p.soldCount,
@@ -93,6 +96,8 @@ export function toProduct(p: BackendProduct): Product {
     tags: arr(p.tags),
     attributes: arr(p.attributes),
     variants: p.variants ? p.variants : undefined,
+    names: p.names ?? undefined,
+    descriptions: p.descriptions ?? undefined,
     createdAt: p.createdAt,
   };
 }
@@ -104,7 +109,7 @@ export function toCategory(c: BackendCategory): Category {
     names: c.names,
     description: c.description ?? '',
     descriptions: c.descriptions ?? undefined,
-    image: c.image,
+    image: resolveMediaUrl(c.image),
     sortOrder: c.sortOrder,
     isActive: c.isActive,
     productCount: c.productCount ?? undefined,
@@ -121,7 +126,7 @@ export function suggestToProduct(s: BackendSuggest): Product {
     categoryId: '',
     price: 0,
     currency: undefined,
-    images: s.image ? [s.image] : [],
+    images: s.image ? [resolveMediaUrl(s.image)] : [],
     rating: 0,
     reviewsCount: 0,
     soldCount: 0,

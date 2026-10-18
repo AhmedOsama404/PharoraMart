@@ -34,6 +34,8 @@ export interface BackendOrder {
   userId?: string | null;
   discount?: number | null;
   couponCode?: string | null;
+  exchangeRateDate?: string | null;
+  exchangeRateSource?: string | null;
 }
 
 export interface BackendPagedOrder {
@@ -78,5 +80,7 @@ export function toOrder(o: BackendOrder): Order {
     userId: o.userId ?? undefined,
     discount: o.discount ?? 0,
     couponCode: o.couponCode ?? undefined,
+    exchangeRateDate: o.exchangeRateDate ?? undefined,
+    exchangeRateSource: o.exchangeRateSource ?? undefined,
   };
 }

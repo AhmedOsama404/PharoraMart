@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiClientService } from '../api/api-client.service';
+import { resolveMediaUrl } from '../../shared/utils/media-url.utils';
 import type { LocalizedText } from '../../models/product.model';
 import type {
   SiteCategoriesSection,
@@ -87,6 +88,14 @@ export class SiteContentService {
   safeUrl(url: string | null | undefined): string {
     const trimmed = (url ?? '').trim();
     return SiteContentService.isSafeUrl(trimmed) ? trimmed : '';
+  }
+
+  /**
+   * A stored logo/media path if safe, resolved against the API origin so an
+   * `<img>` binds a URL that actually exists (the API serves `/media/...` from
+   * its own origin, see LocalMediaStorage). Unsafe values degrade to ''. */
+  mediaUrl(url: string | null | undefined): string {
+    return resolveMediaUrl(this.safeUrl(url));
   }
 
   externalLink(url: string | null | undefined): boolean {

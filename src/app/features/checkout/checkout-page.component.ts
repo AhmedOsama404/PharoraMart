@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -26,6 +26,8 @@ import type { Hotel } from '../../models/hotel.model';
 import { environment } from '../../../environments/environment';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
+import { PriceResolverService } from '../../core/services/price-resolver.service';
+import { ExchangeRatesService } from '../../core/services/exchange-rates.service';
 
 @Component({
   selector: 'app-checkout-page',
@@ -41,6 +43,8 @@ import { MoneyPipe } from '../../shared/pipes/money.pipe';
 export class CheckoutPageComponent implements OnInit {
   protected i18n = inject(I18nService);
   private currency = inject(CurrencyService);
+  private prices = inject(PriceResolverService);
+  private rates = inject(ExchangeRatesService);
   private fb = inject(FormBuilder);
   protected cart = inject(CartStore);
   protected view = inject(CartViewService);
@@ -82,6 +86,7 @@ export class CheckoutPageComponent implements OnInit {
   protected couponApplied = signal('');
   protected couponDiscount = signal(0);
   protected couponError = signal('');
+  private quoteSequence = 0;
 
   // Memoized so p-select keeps a referentially stable options array.
   protected contactOptions = computed(() => [
@@ -97,11 +102,13 @@ export class CheckoutPageComponent implements OnInit {
     return this.hotels()
       .filter((h) => !city || h.city === city)
       .map((h) => ({
-        label: `${h.name}${h.area ? ` — ${h.area}` : ''} · ${this.currency.format(h.deliveryFee)}`,
+        label: `${h.name}${h.area ? ` — ${h.area}` : ''} · ${this.hotelFeeLabel(h)}`,
         value: h.id,
       }));
   });
   protected selectedCity = signal('');
+  private selectedHotel = signal('');
+  protected quoteRateDate = signal<string | null>(null);
 
   // City filter options derived from the hotel directory (new cities appear
   // automatically when the dashboard adds hotels there).
@@ -110,6 +117,13 @@ export class CheckoutPageComponent implements OnInit {
   constructor() {
     this.delivery.hotels().subscribe((list) => this.hotels.set(list));
     this.delivery.cities().subscribe((list) => this.cities.set(list));
+    effect(() => {
+      const code = this.currency.code();
+      const subtotal = this.subtotal();
+      const hotelId = this.selectedHotel();
+      if (hotelId) untracked(() => this.refreshQuote(hotelId));
+      void code; void subtotal;
+    });
     // Pre-fill from the demo session when available; guests fill it manually.
     const u = this.auth.user();
     if (u) {
@@ -127,7 +141,7 @@ export class CheckoutPageComponent implements OnInit {
   // only writer of the fee — see refreshQuote.
   protected onHotelChange(value: unknown): void {
     const id = typeof value === 'string' ? value : '';
-    this.refreshQuote(id);
+    this.selectedHotel.set(id);
   }
 
   protected onCityChange(value: unknown): void {
@@ -138,21 +152,33 @@ export class CheckoutPageComponent implements OnInit {
     const current = this.delivery.hotelById(this.form.get('hotelId')?.value ?? '');
     if (city && current && current.city !== city) {
       this.form.get('hotelId')?.setValue('');
+      this.selectedHotel.set('');
       this.quotedFee.set(null);
+      this.quoteRateDate.set(null);
     }
+  }
+
+  private hotelFeeLabel(hotel: Hotel): string {
+    const resolved = this.prices.resolve(hotel.deliveryFee, hotel.deliveryFeeCurrency ?? 'USD');
+    return resolved ? this.currency.format(resolved.amount, resolved.currency) : this.i18n.t('errors.generic');
   }
 
   // Asks the quote boundary for the hotel fee and publishes it. Unknown or
   // inactive hotels fail loudly and block submit — never charge a guessed fee.
   private refreshQuote(hotelId: string): void {
+    const seq = ++this.quoteSequence;
     this.quoteFailed.set(false);
     if (!hotelId) {
       this.quotedFee.set(null);
+      this.quoteRateDate.set(null);
       return;
     }
-    this.delivery.quoteFor(hotelId, this.subtotal(), 'USD').subscribe({
-      next: (q) => this.quotedFee.set(q.fee),
+    this.quotedFee.set(null);
+    this.quoteRateDate.set(null);
+    this.delivery.quoteFor(hotelId, this.subtotal(), this.currency.code()).subscribe({
+      next: (q) => { if (seq !== this.quoteSequence) return; this.quotedFee.set(q.fee); this.quoteRateDate.set(q.exchangeRateDate ?? null); },
       error: () => {
+        if (seq !== this.quoteSequence) return;
         this.quotedFee.set(null);
         this.quoteFailed.set(true);
         this.notify.error('notifications.loadFailed');
@@ -215,7 +241,6 @@ export class CheckoutPageComponent implements OnInit {
   // quote tomorrow). Free shipping above the configured threshold is the one
   // generic policy allowed here — no per-hotel if/else anywhere.
   protected deliveryFee = computed(() => {
-    if (this.subtotal() <= 0 || this.subtotal() >= environment.freeShippingThreshold) return 0;
     return this.quotedFee() ?? 0;
   });
   protected total = computed(() => this.subtotal() - this.couponDiscount() + this.deliveryFee());
@@ -285,9 +310,10 @@ export class CheckoutPageComponent implements OnInit {
       subtotal: this.subtotal(),
       deliveryFee: this.deliveryFee(),
       total: this.total(),
-      currency: 'USD',
+      currency: this.currency.code(),
       paymentMethod: 'cash_on_delivery',
       couponCode: this.couponApplied() || undefined,
+      exchangeRateDate: this.rates.snapshot()?.date ?? this.quoteRateDate() ?? undefined,
     };
     this.orders.create(req, key, this.auth.user()?.id).subscribe({
       next: (order) => {

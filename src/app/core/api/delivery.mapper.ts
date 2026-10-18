@@ -13,6 +13,7 @@ export interface BackendHotel {
   sortOrder: number;
   zoneId: string;
   deliveryFee: number;
+  deliveryFeeCurrency?: string;
   notes?: string | null;
   coordinates?: { lat: number; lng: number } | null;
 }
@@ -22,6 +23,7 @@ export interface BackendDeliveryQuote {
   fee: number;
   currency: string;
   source: string;
+  exchangeRateDate?: string | null;
 }
 
 export function toHotel(h: BackendHotel): Hotel {
@@ -35,6 +37,7 @@ export function toHotel(h: BackendHotel): Hotel {
     sortOrder: h.sortOrder,
     zoneId: h.zoneId,
     deliveryFee: h.deliveryFee,
+    deliveryFeeCurrency: h.deliveryFeeCurrency ?? 'USD',
     notes: h.notes ?? undefined,
     coordinates: h.coordinates ? { lat: h.coordinates.lat, lng: h.coordinates.lng } : undefined,
   };

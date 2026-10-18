@@ -2,6 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { CartStore } from './cart.store';
 import { ProductService } from './product.service';
 import { effectivePrice, type Product } from '../../models/product.model';
+import { PriceResolverService } from './price-resolver.service';
 
 export interface EnrichedCartLine {
   key: string;
@@ -43,10 +44,11 @@ export class CartViewService {
     const byId = new Map(this.catalog().map((p) => [p.id, p]));
     return this.cart.lines().map((l) => {
       const product = byId.get(l.productId) ?? null;
-      if (!product) {
+      const resolved = product ? this.prices.resolve(effectivePrice(product), product.currency ?? '') : null;
+      if (!product || !resolved) {
         return { ...l, product, unit: 0, lineTotal: 0, unavailable: true };
       }
-      const unit = effectivePrice(product);
+      const unit = resolved.amount;
       return { ...l, product, unit, lineTotal: unit * l.qty, unavailable: false };
     });
   });
@@ -59,6 +61,7 @@ export class CartViewService {
   constructor(
     private cart: CartStore,
     private products: ProductService,
+    private prices: PriceResolverService,
   ) {
     this.refresh();
   }
