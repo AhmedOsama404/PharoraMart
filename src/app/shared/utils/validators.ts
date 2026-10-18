@@ -1,11 +1,24 @@
 import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 export const emailValidator = Validators.email;
 export const requiredValidator = Validators.required;
+
+/**
+ * Validates a mobile number. Values coming from the country-code phone input
+ * are E.164 ("+201001234567") and are checked against the real numbering plan;
+ * legacy free-typed values (no country) fall back to a 7–15 digit length check.
+ * Empty is allowed here; requiredness is set per form.
+ */
 export const phoneValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const v = String(control.value ?? '').trim();
   if (!v) return null;
-  return /^[+]?[\d\s-]{7,15}$/.test(v) ? null : { phone: true };
+  if (v.startsWith('+')) {
+    const parsed = parsePhoneNumberFromString(v);
+    return parsed?.isValid() ? null : { phone: true };
+  }
+  const digits = v.replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15 ? null : { phone: true };
 };
 
 export function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {

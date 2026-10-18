@@ -13,12 +13,13 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService, safeReturnUrl } from '../../core/services/pending-action.service';
 import { ScrollService } from '../../core/services/scroll.service';
 import { firstErrorKey, passwordMatchValidator, phoneValidator } from '../../shared/utils/validators';
+import { PhoneInputComponent } from '../../shared/components/phone-input.component';
 
 @Component({
   selector: 'app-register-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, Button, Card, InputText, Message, Password],
+  imports: [RouterLink, ReactiveFormsModule, Button, Card, InputText, Message, Password, PhoneInputComponent],
   templateUrl: './register-page.component.html',
   styleUrl: './register-page.component.scss',
 })

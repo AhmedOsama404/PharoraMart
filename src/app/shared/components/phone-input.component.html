@@ -1,0 +1,55 @@
+<div class="phone" [attr.dir]="i18n.dir()">
+  <p-select
+    class="phone__country"
+    [options]="countryOptions()"
+    optionLabel="label"
+    optionValue="value"
+    [ngModel]="country()"
+    (ngModelChange)="onCountryChange($event)"
+    [ngModelOptions]="{ standalone: true }"
+    [filter]="true"
+    [filterPlaceholder]="i18n.t('phone.searchCountry')"
+    [ariaLabel]="i18n.t('phone.country')"
+    appendTo="body"
+    panelStyleClass="premium-select-panel phone-country-panel"
+    scrollHeight="18rem"
+    [fluid]="true"
+    [disabled]="disabled()">
+    <ng-template #selectedItem let-option>
+      <span class="opt opt--selected">
+        <img class="opt__flag" [src]="countryFlagPath(option.value)" alt="" aria-hidden="true" />
+        <span class="opt__dial" dir="ltr">+{{ option.dial }}</span>
+      </span>
+    </ng-template>
+    <ng-template #item let-option>
+      <span class="opt">
+        <img
+          class="opt__flag"
+          [src]="countryFlagPath(option.value)"
+          loading="lazy"
+          decoding="async"
+          alt=""
+          aria-hidden="true"
+        />
+        <span class="opt__name">{{ option.name }}</span>
+        <span class="opt__dial" dir="ltr">+{{ option.dial }}</span>
+      </span>
+    </ng-template>
+  </p-select>
+
+  <input
+    pInputText
+    class="phone__number"
+    type="tel"
+    inputmode="tel"
+    [id]="inputId()"
+    [value]="display()"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+    [placeholder]="i18n.t('phone.placeholder')"
+    [attr.aria-label]="i18n.t('phone.number')"
+    autocomplete="tel"
+    dir="ltr"
+    [fluid]="true"
+    [disabled]="disabled()" />
+</div>

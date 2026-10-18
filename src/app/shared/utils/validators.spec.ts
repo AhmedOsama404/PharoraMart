@@ -36,10 +36,15 @@ describe('shared validators', () => {
   });
 
   it('validates phone numbers (checkout)', () => {
-    const ok = new FormControl('+420777123456', [phoneValidator]);
-    expect(phoneValidator(ok)).toBeNull();
-    const bad = new FormControl('abc', [phoneValidator]);
-    expect(phoneValidator(bad)).toEqual({ phone: true });
+    // E.164 from the country-code input, and legacy free-typed values.
+    expect(phoneValidator(new FormControl('+420777123456'))).toBeNull();
+    expect(phoneValidator(new FormControl('+201001234567'))).toBeNull();
+    expect(phoneValidator(new FormControl('0100 123 4567'))).toBeNull();
+    // Empty is allowed here; requiredness is enforced per form.
+    expect(phoneValidator(new FormControl(''))).toBeNull();
+    // Too short or not a number.
+    expect(phoneValidator(new FormControl('+20'))).toEqual({ phone: true });
+    expect(phoneValidator(new FormControl('abc'))).toEqual({ phone: true });
   });
 
   it('returns null for untouched controls', () => {

@@ -142,6 +142,49 @@ input:focus-visible,
   padding: 0.35rem;
 }
 
+/* Country picker options need room for localized names while the trigger stays compact. */
+.phone-country-panel.p-select-overlay {
+  width: min(22rem, calc(100vw - 1rem)) !important;
+  min-width: min(22rem, calc(100vw - 1rem)) !important;
+  max-width: calc(100vw - 1rem);
+}
+/* PrimeNG opens at the trigger's left edge; shift the wider overlay back to the
+   trigger's inline end when the storefront is in Arabic. */
+[dir='rtl'] .phone-country-panel.p-select-overlay {
+  translate: calc(9.5rem - 100%) 0 !important;
+}
+
+.phone-country-panel .p-select-header {
+  padding: 0.55rem;
+  border: 0;
+  background: var(--surface-card);
+}
+
+.phone-country-panel .p-select-filter {
+  min-height: 2.75rem;
+  border-radius: 0.65rem;
+}
+[dir='rtl'] .phone-country-panel .p-select-header .p-iconfield-left .p-inputicon,
+[dir='rtl'] .phone-country-panel .p-select-header .p-iconfield-left svg,
+[dir='rtl'] .phone-country-panel .p-select-header .p-select-filter-icon {
+  right: 0.8rem !important;
+  left: auto !important;
+}
+
+[dir='rtl'] .phone-country-panel .p-select-filter {
+  padding-right: 2.35rem;
+  padding-left: 0.75rem;
+  text-align: right;
+}
+
+.phone-country-panel .p-select-list-container {
+  max-height: min(18rem, calc(100dvh - 8rem)) !important;
+}
+@media (max-width: 420px) {
+  [dir='rtl'] .phone-country-panel.p-select-overlay {
+    translate: calc(8.25rem - 100%) 0 !important;
+  }
+}
 /* Keep header dropdowns below the sticky navigation when the page is scrolled.
    PrimeNG may otherwise choose an upward placement when its full option list
    is taller than the remaining viewport. */

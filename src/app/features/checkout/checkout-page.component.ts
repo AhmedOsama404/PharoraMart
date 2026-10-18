@@ -21,6 +21,7 @@ import { ScrollService } from '../../core/services/scroll.service';
 import { ApiClientService } from '../../core/api/api-client.service';
 import { ApiErrorService } from '../../core/services/api-error.service';
 import { firstErrorKey, phoneValidator } from '../../shared/utils/validators';
+import { PhoneInputComponent } from '../../shared/components/phone-input.component';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import type { CreateOrderRequest } from '../../models/order.model';
 import type { Hotel } from '../../models/hotel.model';
@@ -38,7 +39,7 @@ import type { SiteCheckoutContent } from '../../models/site-content.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule, Button, Card, Divider, InputText, Message,
-    Select, Textarea, EmptyStateComponent, MoneyPipe,
+    Select, Textarea, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],
   templateUrl: './checkout-page.component.html',
   styleUrl: './checkout-page.component.scss',

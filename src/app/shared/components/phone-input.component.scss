@@ -1,0 +1,88 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.phone {
+  display: grid;
+  grid-template-columns: minmax(7.25rem, 9.5rem) minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.phone__country,
+.phone__number {
+  min-width: 0;
+  min-height: 3rem;
+}
+
+.phone__country {
+  border-radius: 0.8rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.phone__country:hover,
+.phone__number:hover {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--surface-border));
+}
+
+.phone__country:focus-within,
+.phone__number:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.phone__number {
+  border-radius: 0.8rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.opt {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.opt__flag {
+  display: block;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.15rem;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 78%, transparent);
+  border-radius: 0.22rem;
+  background: var(--surface-ground);
+  box-shadow: 0 1px 2px rgb(16 41 31 / 10%);
+}
+
+.opt__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opt__dial {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .phone {
+    grid-template-columns: minmax(6.75rem, 8.25rem) minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone__country,
+  .phone__number {
+    transition: none;
+  }
+}

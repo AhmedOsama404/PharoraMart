@@ -19,7 +19,7 @@
       </div>
       <div class="field">
         <label for="phone">{{ i18n.t('auth.phone') }}</label>
-        <input pInputText id="phone" type="tel" formControlName="phone" autocomplete="tel" [fluid]="true" />
+        <app-phone-input inputId="phone" formControlName="phone" />
         @if (err('phone'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
       </div>
       <div class="field">
