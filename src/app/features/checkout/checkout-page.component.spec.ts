@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
@@ -9,10 +9,12 @@ import { CheckoutPageComponent } from './checkout-page.component';
 import { ProductService } from '../../core/services/product.service';
 import { DeliveryService } from '../../core/services/delivery.service';
 import { CartStore } from '../../core/services/cart.store';
+import { CartViewService } from '../../core/services/cart-view.service';
 import { AuthService } from '../../core/services/auth.service';
 import { OrderService } from '../../core/services/order.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
+import { testRatesProvider } from '../../../testing/hermetic-api';
 
 describe('CheckoutPageComponent (hotel delivery)', () => {
   let fixture: ComponentFixture<CheckoutPageComponent>;
@@ -55,6 +57,7 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
+        testRatesProvider,
         { provide: ProductService, useValue: stubProducts },
         { provide: DeliveryService, useValue: stubDelivery },
         { provide: NotificationService, useValue: { success: () => undefined, error: () => undefined, info: () => undefined } },
@@ -123,5 +126,26 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
       expect(list[0].deliveryFee).toBe(6);
       done();
     });
+  });
+
+  it('refreshes live stock on an out-of-stock rejection (item 27)', () => {
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    fillContact();
+    x(comp).form.get('hotelId')?.setValue('h1');
+    x(comp).onHotelChange('h1');
+    fixture.detectChanges();
+
+    const view = TestBed.inject(CartViewService);
+    const refresh = spyOn(view, 'refresh').and.callThrough();
+    spyOn(orders, 'create').and.returnValue(
+      throwError(
+        () => new HttpErrorResponse({ status: 422, error: { code: 'order_out_of_stock' } }),
+      ),
+    );
+
+    x(comp).submit();
+
+    // The visitor must see current quantities/prices after a stock conflict.
+    expect(refresh).toHaveBeenCalled();
   });
 });

@@ -367,6 +367,17 @@ export class CheckoutPageComponent implements OnInit {
           this.couponDiscount.set(0);
           this.submittedKey = null;
         }
+        // Stock/price moved under the visitor (or the FX quote expired):
+        // re-pull the live catalog so the quantities and prices on screen are
+        // current, and end this attempt (fresh idempotency key on retry).
+        if (
+          resolved.code === 'order_out_of_stock' ||
+          resolved.code === 'order_product_unavailable' ||
+          resolved.code === 'order_rates_changed'
+        ) {
+          this.view.refresh();
+          this.submittedKey = null;
+        }
       },
     });
   }
