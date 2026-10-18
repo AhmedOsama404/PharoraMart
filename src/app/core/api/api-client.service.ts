@@ -1,6 +1,6 @@
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SILENT_ERROR_TOAST } from './problem-details';
 
@@ -28,6 +28,16 @@ function options(silent: boolean | undefined, headers?: Record<string, string>) 
 export class ApiClientService {
   private readonly baseUrl = environment.apiBaseUrl.replace(/\/$/, '');
 
+  /**
+   * In-flight GET coalescing. Two subscribers that ask for the exact same
+   * resource *while the first request is still open* share one HTTP round
+   * trip (the classic "checkout calls GET hotels twice in its constructor"
+   * duplicate). The entry is removed the moment the response arrives or
+   * errors, so every later call still hits the network — this is request
+   * coalescing, never a stale-data cache, and it never covers non-GET verbs.
+   */
+  private readonly inFlight = new Map<string, Observable<unknown>>();
+
   constructor(private http: HttpClient) {}
 
   get<T>(
@@ -45,10 +55,23 @@ export class ApiClientService {
         httpParams = httpParams.set(k, String(v));
       }
     }
-    return this.http.get<T>(`${this.baseUrl}/${path.replace(/^\//, '')}`, {
-      params: httpParams,
-      ...options(optionsIn?.silent),
-    });
+    const url = `${this.baseUrl}/${path.replace(/^\//, '')}`;
+    const query = httpParams.toString();
+    // `silent` is part of the key: a silent caller must not inherit (or leak)
+    // the shared error-toast context of a loud caller on the same URL.
+    const key = `${url}${query ? `?${query}` : ''}${optionsIn?.silent ? '|silent' : ''}`;
+
+    const pending = this.inFlight.get(key);
+    if (pending) return pending as Observable<T>;
+
+    const request$ = this.http
+      .get<T>(url, { params: httpParams, ...options(optionsIn?.silent) })
+      .pipe(
+        tap({ next: () => this.inFlight.delete(key), error: () => this.inFlight.delete(key) }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    this.inFlight.set(key, request$);
+    return request$;
   }
 
   post<T>(

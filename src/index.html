@@ -16,8 +16,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- Brand typefaces: Inter (Latin) + Noto Kufi Arabic (display) + Noto Sans
        Arabic (body). Loaded at runtime (not inlined) so the build never needs
-       network access; offline it degrades to system fonts per --font-stack. -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Kufi+Arabic:wght@600;700;800&family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
+       network access; offline it degrades to system fonts per --font-stack.
+       Loaded as a blocking stylesheet on purpose: an async swap was measured
+       (perf/lighthouse/storefront-summary.after-fonts.json) and broke the CLS
+       budget (0 -> 0.10-0.71) for no LCP gain, so it was reverted. display=swap
+       keeps the fallback visible until the webfont arrives. -->
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Kufi+Arabic:wght@600;700;800&family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
   <link rel="preconnect" href="https://images.unsplash.com">
   <link rel="preconnect" href="https://picsum.photos">
 </head>
