@@ -22,7 +22,7 @@ import { FavoritesStore } from '../core/services/favorites.store';
 import { AuthService } from '../core/services/auth.service';
 import { ProductService } from '../core/services/product.service';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
-import { StorefrontConfigService } from '../core/services/storefront-config.service';
+import { StorefrontDefaultsService } from '../core/services/storefront-defaults.service';
 import { SiteContentService } from '../core/services/site-content.service';
 
 @Component({
@@ -45,7 +45,7 @@ export class HeaderComponent {
   protected favorites = inject(FavoritesStore);
   protected auth = inject(AuthService);
   private products = inject(ProductService);
-  protected storefront = inject(StorefrontConfigService);
+  protected storefront = inject(StorefrontDefaultsService);
   protected siteContent = inject(SiteContentService);
   private router = inject(Router);
 

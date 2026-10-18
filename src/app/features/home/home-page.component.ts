@@ -14,7 +14,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService } from '../../core/services/pending-action.service';
 import { RecentlyViewedService } from '../../core/services/recently-viewed.service';
 import { ContentService, type ContentBlock } from '../../core/services/content.service';
-import { StorefrontConfigService } from '../../core/services/storefront-config.service';
+import { StorefrontDefaultsService } from '../../core/services/storefront-defaults.service';
 import { SiteContentService, type HomeSectionKey } from '../../core/services/site-content.service';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import type { Category, Product } from '../../models/product.model';
@@ -43,7 +43,7 @@ export class HomePageComponent implements OnInit {
   private notify = inject(NotificationService);
   private gate = inject(PendingActionService);
   private content = inject(ContentService);
-  protected storefront = inject(StorefrontConfigService);
+  protected storefront = inject(StorefrontDefaultsService);
   protected siteContent = inject(SiteContentService);
   private recent = inject(RecentlyViewedService);
   private router = inject(Router);
