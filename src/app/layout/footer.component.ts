@@ -1,12 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { I18nService } from '../core/services/i18n.service';
-import { CurrencyService, CURRENCIES } from '../core/services/currency.service';
-import { ContactService } from '../core/services/contact.service';
+import { CurrencyService } from '../core/services/currency.service';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
-import { StorefrontConfigService } from '../core/services/storefront-config.service';
+import { SiteContentService } from '../core/services/site-content.service';
 
 @Component({
   selector: 'app-footer',
@@ -19,19 +18,34 @@ import { StorefrontConfigService } from '../core/services/storefront-config.serv
 export class FooterComponent {
   protected i18n = inject(I18nService);
   protected currency = inject(CurrencyService);
-  protected contact = inject(ContactService);
-  protected storefront = inject(StorefrontConfigService);
-  protected year = new Date().getFullYear();
-  protected currencyModel = this.currency.code();
-  protected currencyOptions = CURRENCIES.map((c) => ({ label: c.code, value: c.code }));
+  protected siteContent = inject(SiteContentService);
+  protected currencyOptions = computed(() => this.currency.options().map((c) => ({ label: c.code, value: c.code })));
 
-  // Public business hours from environment config (dashboard-owned later).
-  protected businessHours(): string {
-    return this.contact.businessHours;
+  // Employee-editable footer copy (empty until loaded / when cleared).
+  protected footer = this.siteContent.footer;
+  protected brandName = computed(() => this.siteContent.text(this.siteContent.footer()?.brandName, this.i18n.currentLang()));
+  protected logoUrl = computed(() => this.siteContent.safeUrl(this.siteContent.footer()?.logoUrl));
+  protected tagline = computed(() => this.siteContent.text(this.siteContent.footer()?.tagline, this.i18n.currentLang()));
+  protected copyrightText = computed(() => this.siteContent.text(this.siteContent.footer()?.copyrightText, this.i18n.currentLang()));
+  protected noticeText = computed(() => this.siteContent.text(this.siteContent.footer()?.noticeText, this.i18n.currentLang()));
+
+  /**
+   * Contact lines are plain icon + text content. An email address opens a
+   * mailto: draft and the WhatsApp line opens a wa.me chat so the previous
+   * click-to-contact behaviour survives the move to edited content.
+   */
+  protected contactHref(icon: string, text: string): string | null {
+    const value = text.trim();
+    if (!value) return null;
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return `mailto:${value}`;
+    if (this.siteContent.icon(icon) === 'pi pi-whatsapp') {
+      const digits = value.replace(/\D/g, '');
+      return digits ? `https://wa.me/${digits}` : null;
+    }
+    return null;
   }
 
   protected onCurrency(code: string): void {
-    this.currencyModel = code;
     this.currency.setCurrency(code);
   }
 }
