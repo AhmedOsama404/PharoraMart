@@ -1,0 +1,6 @@
+# Cloudflare Pages project settings.
+# The dashboard Git integration is the primary deploy path; this file keeps
+# `npx wrangler pages deploy` (or `wrangler pages dev`) consistent with it.
+name = "pharora-storefront"
+pages_build_output_dir = "dist/pharoramart/browser"
+compatibility_date = "2026-10-19"
