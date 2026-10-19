@@ -180,7 +180,7 @@ export const fr: TranslationDict = {
     backToCart: 'Retour au panier',
     orderSuccess: 'Commande passée avec succès',
     duplicateBlocked: 'Votre commande est déjà en cours de traitement. Patientez.',
-    applyCoupon: 'Apply',
+    applyCoupon: 'Appliquer le code promo', couponApplied: 'Code promo appliqué',
     couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',

@@ -2,8 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Signal } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { CheckoutPageComponent } from './checkout-page.component';
 import { ProductService } from '../../core/services/product.service';
@@ -15,16 +16,24 @@ import { OrderService } from '../../core/services/order.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
 import { testRatesProvider } from '../../../testing/hermetic-api';
+import { ApiClientService } from '../../core/api/api-client.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { environment } from '../../../environments/environment';
 
 describe('CheckoutPageComponent (hotel delivery)', () => {
   let fixture: ComponentFixture<CheckoutPageComponent>;
   let comp: CheckoutPageComponent;
   let orders: OrderService;
   let cart: CartStore;
+  let originalUseMockApi: boolean;
 
   // Test-only view over protected members (the template is the real caller).
   type Exposed = {
     form: FormGroup;
+    couponControl: FormControl<string>;
+    couponApplied: Signal<string>;
+    subtotal: Signal<number>;
+    applyCoupon(): void;
     onHotelChange(v: unknown): void;
     submit(): void;
     quoteFailed: Signal<boolean>;
@@ -32,8 +41,8 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
   const x = (c: CheckoutPageComponent): Exposed => c as unknown as Exposed;
 
   const stubProducts = {
-    all: () => of(MOCK_PRODUCTS),
-    list: () => of({ items: MOCK_PRODUCTS, total: MOCK_PRODUCTS.length }),
+    all: () => of(MOCK_PRODUCTS.map((product) => ({ ...product, currency: product.currency ?? 'USD' }))),
+    list: () => of({ items: MOCK_PRODUCTS.map((product) => ({ ...product, currency: product.currency ?? 'USD' })), total: MOCK_PRODUCTS.length }),
   };
   const stubDelivery = {
     hotels: () =>
@@ -52,9 +61,11 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    originalUseMockApi = environment.useMockApi;
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         provideHttpClient(),
         provideHttpClientTesting(),
         testRatesProvider,
@@ -71,6 +82,8 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => { environment.useMockApi = originalUseMockApi; });
+
   function fillContact(): void {
     x(comp).form.patchValue({ fullName: 'Hotel Guest', phone: '+201001234567', city: 'Marsa Alam' });
   }
@@ -82,6 +95,39 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('6');
+  });
+
+  it('shows a stable promo-code label after applying the entered code', () => {
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    environment.useMockApi = false;
+    const api = TestBed.inject(ApiClientService);
+    spyOn(api, 'post').and.returnValue(of({ valid: true, code: 'TDBYY20HFY', discount: 3 }));
+    x(comp).couponControl.setValue('tdbyy20hfy');
+    x(comp).applyCoupon();
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.coupon-row button') as HTMLButtonElement;
+    expect(x(comp).couponApplied()).toBe('TDBYY20HFY');
+    expect(button.textContent?.trim()).toBe('Promo code applied');
+  });
+
+  it('revalidates the coupon with the recalculated subtotal after currency changes', () => {
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    environment.useMockApi = false;
+    fixture.detectChanges();
+    const api = TestBed.inject(ApiClientService);
+    const post = spyOn(api, 'post').and.returnValue(of({ valid: true, code: 'SAVE10', discount: 3 }));
+    x(comp).couponControl.setValue('save10');
+    x(comp).applyCoupon();
+    const firstSubtotal = post.calls.mostRecent().args[1] as { subtotal: number };
+
+    TestBed.inject(CurrencyService).setCurrency('EUR');
+    fixture.detectChanges();
+
+    expect(post).toHaveBeenCalledTimes(2);
+    const nextSubtotal = post.calls.mostRecent().args[1] as { subtotal: number };
+    expect(nextSubtotal.subtotal).toBe(x(comp).subtotal());
+    expect(nextSubtotal.subtotal).not.toBe(firstSubtotal.subtotal);
   });
 
   it('blocks submit without a hotel (form invalid, no order created)', () => {

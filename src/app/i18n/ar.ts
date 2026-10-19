@@ -180,7 +180,7 @@ export const ar: TranslationDict = {
     backToCart: 'عودة إلى السلة',
     orderSuccess: 'تم إرسال الطلب بنجاح',
     duplicateBlocked: 'طلبك قيد المعالجة بالفعل. يرجى الانتظار.',
-    applyCoupon: 'Apply',
+    applyCoupon: 'تطبيق رمز الخصم', couponApplied: 'تم تطبيق رمز الخصم',
     couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',

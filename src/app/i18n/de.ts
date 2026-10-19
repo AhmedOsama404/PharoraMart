@@ -180,7 +180,7 @@ export const de: TranslationDict = {
     backToCart: 'Zurück zum Warenkorb',
     orderSuccess: 'Bestellung erfolgreich aufgegeben',
     duplicateBlocked: 'Deine Bestellung wird bereits verarbeitet. Bitte warte.',
-    applyCoupon: 'Apply',
+    applyCoupon: 'Gutscheincode anwenden', couponApplied: 'Gutscheincode angewendet',
     couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',

@@ -89,7 +89,7 @@
       @if (siteContent.checkout()?.showCouponEntry !== false) {
         <div class="coupon-row">
           <input pInputText [formControl]="couponControl" [placeholder]="i18n.t('checkout.couponCode')" [attr.aria-label]="i18n.t('checkout.couponCode')" />
-          <p-button [label]="couponApplied() ? couponApplied() : i18n.t('checkout.applyCoupon')" severity="secondary"
+          <p-button [label]="couponApplied() ? i18n.t('checkout.couponApplied') : i18n.t('checkout.applyCoupon')" severity="secondary"
             [loading]="couponBusy()" [disabled]="couponBusy()" (onClick)="applyCoupon()" />
         </div>
       }
@@ -108,7 +108,7 @@
       <div class="t-row grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ total() | money }}</strong></div>
       @if (submitError()) { <p-message severity="error" [text]="submitError()" /> }
       <p-button type="submit" [label]="placing() ? i18n.t('checkout.placing') : copy('placeOrderLabel', 'checkout.placeOrder')"
-        icon="pi pi-check" [loading]="placing()" [disabled]="placing()" [fluid]="true" />
+        icon="pi pi-check" [loading]="placing()" [disabled]="placing() || couponBusy()" [fluid]="true" />
       <p-button [label]="copy('backToCartLabel', 'checkout.backToCart')" severity="secondary" [text]="true" [fluid]="true" (onClick)="go('/cart')" />
     </p-card>
   </form>

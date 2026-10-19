@@ -182,7 +182,7 @@ export const en: TranslationDict = {
     backToCart: 'Back to cart',
     orderSuccess: 'Order placed successfully',
     duplicateBlocked: 'Your order is already being processed. Please wait.',
-    applyCoupon: 'Apply',
+    applyCoupon: 'Apply promo code', couponApplied: 'Promo code applied',
     couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',

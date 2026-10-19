@@ -94,6 +94,8 @@ export class CheckoutPageComponent implements OnInit {
   protected couponError = signal('');
   protected couponBusy = signal(false);
   private quoteSequence = 0;
+  private couponValidationSequence = 0;
+  private lastCouponValidationKey = '';
 
   // Memoized so p-select keeps a referentially stable options array.
   protected contactOptions = computed(() => [
@@ -130,6 +132,22 @@ export class CheckoutPageComponent implements OnInit {
       const hotelId = this.selectedHotel();
       if (hotelId) untracked(() => this.refreshQuote(hotelId));
       void code; void subtotal;
+    });
+    // A validated discount uses the currency and subtotal from its validation.
+    // Revalidate when prices or the header currency change so the displayed
+    // total stays in step with the order request.
+    effect(() => {
+      const code = this.couponApplied();
+      if (!code) {
+        this.lastCouponValidationKey = '';
+        return;
+      }
+      const subtotal = this.subtotal();
+      const currencyCode = this.currency.code();
+      const key = this.couponValidationKey(code, subtotal, currencyCode);
+      if (key !== this.lastCouponValidationKey) {
+        untracked(() => this.validateCoupon(code, subtotal, currencyCode));
+      }
     });
     // Pre-fill from the demo session when available; guests fill it manually.
     const u = this.auth.user();
@@ -210,32 +228,63 @@ export class CheckoutPageComponent implements OnInit {
     this.couponError.set('');
     if (!code) return;
     if (environment.useMockApi) {
+      this.couponApplied.set('');
+      this.couponDiscount.set(0);
       this.couponError.set(this.i18n.t('checkout.couponInvalid'));
       return;
     }
+    this.validateCoupon(code, this.subtotal(), this.currency.code());
+  }
+
+  private couponValidationKey(code: string, subtotal: number, currencyCode: string): string {
+    return `${code.trim().toUpperCase()}|${currencyCode}|${subtotal.toFixed(2)}`;
+  }
+
+  private validateCoupon(code: string, subtotal: number, currencyCode: string): void {
+    const normalizedCode = code.trim().toUpperCase();
+    const key = this.couponValidationKey(normalizedCode, subtotal, currencyCode);
+    if (!normalizedCode || key === this.lastCouponValidationKey) return;
+
+    this.lastCouponValidationKey = key;
+    const sequence = ++this.couponValidationSequence;
     this.couponBusy.set(true);
+    this.couponDiscount.set(0);
+    this.couponError.set('');
+
     this.api
       .post<CouponValidationResponse>(
         'coupons/validate',
-        { code, subtotal: this.subtotal() },
+        { code: normalizedCode, subtotal },
         undefined,
         { silent: true },
       )
       .subscribe({
         next: (res) => {
+          if (sequence !== this.couponValidationSequence) return;
+          // Prices may change while the request is in flight. Discard its
+          // result and validate again against the current cart total.
+          if (currencyCode !== this.currency.code() || subtotal !== this.subtotal()) {
+            this.couponBusy.set(false);
+            this.validateCoupon(normalizedCode, this.subtotal(), this.currency.code());
+            return;
+          }
           this.couponBusy.set(false);
           if (res.valid) {
-            this.couponApplied.set(code.toUpperCase());
+            this.couponApplied.set(normalizedCode);
             this.couponDiscount.set(res.discount);
             return;
           }
-          // Ineligible (already used, expired, min order, …): show the exact,
-          // localized reason and keep no discount applied.
           this.couponApplied.set('');
           this.couponDiscount.set(0);
           this.couponError.set(this.apiError.messageForCode(res.code, res.args));
         },
         error: (err: unknown) => {
+          if (sequence !== this.couponValidationSequence) return;
+          if (currencyCode !== this.currency.code() || subtotal !== this.subtotal()) {
+            this.couponBusy.set(false);
+            this.validateCoupon(normalizedCode, this.subtotal(), this.currency.code());
+            return;
+          }
           this.couponBusy.set(false);
           this.couponApplied.set('');
           this.couponDiscount.set(0);
@@ -295,7 +344,7 @@ export class CheckoutPageComponent implements OnInit {
   protected submit(): void {
     // Belt and braces: the button disables while placing, but keyboard
     // submits and double taps must also be harmless.
-    if (this.placing()) {
+    if (this.placing() || this.couponBusy()) {
       this.notify.info('checkout.duplicateBlocked');
       return;
     }

@@ -180,7 +180,7 @@ export const cs: TranslationDict = {
     backToCart: 'Zpět do košíku',
     orderSuccess: 'Objednávka byla úspěšně odeslána',
     duplicateBlocked: 'Vaše objednávka se již zpracovává. Počkejte prosím.',
-    applyCoupon: 'Apply',
+    applyCoupon: 'Použít slevový kód', couponApplied: 'Slevový kód použit',
     couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',

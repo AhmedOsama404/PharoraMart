@@ -180,7 +180,7 @@ export const sk: TranslationDict = {
     backToCart: 'Späť do košíka',
     orderSuccess: 'Objednávka bola úspešne odoslaná',
     duplicateBlocked: 'Vaša objednávka sa už spracúva. Počkajte prosím.',
-    applyCoupon: 'Apply',
+    applyCoupon: 'Uplatniť zľavový kód', couponApplied: 'Zľavový kód použitý',
     couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',
