@@ -26,6 +26,8 @@ import { SectionHeaderComponent } from '../../shared/components/section-header.c
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { pickLocaleText } from '../../shared/utils/localized.utils';
+import type { ProductVariant } from '../../models/product.model';
 
 // Stable RouterLinkActive options shared by every breadcrumb item below.
 // PrimeNG Breadcrumb renders `[routerLinkActiveOptions]="item.options || { exact: false }"`:
@@ -201,11 +203,15 @@ export class ProductDetailPageComponent {
     this.reloadNonce.update((n) => n + 1);
   }
 
-  protected variantOptions(variantId: string, options: string[]): { label: string; value: string }[] {
-    const key = `${variantId}:${options.join('|')}`;
+  protected variantOptions(variant: ProductVariant): { label: string; value: string }[] {
+    const locale = this.i18n.currentLang();
+    const key = `${locale}:${variant.id}:${variant.options.join('|')}`;
     let cached = this.variantOptionCache.get(key);
     if (!cached) {
-      cached = options.map((o) => ({ label: o, value: o }));
+      cached = variant.options.map((value, index) => ({
+        label: pickLocaleText(variant.optionTranslations?.[index] ?? undefined, locale) || value,
+        value,
+      }));
       this.variantOptionCache.set(key, cached);
     }
     return cached;
@@ -214,9 +220,15 @@ export class ProductDetailPageComponent {
   private variantSelection(): { key?: string; label?: string } {
     const p = this.product();
     if (!p?.variants?.length) return {};
-    const parts = p.variants.map((v) => this.selectedVariants[v.id] ?? '').filter(Boolean);
-    if (!parts.length) return {};
-    return { key: parts.join('|'), label: parts.join(' / ') };
+    const selected = p.variants.map((variant) => {
+      const value = this.selectedVariants[variant.id];
+      if (!value) return null;
+      const index = variant.options.indexOf(value);
+      return pickLocaleText(variant.optionTranslations?.[index] ?? undefined, this.i18n.currentLang()) || value;
+    }).filter((value): value is string => value !== null);
+    const keys = p.variants.map((variant) => this.selectedVariants[variant.id]).filter((value): value is string => Boolean(value));
+    if (!keys.length) return {};
+    return { key: keys.join('|'), label: selected.join(' / ') };
   }
 
   protected addToCart(): void {

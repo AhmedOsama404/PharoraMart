@@ -115,6 +115,15 @@ body {
   right: 0.75rem;
 }
 
+/* Pagination direction follows reading order: first/last and prev/next point
+   the opposite way in RTL even though PrimeNG already orders the buttons. */
+[dir='rtl'] .p-paginator-first-icon,
+[dir='rtl'] .p-paginator-prev-icon,
+[dir='rtl'] .p-paginator-next-icon,
+[dir='rtl'] .p-paginator-last-icon {
+  transform: scaleX(-1);
+}
+
 /* Focus visibility (a11y) */
 a:focus-visible,
 button:focus-visible,

@@ -1,4 +1,3 @@
-import { DOCUMENT } from '@angular/common';
 import { LocalizedPipe } from '../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { LocalizedText } from '../models/product.model';
@@ -38,7 +37,6 @@ import { SiteContentService } from '../core/services/site-content.service';
   styleUrl: './header.component.scss',
 })
 export class HeaderComponent {
-  private document = inject(DOCUMENT);
   protected i18n = inject(I18nService);
   protected currency = inject(CurrencyService);
   protected cart = inject(CartStore);
@@ -140,47 +138,6 @@ export class HeaderComponent {
 
   protected onCurrency(code: string): void {
     this.currency.setCurrency(code);
-  }
-
-  /**
-   * PrimeNG positions body-appended menus in document coordinates. A sticky
-   * header moves independently of those coordinates, so anchor these two
-   * header menus to the trigger's live viewport position after they open.
-   */
-  protected alignHeaderSelect(kind: 'language' | 'currency'): void {
-    const view = this.document.defaultView;
-    const trigger = this.document.querySelector<HTMLElement>(
-      kind === 'language' ? '.lang-select' : '.cur-select',
-    );
-
-    if (!view || !trigger) return;
-
-    view.requestAnimationFrame(() => {
-      const panel = Array.from(
-        this.document.querySelectorAll<HTMLElement>('.header-select-panel.p-select-overlay'),
-      ).find((candidate) => view.getComputedStyle(candidate).display !== 'none');
-      if (!panel || !trigger.isConnected) return;
-
-      const triggerRect = trigger.getBoundingClientRect();
-      panel.style.position = 'fixed';
-      panel.style.right = 'auto';
-      panel.style.bottom = 'auto';
-      panel.style.minWidth = `${triggerRect.width}px`;
-
-      const panelHeight = panel.getBoundingClientRect().height;
-      const panelWidth = panel.getBoundingClientRect().width;
-      const top = Math.min(
-        triggerRect.bottom + 6,
-        Math.max(8, view.innerHeight - panelHeight - 8),
-      );
-      const left = Math.max(
-        8,
-        Math.min(triggerRect.left, view.innerWidth - panelWidth - 8),
-      );
-
-      panel.style.top = `${top}px`;
-      panel.style.left = `${left}px`;
-    });
   }
 
   /** Relative URLs route in-app; absolute http(s) URLs open externally. */

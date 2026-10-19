@@ -75,7 +75,7 @@
   </section>
 </div>
 
-<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" position="left">
+<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
   <ng-container *ngTemplateOutlet="filterBody" />
   <p-button [label]="i18n.t('catalog.clearAll')" [text]="true" (onClick)="clearAll()" />
 </p-drawer>

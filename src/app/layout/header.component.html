@@ -50,10 +50,10 @@
     </div>
     <div class="actions">
       <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value"
-        (onChange)="onLang($event.value)" (onShow)="alignHeaderSelect('language')" [attr.aria-label]="i18n.t('language.label')" class="lang-select"
+        (onChange)="onLang($event.value)" [attr.aria-label]="i18n.t('language.label')" class="lang-select"
         appendTo="body" panelStyleClass="premium-select-panel header-select-panel" scrollHeight="16rem" />
       <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value"
-        (ngModelChange)="onCurrency($event)" (onShow)="alignHeaderSelect('currency')" [attr.aria-label]="i18n.t('currency.label')" class="cur-select"
+        (ngModelChange)="onCurrency($event)" [attr.aria-label]="i18n.t('currency.label')" class="cur-select"
         appendTo="body" panelStyleClass="premium-select-panel header-select-panel" scrollHeight="16rem" />
       <a routerLink="/favorites" class="icon-btn" [attr.aria-label]="i18n.t('nav.favorites')">
         <i class="pi pi-heart"></i>
@@ -82,7 +82,7 @@
   </div>
 </header>
 
-<p-drawer [(visible)]="mobileOpen" [header]="i18n.t('nav.menu')" position="left">
+<p-drawer [(visible)]="mobileOpen" [header]="i18n.t('nav.menu')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
   <nav class="mobile-nav">
     @if (storefront.headerItemVisible('home')) { <a routerLink="/" (click)="mobileOpen.set(false)">{{ storefront.headerItemText('home', i18n.currentLang(), i18n.t('nav.home')) }}</a> }
     @if (storefront.headerItemVisible('catalog')) { <a routerLink="/products" (click)="mobileOpen.set(false)">{{ storefront.headerItemText('catalog', i18n.currentLang(), i18n.t('nav.catalog')) }}</a> }

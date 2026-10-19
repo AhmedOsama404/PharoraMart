@@ -12,8 +12,12 @@ import type { LocalizedText } from '../../models/product.model';
  *
  * Keeping the fallback in the call site means a catalog with no translations
  * renders English exactly as before — a missing translation never blanks out.
+ *
+ * The pipe is intentionally impure: it reads `I18nService.currentLang()`, and a
+ * pure pipe would cache its result until the input reference changes, so a
+ * language switch would not re-render localized catalog text without a reload.
  */
-@Pipe({ name: 'localized', standalone: true })
+@Pipe({ name: 'localized', standalone: true, pure: false })
 export class LocalizedPipe implements PipeTransform {
   constructor(private readonly i18n: I18nService) {}
 

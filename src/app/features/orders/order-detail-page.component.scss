@@ -6,3 +6,4 @@ h1 { font-size: clamp(1.7rem, 2.8vw, 2.2rem); line-height: 1.25; letter-spacing:
 .items img { width: 3.3rem; height: 3.1rem; object-fit: cover; border-radius: 0.7rem; background: #f3f0e8; }
 .grand { color: var(--primary); padding-top: 0.6rem; border-top: 1px solid var(--surface-border); }
 .addr { color: var(--text-secondary); margin: 1rem 0 0; padding-top: 0.85rem; border-top: 1px solid var(--surface-border); }
+:host-context([dir='rtl']) ::ng-deep .pi-arrow-left { transform: scaleX(-1); }

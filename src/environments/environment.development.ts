@@ -1,6 +1,7 @@
 export const environment = {
   production: false,
   // Local backend for live-API testing (set useMockApi:false to use it).
+  // run-api.ps1 starts the API on http://localhost:5086.
   apiBaseUrl: 'https://localhost:44389/api/v1',
   useMockApi: false,
   // Public business identity (all frontend-bundled values are public by

@@ -50,8 +50,8 @@
       @if (product()!.variants?.length) {
         @for (v of product()!.variants!; track v.id) {
           <div class="variant">
-            <label [attr.for]="'variant-' + v.id">{{ v.name }}</label>
-            <p-select [inputId]="'variant-' + v.id" [options]="variantOptions(v.id, v.options)" [(ngModel)]="selectedVariants[v.id]"
+            <label [attr.for]="'variant-' + v.id">{{ v.names | localized: v.name }}</label>
+            <p-select [inputId]="'variant-' + v.id" [options]="variantOptions(v)" [(ngModel)]="selectedVariants[v.id]"
               [placeholder]="i18n.t('product.selectVariant')" optionLabel="label" optionValue="value" [fluid]="true"
               appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
           </div>
@@ -83,7 +83,7 @@
             @if (product()!.attributes && product()!.attributes.length) {
               <dl class="attrs">
                 @for (a of product()!.attributes; track a.name) {
-                  <div><dt>{{ a.name }}</dt><dd>{{ a.value }}</dd></div>
+                  <div><dt>{{ a.names | localized: a.name }}</dt><dd>{{ a.values | localized: a.value }}</dd></div>
                 }
               </dl>
             } @else {
