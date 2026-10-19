@@ -67,11 +67,13 @@ Plain `string[]` of product ids (`FavoritesStore`); no model file needed.
 - `GateReason = addToCart|addToFavorites|checkout|account` (doubles as
   `gate.*` translation keys).
 
-## API envelopes (`api.model.ts`)
+## API envelopes
 
-- `ApiResponse<T> { data, message?, success }`, `PagedResult<T>`,
-  `ApiError { status, message, errors? }`. Backend convention: RFC 7807
-  `ProblemDetails` + camelCase + string enums (see API_CONTRACT.md).
+The live API returns plain payloads and paged results (`{ items, total, page,
+pageSize }`). It does not use a `{ data, success }` envelope; errors are RFC 7807
+`ProblemDetails` with `code` and `traceId` (see
+`D:\_prod_readiness\INTEGRATION-MAP.md` and the backend OpenAPI snapshot).
+The previous unused `api.model.ts` types were removed in Phase 2.
 
 ## Identity and relationship rules
 
