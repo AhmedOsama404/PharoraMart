@@ -21,7 +21,8 @@ backend's `docs/FREE_HOSTING.md` for the full three-repo runbook.
 1. Push this repository with `wrangler.toml`, `public/_redirects` and
    `public/_headers` present.
 2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**
-   → select `AhmedOsama404/NovaMart`.
+   → select `AhmedOsama404/PharoraMart` (the repository was renamed from
+   `NovaMart`; GitHub redirects the old URL).
 3. Settings:
    - Project name: `pharora-storefront`
    - Production branch: `production`
