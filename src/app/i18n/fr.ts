@@ -159,6 +159,8 @@ export const fr: TranslationDict = {
     continueAsGuest: 'Continuer en invité',
   },
   checkout: {
+    contactMethodHint: "Dites-nous comment vous souhaitez être informé de cette commande.",
+    contactUpdatesNote: "Nous n’utilisons votre choix que pour cette commande, et vous pouvez le modifier à tout moment depuis votre compte.",
     contactLanguage: "Langue de contact",
     contactLanguageHint: "Nous vous écrirons dans cette langue au sujet de votre commande.",
     whatsappOptIn: "Recevoir les informations de commande sur WhatsApp",

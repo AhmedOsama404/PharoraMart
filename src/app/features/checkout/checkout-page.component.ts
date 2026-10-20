@@ -86,10 +86,20 @@ export class CheckoutPageComponent implements OnInit {
     // and it is frozen on the order: the messages always use it.
     language: ['', [Validators.required]],
     // How the customer wants to be contacted about this order.
-    contactMethod: ['phone' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
+    contactMethod: ['whatsapp' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
     // The WhatsApp opt-in is OFF by default: the customer has to choose it.
     whatsappOptIn: [false],
   });
+
+  // No WhatsApp consent means no WhatsApp contact method: the two
+  // controls can never contradict each other.
+  private readonly whatsappConsentSync = this.form.controls.whatsappOptIn.valueChanges
+    .pipe(takeUntilDestroyed())
+    .subscribe((checked) => {
+      if (!checked && this.form.controls.contactMethod.value === 'whatsapp') {
+        this.form.controls.contactMethod.setValue('email');
+      }
+    });
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
   protected cities = signal<string[]>([]);
@@ -177,12 +187,22 @@ export class CheckoutPageComponent implements OnInit {
       });
   }
 
-  /** The ways the customer can be contacted. */
+  /** The ways the customer can be contacted: WhatsApp or email. */
   protected contactOptions = computed(() => [
-    { label: this.i18n.t('checkout.contactPhone'), value: 'phone' },
     { label: this.i18n.t('checkout.contactWhatsapp'), value: 'whatsapp' },
     { label: this.i18n.t('checkout.contactEmail'), value: 'email' },
   ]);
+
+  /**
+   * Choosing WhatsApp IS the opt-in, so the box is ticked with it. Turning
+   * the box off moves the contact method back to email, so the two can never
+   * contradict each other.
+   */
+  protected onContactMethodChange(value: string): void {
+    if (value === 'whatsapp') {
+      this.form.controls.whatsappOptIn.setValue(true);
+    }
+  }
 
   /** The languages the customer can choose, with the label of each. */
   protected languageOptions = computed(() =>

@@ -159,6 +159,8 @@ export const ar: TranslationDict = {
     continueAsGuest: 'المتابعة كضيف',
   },
   checkout: {
+    contactMethodHint: "أخبرنا كيف تريد أن نُبلغك بهذا الطلب.",
+    contactUpdatesNote: "نستخدم اختيارك لهذا الطلب فقط، ويمكنك تغييره في أي وقت من حسابك.",
     contactLanguage: "لغة التواصل",
     contactLanguageHint: "سنكتب إليك بهذه اللغة بخصوص طلبك.",
     whatsappOptIn: "أرسلوا لي تحديثات الطلب عبر واتساب",

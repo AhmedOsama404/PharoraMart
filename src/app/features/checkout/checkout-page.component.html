@@ -29,7 +29,9 @@
             <label for="contactMethod">{{ i18n.t('checkout.contactMethod') }}</label>
             <p-select id="contactMethod" formControlName="contactMethod" [options]="contactOptions()" optionLabel="label"
               optionValue="value" [placeholder]="i18n.t('checkout.contactMethod')" [fluid]="true"
-              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
+              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem"
+              (onChange)="onContactMethodChange($event.value)" />
+            <small class="hint">{{ i18n.t('checkout.contactMethodHint') }}</small>
             @if (err('contactMethod'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">
@@ -46,6 +48,7 @@
             <p-checkbox formControlName="whatsappOptIn" [binary]="true" inputId="whatsappOptIn" name="whatsappOptIn" />
             <label for="whatsappOptIn">{{ i18n.t('checkout.whatsappOptIn') }}</label>
             <small class="hint">{{ i18n.t('checkout.whatsappOptInHint') }}</small>
+            <p class="hint">{{ i18n.t('checkout.contactUpdatesNote') }}</p>
           </div>
           <div class="field">
             <p class="hint">{{ i18n.t('checkout.emailUpdatesHint') }}</p>

@@ -159,6 +159,8 @@ export const sk: TranslationDict = {
     continueAsGuest: 'Pokračovať ako hosť',
   },
   checkout: {
+    contactMethodHint: "Povedzte nám, ako chcete byť informovaní o tejto objednávke.",
+    contactUpdatesNote: "Vašu voľbu použijeme len pre túto objednávku a kedykoľvek ju môžete zmeniť v svojom účte.",
     contactLanguage: "Jazyk komunikácie",
     contactLanguageHint: "Píšeme vám v tomto jazyku o vašej objednávke.",
     whatsappOptIn: "Posielať mi aktualizácie objednávky cez WhatsApp",
