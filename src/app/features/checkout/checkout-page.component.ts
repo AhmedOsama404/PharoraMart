@@ -85,6 +85,8 @@ export class CheckoutPageComponent implements OnInit {
     // The language the customer wants to be contacted in. It is required,
     // and it is frozen on the order: the messages always use it.
     language: ['', [Validators.required]],
+    // How the customer wants to be contacted about this order.
+    contactMethod: ['phone' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
     // The WhatsApp opt-in is OFF by default: the customer has to choose it.
     whatsappOptIn: [false],
   });
@@ -174,6 +176,13 @@ export class CheckoutPageComponent implements OnInit {
         if (hotelId) this.refreshQuote(hotelId);
       });
   }
+
+  /** The ways the customer can be contacted. */
+  protected contactOptions = computed(() => [
+    { label: this.i18n.t('checkout.contactPhone'), value: 'phone' },
+    { label: this.i18n.t('checkout.contactWhatsapp'), value: 'whatsapp' },
+    { label: this.i18n.t('checkout.contactEmail'), value: 'email' },
+  ]);
 
   /** The languages the customer can choose, with the label of each. */
   protected languageOptions = computed(() =>
@@ -449,7 +458,7 @@ export class CheckoutPageComponent implements OnInit {
         hotelName: hotel?.name ?? v.hotelId,
         room: v.room || undefined,
         notes: v.notes || undefined,
-        contactMethod: environment.contactMode,
+        contactMethod: v.contactMethod,
       },
       language: v.language,
       whatsappOptIn: v.whatsappOptIn === true,

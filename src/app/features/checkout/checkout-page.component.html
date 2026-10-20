@@ -26,6 +26,13 @@
             @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">
+            <label for="contactMethod">{{ i18n.t('checkout.contactMethod') }}</label>
+            <p-select id="contactMethod" formControlName="contactMethod" [options]="contactOptions()" optionLabel="label"
+              optionValue="value" [placeholder]="i18n.t('checkout.contactMethod')" [fluid]="true"
+              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
+            @if (err('contactMethod'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+          </div>
+          <div class="field">
             <label for="language">{{ i18n.t('checkout.contactLanguage') }}</label>
             <p-select id="language" formControlName="language" [options]="languageOptions()" optionLabel="label"
               optionValue="value" [placeholder]="i18n.t('checkout.contactLanguage')" [fluid]="true"
