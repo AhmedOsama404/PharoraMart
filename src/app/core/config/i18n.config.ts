@@ -1,11 +1,4 @@
 import { en, type TranslationDict } from '../../i18n/en';
-import { ar } from '../../i18n/ar';
-import { cs } from '../../i18n/cs';
-import { de } from '../../i18n/de';
-import { fr } from '../../i18n/fr';
-import { it } from '../../i18n/it';
-import { pl } from '../../i18n/pl';
-import { sk } from '../../i18n/sk';
 
 // Eight supported storefront languages. Arabic is the only RTL language:
 // every other language renders LTR (see LANG_DIRS).
@@ -53,17 +46,41 @@ function mergeDict(base: TranslationDict, extra: TranslationDict): TranslationDi
   return out;
 }
 
-const BASE_DICTS: Record<SupportedLang, TranslationDict> = { en, ar, cs, it, pl, fr, sk, de };
+const DICTS: Partial<Record<SupportedLang, TranslationDict>> = {
+  en: mergeDict(en, RESILIENCE_DICTS.en),
+};
 
-const DICTS: Record<SupportedLang, TranslationDict> = Object.fromEntries(
-  (Object.keys(BASE_DICTS) as SupportedLang[]).map((lang) => [
-    lang,
-    mergeDict(BASE_DICTS[lang], RESILIENCE_DICTS[lang] ?? RESILIENCE_DICTS.en),
-  ]),
-) as Record<SupportedLang, TranslationDict>;
+const DICT_LOADERS: Record<Exclude<SupportedLang, 'en'>, () => Promise<TranslationDict>> = {
+  ar: async () => mergeDict((await import('../../i18n/ar')).ar, RESILIENCE_DICTS.ar),
+  cs: async () => mergeDict((await import('../../i18n/cs')).cs, RESILIENCE_DICTS.cs),
+  de: async () => mergeDict((await import('../../i18n/de')).de, RESILIENCE_DICTS.de),
+  fr: async () => mergeDict((await import('../../i18n/fr')).fr, RESILIENCE_DICTS.fr),
+  it: async () => mergeDict((await import('../../i18n/it')).it, RESILIENCE_DICTS.it),
+  pl: async () => mergeDict((await import('../../i18n/pl')).pl, RESILIENCE_DICTS.pl),
+  sk: async () => mergeDict((await import('../../i18n/sk')).sk, RESILIENCE_DICTS.sk),
+};
+
+const pendingLoads = new Map<SupportedLang, Promise<TranslationDict>>();
+
+export function loadDict(lang: SupportedLang): Promise<TranslationDict> {
+  const cached = DICTS[lang];
+  if (cached) return Promise.resolve(cached);
+  const pending = pendingLoads.get(lang);
+  if (pending) return pending;
+  const load = DICT_LOADERS[lang as Exclude<SupportedLang, 'en'>]().then((dict) => {
+    DICTS[lang] = dict;
+    pendingLoads.delete(lang);
+    return dict;
+  }, (error: unknown) => {
+    pendingLoads.delete(lang);
+    throw error;
+  });
+  pendingLoads.set(lang, load);
+  return load;
+}
 
 export function getDict(lang: SupportedLang): TranslationDict {
-  return DICTS[lang] ?? DICTS.en;
+  return DICTS[lang] ?? DICTS.en!;
 }
 
 export function lookupKey(dict: unknown, key: string): string {

@@ -6,15 +6,16 @@ import { CartStore } from '../../core/services/cart.store';
 import { FavoritesStore } from '../../core/services/favorites.store';
 import { NotificationService } from '../../core/services/notification.service';
 import type { Product } from '../../models/product.model';
-import { catchError, of } from 'rxjs';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 
 @Component({
   selector: 'app-favorites-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProductCardComponent, EmptyStateComponent],
+  imports: [ProductCardComponent, EmptyStateComponent, DataBoundaryComponent],
   templateUrl: './favorites-page.component.html',
   styleUrl: './favorites-page.component.scss',
 })
@@ -25,16 +26,49 @@ export class FavoritesPageComponent {
   protected favorites = inject(FavoritesStore);
   private notify = inject(NotificationService);
   private router = inject(Router);
+  private connectivity = inject(ConnectivityService);
 
   private catalog = signal<Product[]>([]);
+  protected state = signal<'loading' | 'ok' | 'error'>('loading');
+  protected error = signal<unknown>(null);
+
+  protected boundaryState = computed<BoundaryState>(() => {
+    if (this.state() === 'loading') return 'loading';
+    if (this.state() === 'error') {
+      return this.connectivity.status() === 'offline' ? 'offline' : 'error';
+    }
+    return this.items().length ? 'success' : 'empty';
+  });
 
   constructor() {
-    effect((onCleanup) => {
+    effect(() => {
       const ids = this.favorites.ids();
-      const subscription = this.products.getByIdsMany(ids)
-        .pipe(catchError(() => of([])))
-        .subscribe((items) => this.catalog.set(items));
-      onCleanup(() => subscription.unsubscribe());
+      this.load(ids);
+    });
+  }
+
+  protected retry(): void {
+    this.load(this.favorites.ids());
+  }
+
+  private load(ids: readonly string[]): void {
+    this.state.set('loading');
+    this.error.set(null);
+    if (!ids.length) {
+      this.catalog.set([]);
+      this.state.set('ok');
+      return;
+    }
+    this.products.getByIdsMany(ids).subscribe({
+      next: (items) => {
+        this.catalog.set(items);
+        this.state.set('ok');
+      },
+      error: (err: unknown) => {
+        this.catalog.set([]);
+        this.error.set(err);
+        this.state.set('error');
+      },
     });
   }
 

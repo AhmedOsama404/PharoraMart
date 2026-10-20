@@ -29,6 +29,7 @@ export class ConnectivityService implements OnDestroy {
   private probeAttempts = 0;
   private probeTimer: ReturnType<typeof setTimeout> | null = null;
   private listeners: Array<() => void> = [];
+  private readonly retryHooks = new Set<() => void>();
   private destroyed = false;
 
   constructor(
@@ -62,6 +63,20 @@ export class ConnectivityService implements OnDestroy {
       return;
     }
     this.scheduleProbe();
+  }
+
+  /** Registers a callback fired when a human explicitly asks to retry. */
+  onRetry(hook: () => void): void {
+    this.retryHooks.add(hook);
+  }
+
+  /**
+   * Explicit user Retry: clear client-side breaker state so the next request
+   * is a real probe, and re-check backend health in parallel.
+   */
+  retryNow(): void {
+    for (const hook of this.retryHooks) hook();
+    this.probe();
   }
 
   /** Force a probe now (tab focus, window online, Retry). */

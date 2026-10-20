@@ -65,6 +65,13 @@ class CircuitBreaker {
       this.halfOpenProbe = false;
     }
   }
+
+  /** A human pressed Retry: let the next request probe immediately. */
+  reset(): void {
+    this.failures = 0;
+    this.openUntil = 0;
+    this.halfOpenProbe = false;
+  }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -73,6 +80,12 @@ export class ApiClientService {
   private readonly connectivity = inject(ConnectivityService);
   private readonly breaker = new CircuitBreaker();
   private readonly baseUrl = environment.apiBaseUrl.replace(/\/$/, '');
+
+  constructor() {
+    // A human Retry must be able to probe even while the breaker is cooling
+    // down; otherwise the first click after an outage is a silent no-op.
+    this.connectivity.onRetry(() => this.breaker.reset());
+  }
 
   /**
    * In-flight GET coalescing. Two subscribers that ask for the exact same

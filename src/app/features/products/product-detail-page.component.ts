@@ -1,6 +1,6 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -65,7 +65,7 @@ const LOADING_STATE: ProductDetailState = { status: 'loading', product: null, re
   templateUrl: './product-detail-page.component.html',
   styleUrl: './product-detail-page.component.scss',
 })
-export class ProductDetailPageComponent {
+export class ProductDetailPageComponent implements OnDestroy {
   protected i18n = inject(I18nService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -99,6 +99,10 @@ export class ProductDetailPageComponent {
     ),
     { initialValue: LOADING_STATE },
   );
+
+  /** True after 3 s of loading so a hung backend gets a visible hint + Retry. */
+  protected slow = signal(false);
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected product = computed(() => this.page().product);
 
@@ -167,7 +171,33 @@ export class ProductDetailPageComponent {
           this.recent.push(product.id);
         });
       }
+      this.trackSlowHint(state.status === 'loading');
     });
+  }
+
+  ngOnDestroy(): void {
+    this.clearSlowTimer();
+  }
+
+  private trackSlowHint(loading: boolean): void {
+    if (!loading) {
+      this.clearSlowTimer();
+      this.slow.set(false);
+      return;
+    }
+    if (this.slowTimer) return;
+    this.slow.set(false);
+    this.slowTimer = setTimeout(() => {
+      this.slowTimer = null;
+      this.slow.set(true);
+    }, 3000);
+  }
+
+  private clearSlowTimer(): void {
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
   }
 
   // Loads one terminal state for a product id. Never rejects and never hangs:

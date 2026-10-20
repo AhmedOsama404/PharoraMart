@@ -12,7 +12,7 @@ import { InputText } from 'primeng/inputtext';
 import { Menu } from 'primeng/menu';
 import { Select } from 'primeng/select';
 import type { MenuItem } from 'primeng/api';
-import { debounceTime, distinctUntilChanged, Subject, switchMap, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Subject, switchMap, of, catchError } from 'rxjs';
 import { I18nService } from '../core/services/i18n.service';
 import { SUPPORTED_LANGS, type SupportedLang } from '../core/config/i18n.config';
 import { CurrencyService } from '../core/services/currency.service';
@@ -94,7 +94,11 @@ export class HeaderComponent {
       .pipe(
         debounceTime(250),
         distinctUntilChanged(),
-        switchMap((term) => (term.trim() ? this.products.suggestions(term) : of([]))),
+        switchMap((term) =>
+          term.trim()
+            ? this.products.suggestions(term).pipe(catchError(() => of([])))
+            : of([]),
+        ),
       )
       .subscribe((items) => {
         this.suggestions.set(items);
@@ -132,9 +136,9 @@ export class HeaderComponent {
     this.logoFailed.set(true);
   }
 
-  protected onLang(lang: SupportedLang): void {
-    this.langModel = lang;
-    this.i18n.setLang(lang);
+  protected async onLang(lang: SupportedLang): Promise<void> {
+    await this.i18n.setLang(lang);
+    this.langModel = this.i18n.currentLang();
   }
 
   protected onCurrency(code: string): void {

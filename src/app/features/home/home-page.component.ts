@@ -1,7 +1,8 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, type WritableSignal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Skeleton } from 'primeng/skeleton';
@@ -16,18 +17,24 @@ import { RecentlyViewedService } from '../../core/services/recently-viewed.servi
 import { ContentService, type ContentBlock } from '../../core/services/content.service';
 import { StorefrontDefaultsService } from '../../core/services/storefront-defaults.service';
 import { SiteContentService, type HomeSectionKey } from '../../core/services/site-content.service';
-import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
+import {
+  DataBoundaryComponent,
+  type BoundaryState,
+} from '../../shared/resilience/data-boundary.component';
 import type { Category, Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
-import { catchError, of, retry, throwError, timer } from 'rxjs';
+import { catchError, of, retry, throwError, timer, type Observable } from 'rxjs';
+
+type HomeDataSection = 'categories' | 'featured' | 'newArrivals' | 'popular' | 'content';
 
 @Component({
   selector: 'app-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, RouterLink, Button, Skeleton, Tag, ProductCardComponent, SectionHeaderComponent, ResolvedMoneyPipe, LocalizedPipe,
+  imports: [SafeImageDirective, RouterLink, Button, Skeleton, Tag, ProductCardComponent, SectionHeaderComponent, ResolvedMoneyPipe, LocalizedPipe, DataBoundaryComponent,
   ],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss',
@@ -112,7 +119,25 @@ export class HomePageComponent implements OnInit {
   protected heroProductsLoading = signal(true);
   protected heroLoading = computed(() => !this.siteContent.ready() || this.heroProductsLoading());
 
-  protected loading = signal(true);
+  // One terminal state per home region. A failing feed can never leave another
+  // region (or the whole page) stuck on a skeleton.
+  protected state: Record<HomeDataSection, WritableSignal<BoundaryState>> = {
+    categories: signal<BoundaryState>('loading'),
+    featured: signal<BoundaryState>('loading'),
+    newArrivals: signal<BoundaryState>('loading'),
+    popular: signal<BoundaryState>('loading'),
+    content: signal<BoundaryState>('loading'),
+  };
+  protected error: Record<HomeDataSection, WritableSignal<unknown>> = {
+    categories: signal<unknown>(null),
+    featured: signal<unknown>(null),
+    newArrivals: signal<unknown>(null),
+    popular: signal<unknown>(null),
+    content: signal<unknown>(null),
+  };
+  private connectivity = inject(ConnectivityService);
+  private destroyRef = inject(DestroyRef);
+
   protected categories = signal<Category[]>([]);
   protected featured = signal<Product[]>([]);
   protected newArrivals = signal<Product[]>([]);
@@ -126,59 +151,185 @@ export class HomePageComponent implements OnInit {
   protected heroSlotProducts = signal<(Product | null)[]>([null, null, null, null]);
 
   ngOnInit(): void {
-    // Independent storefront sections load in parallel; each renders as it arrives.
-    const categorySettings = this.storefront.sectionSettings('categories');
-    this.products.categories().subscribe((items) => {
-      const selected = categorySettings?.categoryIds;
-      this.categories.set(selected ? selected.map((id) => items.find((item) => item.id === id)).filter((item): item is Category => !!item)
-        : items.slice(0, categorySettings?.maxItems ?? items.length));
-    });
-    this.products.featured().subscribe((items) => {
-      const featuredSettings = this.storefront.sectionSettings('featured');
-      if (featuredSettings?.selectionMode === 'manual' && featuredSettings.productIds) {
-        this.resolveProducts(featuredSettings.productIds.slice(0, featuredSettings.maxItems ?? 8), (selected) => this.featured.set(selected.slice(0, featuredSettings.maxItems ?? 8)));
-      } else {
-        this.featured.set(items.slice(0, featuredSettings?.maxItems ?? 8));
-      }
+    // Independent storefront sections load in parallel; each renders and fails
+    // on its own. The old single `loading` flag left every section blank when
+    // one feed failed.
+    this.loadCategories();
+    this.loadFeatured();
+    this.loadNewArrivals();
+    this.loadPopular();
+    this.loadContent();
+    this.loadRecentlyViewed();
 
-      if (!this.siteContent.ready()) return;
-      const promoSettings = this.storefront.sectionSettings('promo');
-      if (promoSettings?.productId) {
-        this.products.getById(promoSettings.productId).pipe(catchError(() => of(null))).subscribe((product) => this.saleProduct.set(product));
-      } else {
-        this.saleProduct.set(items.find((p) => p.salePrice != null) ?? items[0] ?? null);
-      }
-      this.loading.set(false);
-    });
-    this.products.newArrivals().subscribe((items) => this.applyProductSection('newArrivals', items, (selected) => this.newArrivals.set(selected)));
-    this.products.popular().subscribe((items) => this.applyProductSection('popular', items, (selected) => this.popular.set(selected)));
-    this.content.published().subscribe((blocks) => this.contentBlocks.set(blocks));
-    // Recently viewed ids are local-only; resolve them against the catalog.
-    const ids = this.recent.list();
-    if (ids.length) {
-      this.products.getByIdsMany(ids).subscribe((items) => {
-        const byId = new Map(items.map((p) => [p.id, p]));
-        this.recentlyViewed.set(ids.map((id) => byId.get(id)).filter((p): p is Product => !!p).slice(0, 4));
+    // Reconnect/focus recovery: refetch only the regions that failed.
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.failed('categories')) this.loadCategories();
+        if (this.failed('featured')) this.loadFeatured();
+        if (this.failed('newArrivals')) this.loadNewArrivals();
+        if (this.failed('popular')) this.loadPopular();
+        if (this.failed('content')) this.loadContent();
+        if (this.failedRecentlyViewed) this.loadRecentlyViewed();
       });
-    }
   }
 
-  private applyProductSection(type: 'newArrivals' | 'popular', automatic: Product[], set: (items: Product[]) => void): void {
-    const settings = this.storefront.sectionSettings(type);
-    if (settings?.selectionMode === 'manual' && settings.productIds) {
-      this.resolveProducts(settings.productIds.slice(0, settings.maxItems ?? 8), (items) => set(items.slice(0, settings.maxItems ?? 8)));
+  protected loadCategories(): void {
+    this.setSection('categories', 'loading');
+    this.products.categories().subscribe({
+      next: (items) => {
+        const settings = this.storefront.sectionSettings('categories');
+        const selected = settings?.categoryIds;
+        const list = selected
+          ? selected
+              .map((id) => items.find((item) => item.id === id))
+              .filter((item): item is Category => !!item)
+          : items.slice(0, settings?.maxItems ?? items.length);
+        this.categories.set(list);
+        this.setSection('categories', list.length ? 'success' : 'empty');
+      },
+      error: (err: unknown) => this.setSection('categories', this.failureState(), err),
+    });
+  }
+
+  protected loadFeatured(): void {
+    this.setSection('featured', 'loading');
+    this.products.featured().subscribe({
+      next: (items) => {
+        const settings = this.storefront.sectionSettings('featured');
+        if (settings?.selectionMode === 'manual' && settings.productIds) {
+          this.resolveProducts(
+            settings.productIds.slice(0, settings.maxItems ?? 8),
+            (selected) => {
+              const list = selected.slice(0, settings.maxItems ?? 8);
+              this.featured.set(list);
+              this.setSection('featured', list.length ? 'success' : 'empty');
+            },
+            (err) => this.setSection('featured', this.failureState(), err),
+          );
+        } else {
+          const list = items.slice(0, settings?.maxItems ?? 8);
+          this.featured.set(list);
+          this.setSection('featured', list.length ? 'success' : 'empty');
+        }
+        this.loadPromo(items);
+      },
+      error: (err: unknown) => this.setSection('featured', this.failureState(), err),
+    });
+  }
+
+  protected loadNewArrivals(): void {
+    this.loadGrid('newArrivals', this.products.newArrivals(), (items) => this.newArrivals.set(items));
+  }
+
+  protected loadPopular(): void {
+    this.loadGrid('popular', this.products.popular(), (items) => this.popular.set(items));
+  }
+
+  protected loadContent(): void {
+    this.setSection('content', 'loading');
+    this.content.published().subscribe({
+      next: (blocks) => {
+        this.contentBlocks.set(blocks);
+        this.setSection('content', 'success');
+      },
+      error: (err: unknown) => this.setSection('content', 'error', err),
+    });
+  }
+
+  private loadRecentlyViewed(): void {
+    this.failedRecentlyViewed = false;
+    const ids = this.recent.list();
+    if (!ids.length) {
+      this.recentlyViewed.set([]);
       return;
     }
-    set(automatic.slice(0, settings?.maxItems ?? 8));
+    this.products.getByIdsMany(ids).subscribe({
+      next: (items) => {
+        const byId = new Map(items.map((p) => [p.id, p]));
+        this.recentlyViewed.set(
+          ids.map((id) => byId.get(id)).filter((p): p is Product => !!p).slice(0, 4),
+        );
+      },
+      // Recently viewed is personal, optional content: hide it rather than
+      // failing the page, and retry after the next reconnect.
+      error: () => {
+        this.recentlyViewed.set([]);
+        this.failedRecentlyViewed = true;
+      },
+    });
   }
 
-  private resolveProducts(ids: readonly string[], next: (products: Product[]) => void): void {
+  private failedRecentlyViewed = false;
+
+  private loadGrid(
+    key: 'newArrivals' | 'popular',
+    request$: Observable<Product[]>,
+    set: (items: Product[]) => void,
+  ): void {
+    this.setSection(key, 'loading');
+    request$.subscribe({
+      next: (items) => {
+        const settings = this.storefront.sectionSettings(key);
+        if (settings?.selectionMode === 'manual' && settings.productIds) {
+          this.resolveProducts(
+            settings.productIds.slice(0, settings.maxItems ?? 8),
+            (selected) => {
+              const list = selected.slice(0, settings.maxItems ?? 8);
+              set(list);
+              this.setSection(key, list.length ? 'success' : 'empty');
+            },
+            (err) => this.setSection(key, this.failureState(), err),
+          );
+          return;
+        }
+        const list = items.slice(0, settings?.maxItems ?? 8);
+        set(list);
+        this.setSection(key, list.length ? 'success' : 'empty');
+      },
+      error: (err: unknown) => this.setSection(key, this.failureState(), err),
+    });
+  }
+
+  private loadPromo(items: Product[]): void {
+    const settings = this.storefront.sectionSettings('promo');
+    if (settings?.productId) {
+      this.products
+        .getById(settings.productId)
+        .pipe(catchError(() => of(null)))
+        .subscribe((product) => this.saleProduct.set(product));
+      return;
+    }
+    this.saleProduct.set(items.find((p) => p.salePrice != null) ?? items[0] ?? null);
+  }
+
+  private resolveProducts(
+    ids: readonly string[],
+    next: (products: Product[]) => void,
+    onError?: (err: unknown) => void,
+  ): void {
     if (ids.length === 0) {
       next([]);
       return;
     }
-    this.products.getByIdsMany(ids).pipe(catchError(() => of([])))
-      .subscribe(next);
+    this.products.getByIdsMany(ids).subscribe({
+      next,
+      error: (err: unknown) => (onError ? onError(err) : next([])),
+    });
+  }
+
+  private failed(key: HomeDataSection): boolean {
+    const state = this.state[key]();
+    return state === 'error' || state === 'offline';
+  }
+
+  private failureState(): BoundaryState {
+    return this.connectivity.status() === 'offline' ? 'offline' : 'error';
+  }
+
+  private setSection(key: HomeDataSection, state: BoundaryState, error: unknown = null): void {
+    this.state[key].set(state);
+    this.error[key].set(error);
   }
 
   protected addToCart({ product: p, quantity }: { product: Product; quantity: number }): void {
@@ -253,11 +404,5 @@ export class HomePageComponent implements OnInit {
 
   protected categoryDescription(c: Category): string {
     return this.products.categoryDescription(c);
-  }
-
-  protected fbImg(ev: Event): void {
-    // Shared recovery with once-guard (the old version re-set the source on
-    // every error event) plus framed-placeholder fallback.
-    handleImgError(ev, 'novamart');
   }
 }

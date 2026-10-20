@@ -17,13 +17,14 @@ import { PriceResolverService } from '../../core/services/price-resolver.service
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
-import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 
 @Component({
   selector: 'app-cart-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Message, Skeleton, QtySelectorComponent, EmptyStateComponent, MoneyPipe],
+  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Message, Skeleton, QtySelectorComponent, EmptyStateComponent, MoneyPipe, DataBoundaryComponent],
   templateUrl: './cart-page.component.html',
   styleUrl: './cart-page.component.scss',
 })
@@ -36,6 +37,16 @@ export class CartPageComponent {
   private notify = inject(NotificationService);
   private confirm = inject(ConfirmationService);
   private router = inject(Router);
+  private connectivity = inject(ConnectivityService);
+
+  /** One terminal state for the whole cart: loading, failure, empty or rows. */
+  protected boundaryState = computed<BoundaryState>(() => {
+    if (!this.view.ready()) return 'loading';
+    if (this.view.failed()) {
+      return this.connectivity.status() === 'offline' ? 'offline' : 'error';
+    }
+    return this.cart.isEmpty() ? 'empty' : 'success';
+  });
 
   // All rows (including explicit "unavailable" rows) come from the shared
   // CartViewService, so badge, page and checkout can never disagree.
@@ -57,12 +68,6 @@ export class CartPageComponent {
 
   protected retry(): void {
     this.view.refresh();
-  }
-
-  // Small line thumbnails share the two-stage recovery (their fixed box
-  // dimensions already prevent layout collapse).
-  protected imgFallback(ev: Event, seed: string): void {
-    handleImgError(ev, seed);
   }
 
   protected setQty(key: string, qty: number, max: number): void {

@@ -1,5 +1,5 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -14,13 +14,14 @@ import type { Order, OrderStatus } from '../../models/order.model';
 import { orderStatusLabel, orderStatusSeverity, type StatusSeverity } from '../../shared/utils/order-status.utils';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
-import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
+import { isApiFailure } from '../../core/resilience/api-failure';
 
 @Component({
   selector: 'app-order-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Skeleton, Tag, EmptyStateComponent, MoneyPipe],
+  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Skeleton, Tag, EmptyStateComponent, MoneyPipe, DataBoundaryComponent],
   templateUrl: './order-detail-page.component.html',
   styleUrl: './order-detail-page.component.scss',
 })
@@ -32,30 +33,50 @@ export class OrderDetailPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  protected state = signal<'loading' | 'ok'>('loading');
+  protected state = signal<'loading' | 'ok' | 'error' | 'not_found'>('loading');
   protected order = signal<Order | null>(null);
+  protected error = signal<unknown>(null);
+
+  protected boundaryState = computed<BoundaryState>(() => {
+    switch (this.state()) {
+      case 'loading':
+        return 'loading';
+      case 'not_found':
+        return 'empty';
+      case 'error':
+        return 'error';
+      default:
+        return this.order() ? 'success' : 'empty';
+    }
+  });
 
   ngOnInit(): void {
     // Fresh mount carried over the list's scroll position: start at the top.
     this.scroll.scrollToTop();
+    this.load();
+  }
+
+  protected load(): void {
+    this.state.set('loading');
+    this.error.set(null);
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.orders.getById(id).subscribe({
       next: (o) => {
         this.order.set(o);
         this.state.set('ok');
       },
-      // Unknown id: show not-found instead of loading forever.
-      error: () => this.state.set('ok'),
+      error: (err: unknown) => {
+        const notFound =
+          (isApiFailure(err) && err.kind === 'not_found') ||
+          (err instanceof Error && err.message.includes('not-found'));
+        this.error.set(err);
+        this.state.set(notFound ? 'not_found' : 'error');
+      },
     });
   }
 
   protected dateOf(iso: string): string {
     return this.currency.formatDate(iso);
-  }
-
-  // Receipt thumbnails share the two-stage recovery (fixed-size box).
-  protected imgFallback(ev: Event, seed: string): void {
-    handleImgError(ev, seed);
   }
 
   protected statusLabel(s: OrderStatus): string {

@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding, TitleStrategy } from '@angular/router';
@@ -9,9 +9,11 @@ import { routes } from './app.routes';
 import { apiInterceptor } from './core/api/api.interceptor';
 import { LocalizedTitleStrategy } from './core/services/title.strategy';
 import { NovaPreset } from './core/config/theme.preset';
+import { I18nService } from './core/services/i18n.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideAppInitializer(() => inject(I18nService).initialize()),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),

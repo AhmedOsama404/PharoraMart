@@ -1,5 +1,5 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -14,7 +14,8 @@ import { ScrollService } from '../../core/services/scroll.service';
 import type { Order } from '../../models/order.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
-import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
+import { isApiFailure } from '../../core/resilience/api-failure';
 import { SiteContentService } from '../../core/services/site-content.service';
 import type { SiteOrderConfirmationContent } from '../../models/site-content.model';
 
@@ -22,7 +23,7 @@ import type { SiteOrderConfirmationContent } from '../../models/site-content.mod
   selector: 'app-confirmation-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, Button, Card, Divider, Message, Skeleton, EmptyStateComponent, MoneyPipe],
+  imports: [SafeImageDirective, Button, Card, Divider, Message, Skeleton, EmptyStateComponent, MoneyPipe, DataBoundaryComponent],
   templateUrl: './confirmation-page.component.html',
   styleUrl: './confirmation-page.component.scss',
 })
@@ -36,21 +37,47 @@ export class ConfirmationPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  protected state = signal<'loading' | 'ok'>('loading');
+  protected state = signal<'loading' | 'ok' | 'error' | 'not_found'>('loading');
   protected order = signal<Order | null>(null);
+  protected error = signal<unknown>(null);
+
+  protected boundaryState = computed<BoundaryState>(() => {
+    switch (this.state()) {
+      case 'loading':
+        return 'loading';
+      case 'not_found':
+        return 'empty';
+      case 'error':
+        return 'error';
+      default:
+        return this.order() ? 'success' : 'empty';
+    }
+  });
 
   ngOnInit(): void {
     // Arriving from the checkout submit button (bottom of a long form):
     // start at the confirmation summary, not mid-page.
     this.scroll.scrollToTop();
+    this.load();
+  }
+
+  protected load(): void {
+    this.state.set('loading');
+    this.error.set(null);
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.orders.getById(id).subscribe({
       next: (o) => {
         this.order.set(o);
         this.state.set('ok');
       },
-      // Unknown confirmation id: render the not-found view, never a skeleton.
-      error: () => this.state.set('ok'),
+      error: (err: unknown) => {
+        // Only a real 404 is "not found"; an outage must offer Retry.
+        const notFound =
+          (isApiFailure(err) && err.kind === 'not_found') ||
+          (err instanceof Error && err.message.includes('not-found'));
+        this.error.set(err);
+        this.state.set(notFound ? 'not_found' : 'error');
+      },
     });
   }
 
@@ -65,11 +92,6 @@ export class ConfirmationPageComponent implements OnInit {
 
   protected show(key: 'showNextSteps' | 'showWhatsAppButton' | 'showEmailButton' | 'showDemoNotice'): boolean {
     return this.siteContent.orderConfirmation()?.[key] !== false;
-  }
-
-  // Receipt thumbnails share the two-stage recovery (see CartPageComponent).
-  protected imgFallback(ev: Event, seed: string): void {
-    handleImgError(ev, seed);
   }
 
   // Both actions only OPEN the external app with a pre-filled message.

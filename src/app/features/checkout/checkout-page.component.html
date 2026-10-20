@@ -1,5 +1,6 @@
 <h1>{{ copy('title', 'checkout.title') }}</h1>
 <p class="sub">{{ copy('subtitle', 'checkout.subtitle') }}</p>
+@if (blockedReason()) { <p-message severity="warn" [text]="blockedReason()" /> }
 @if (!cart.lines().length) {
   <app-empty-state icon="pi-shopping-cart" [title]="i18n.t('checkout.emptyCart')"
     [actionLabel]="i18n.t('cart.startShopping')" (actionClick)="go('/products')" />
@@ -70,21 +71,27 @@
     </div>
     <p-card class="summary">
       <h2>{{ copy('reviewTitle', 'checkout.reviewTitle') }}</h2>
-      <ul class="items">
-        @for (l of lines(); track l.key) {
-          <li>
-            <img appSafeImg="product" [src]="l.image" [alt]="l.name" loading="lazy" />
-            <span class="n">{{ l.name }} <small>× {{ l.qty }}</small></span>
-            <strong>{{ l.total | money }}</strong>
-          </li>
-        }
-        @for (u of unavailableLines(); track u.key) {
-          <li class="unavailable">
-            <span class="n">{{ i18n.t('cart.unavailable') }} <small>{{ u.productId }}</small></span>
-            <strong>—</strong>
-          </li>
-        }
-      </ul>
+      @if (!view.ready()) {
+        <div class="items" aria-busy="true">
+          @for (i of [1, 2]; track i) { <p-skeleton height="3.4rem" borderRadius="0.8rem" /> }
+        </div>
+      } @else {
+        <ul class="items">
+          @for (l of lines(); track l.key) {
+            <li>
+              <img appSafeImg="product" [src]="l.image" [alt]="l.name" loading="lazy" />
+              <span class="n">{{ l.name }} <small>× {{ l.qty }}</small></span>
+              <strong>{{ l.total | money }}</strong>
+            </li>
+          }
+          @for (u of unavailableLines(); track u.key) {
+            <li class="unavailable">
+              <span class="n">{{ i18n.t('cart.unavailable') }} <small>{{ u.productId }}</small></span>
+              <strong>—</strong>
+            </li>
+          }
+        </ul>
+      }
       <div class="t-row"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ subtotal() | money }}</strong></div>
       @if (siteContent.checkout()?.showCouponEntry !== false) {
         <div class="coupon-row">
@@ -108,7 +115,7 @@
       <div class="t-row grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ total() | money }}</strong></div>
       @if (submitError()) { <p-message severity="error" [text]="submitError()" /> }
       <p-button type="submit" [label]="placing() ? i18n.t('checkout.placing') : copy('placeOrderLabel', 'checkout.placeOrder')"
-        icon="pi pi-check" [loading]="placing()" [disabled]="placing() || couponBusy()" [fluid]="true" />
+        icon="pi pi-check" [loading]="placing()" [disabled]="placing() || couponBusy() || checkoutBlocked()" [fluid]="true" />
       <p-button [label]="copy('backToCartLabel', 'checkout.backToCart')" severity="secondary" [text]="true" [fluid]="true" (onClick)="go('/cart')" />
     </p-card>
   </form>

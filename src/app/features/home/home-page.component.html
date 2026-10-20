@@ -89,18 +89,21 @@
     @case ('categories') {
       <section #catsEl class="block home-section categories-section">
         <app-section-header [title]="siteContent.text(siteContent.categoriesSection()?.sectionTitle, i18n.currentLang())" [subtitle]="siteContent.text(siteContent.categoriesSection()?.sectionBody, i18n.currentLang())" />
-        @if (loading()) {
-          <div class="cat-grid">@for (i of [1,2,3,4,5]; track i) { <p-skeleton height="12rem" borderRadius="1rem" /> }</div>
-        } @else {
-          <div class="cat-grid">
-            @for (c of categories(); track c.id) {
-              <a class="cat-card" [routerLink]="['/products']" [queryParams]="{ category: c.id }">
-                <img appSafeImg="category" [src]="c.image" [alt]="categoryName(c)" loading="lazy" />
-                <span class="cat-label"><strong>{{ categoryName(c) }}</strong><small>{{ categoryDescription(c) }}</small></span>
-              </a>
-            }
-          </div>
-        }
+        <app-data-boundary [state]="state.categories()" [error]="error.categories()" (retry)="loadCategories()">
+          <ng-template #skeleton>
+            <div class="cat-grid">@for (i of [1,2,3,4,5]; track i) { <p-skeleton height="12rem" borderRadius="1rem" /> }</div>
+          </ng-template>
+          <ng-template #content>
+            <div class="cat-grid">
+              @for (c of categories(); track c.id) {
+                <a class="cat-card" [routerLink]="['/products']" [queryParams]="{ category: c.id }">
+                  <img appSafeImg="category" [src]="c.image" [alt]="categoryName(c)" loading="lazy" />
+                  <span class="cat-label"><strong>{{ categoryName(c) }}</strong><small>{{ categoryDescription(c) }}</small></span>
+                </a>
+              }
+            </div>
+          </ng-template>
+        </app-data-boundary>
       </section>
     }
     @case ('featured') {
@@ -108,19 +111,22 @@
         <section class="block home-section featured-section">
           <app-section-header [title]="sectionTitle('featured')" [subtitle]="sectionBody('featured')"
             [link]="sectionViewAllUrl('featured')" [linkLabel]="sectionViewAll('featured')" />
-          @if (loading()) {
-            <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
-          } @else {
-            @defer (on viewport) {
-              <div class="grid">
-                @for (p of featured(); track p.id) {
-                  <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
-                }
-              </div>
-            } @placeholder {
-              <div class="grid defer-placeholder" aria-hidden="true"></div>
-            }
-          }
+          <app-data-boundary [state]="state.featured()" [error]="error.featured()" (retry)="loadFeatured()">
+            <ng-template #skeleton>
+              <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+            </ng-template>
+            <ng-template #content>
+              @defer (on viewport) {
+                <div class="grid">
+                  @for (p of featured(); track p.id) {
+                    <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+                  }
+                </div>
+              } @placeholder {
+                <div class="grid defer-placeholder" aria-hidden="true"></div>
+              }
+            </ng-template>
+          </app-data-boundary>
         </section>
       }
     }
@@ -161,19 +167,24 @@
         <section class="block home-section arrivals-section">
           <app-section-header [title]="sectionTitle('newArrivals')" [subtitle]="sectionBody('newArrivals')"
             [link]="sectionViewAllUrl('newArrivals')" [linkLabel]="sectionViewAll('newArrivals')" />
-          @if (!loading()) {
-            @defer (on viewport) {
-              <div class="arrivals-carousel" role="region" tabindex="0" [attr.aria-label]="sectionTitle('newArrivals')">
-                @for (p of newArrivals(); track p.id) {
-                  <div class="car-item">
-                    <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
-                  </div>
-                }
-              </div>
-            } @placeholder {
-              <div class="grid defer-placeholder" aria-hidden="true"></div>
-            }
-          }
+          <app-data-boundary [state]="state.newArrivals()" [error]="error.newArrivals()" (retry)="loadNewArrivals()">
+            <ng-template #skeleton>
+              <div class="arrivals-carousel" aria-hidden="true">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+            </ng-template>
+            <ng-template #content>
+              @defer (on viewport) {
+                <div class="arrivals-carousel" role="region" tabindex="0" [attr.aria-label]="sectionTitle('newArrivals')">
+                  @for (p of newArrivals(); track p.id) {
+                    <div class="car-item">
+                      <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+                    </div>
+                  }
+                </div>
+              } @placeholder {
+                <div class="grid defer-placeholder" aria-hidden="true"></div>
+              }
+            </ng-template>
+          </app-data-boundary>
         </section>
       }
     }
@@ -182,17 +193,22 @@
         <section class="block home-section popular-section">
           <app-section-header [title]="sectionTitle('popular')" [subtitle]="sectionBody('popular')"
             [link]="sectionViewAllUrl('popular')" [linkLabel]="sectionViewAll('popular')" />
-          @if (!loading()) {
-            @defer (on viewport) {
-              <div class="grid">
-                @for (p of popular(); track p.id) {
-                  <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
-                }
-              </div>
-            } @placeholder {
-              <div class="grid defer-placeholder" aria-hidden="true"></div>
-            }
-          }
+          <app-data-boundary [state]="state.popular()" [error]="error.popular()" (retry)="loadPopular()">
+            <ng-template #skeleton>
+              <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+            </ng-template>
+            <ng-template #content>
+              @defer (on viewport) {
+                <div class="grid">
+                  @for (p of popular(); track p.id) {
+                    <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+                  }
+                </div>
+              } @placeholder {
+                <div class="grid defer-placeholder" aria-hidden="true"></div>
+              }
+            </ng-template>
+          </app-data-boundary>
         </section>
       }
     }

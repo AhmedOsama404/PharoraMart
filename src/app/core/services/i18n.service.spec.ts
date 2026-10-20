@@ -53,8 +53,8 @@ describe('I18nService', () => {
     expect(svc.dir()).toBe('ltr');
   });
 
-  it('switches language immediately with persistence and DOM attrs', () => {
-    svc.setLang('ar');
+  it('loads the selected language with persistence and DOM attrs', async () => {
+    await svc.setLang('ar');
     expect(svc.currentLang()).toBe('ar');
     expect(svc.dir()).toBe('rtl');
     expect(document.documentElement.getAttribute('dir')).toBe('rtl');
@@ -63,15 +63,15 @@ describe('I18nService', () => {
     expect(svc.t('nav.home')).toBe((ar['nav'] as Record<string, string>)['home']);
   });
 
-  it('uses LTR for Czech and translates strings', () => {
-    svc.setLang('cs');
+  it('uses LTR for Czech and translates strings', async () => {
+    await svc.setLang('cs');
     expect(svc.dir()).toBe(LANG_DIRS['cs']);
     expect(svc.t('nav.cart')).toBe((cs['nav'] as Record<string, string>)['cart']);
   });
 
-  it('renders Arabic RTL and every other language LTR', () => {
+  it('renders Arabic RTL and every other language LTR', async () => {
     for (const lang of SUPPORTED_LANGS) {
-      svc.setLang(lang);
+      await svc.setLang(lang);
       const expected = lang === 'ar' ? 'rtl' : 'ltr';
       expect(svc.dir()).withContext(lang).toBe(expected);
       expect(document.documentElement.getAttribute('dir')).withContext(lang).toBe(expected);

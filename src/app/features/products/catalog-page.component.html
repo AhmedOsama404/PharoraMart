@@ -1,4 +1,4 @@
-<nav class="crumbs" [attr.aria-label]="i18n.t('aria.breadcrumb')">
+﻿<nav class="crumbs" [attr.aria-label]="i18n.t('aria.breadcrumb')">
   <a routerLink="/" class="crumb-home">{{ i18n.t('product.breadcrumbsHome') }}</a>
   <span aria-hidden="true">/</span><span aria-current="page">{{ i18n.t('catalog.title') }}</span>
 </nav>
@@ -43,6 +43,16 @@
         {{ i18n.t('catalog.results', { count: total() }) }}
       }
     </p>
+    @if (slow()) {
+      <div class="rs-slow" role="status">
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        <div>
+          <strong>{{ i18n.t('resilience.slowTitle') }}</strong>
+          <span>{{ i18n.t('resilience.slowHint') }}</span>
+        </div>
+        <p-button [label]="i18n.t('resilience.retry')" icon="pi pi-refresh" severity="secondary" [text]="true" (onClick)="retry()" />
+      </div>
+    }
     @if (state() === 'loading' || priceInputPending()) {
       <div class="grid skeleton-grid" [attr.aria-label]="i18n.t('aria.loadingProducts')">
         @for (i of [1,2,3,4,5,6]; track i) {
@@ -59,7 +69,7 @@
       </div>
     } @else if (state() === 'error') {
       <app-empty-state icon="pi-exclamation-triangle" [title]="i18n.t('catalog.errorTitle')"
-        [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="reload()" />
+        [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="retry()" />
     } @else if (!items().length) {
       <app-empty-state icon="pi-search" [title]="i18n.t('catalog.emptyTitle')"
         [subtitle]="i18n.t('catalog.emptySubtitle')" [actionLabel]="i18n.t('catalog.clearAll')" (actionClick)="clearAll()" />
@@ -94,7 +104,7 @@
       <input pInputText type="number" step="0.01" [ngModel]="minPriceInput()" (ngModelChange)="onPriceInput('min', $event)"
         (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.minPrice')"
         [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
-      <span>–</span>
+      <span>â€“</span>
       <input pInputText type="number" step="0.01" [ngModel]="maxPriceInput()" (ngModelChange)="onPriceInput('max', $event)"
         (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.maxPrice')"
         [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
@@ -112,3 +122,4 @@
   </div>
   <p-button [label]="i18n.t('catalog.clearAll')" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="clearAll()" />
 </ng-template>
+

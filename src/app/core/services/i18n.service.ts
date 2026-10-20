@@ -5,6 +5,7 @@ import {
   SUPPORTED_LANGS,
   fillTemplate,
   getDict,
+  loadDict,
   lookupKey,
   type SupportedLang,
 } from '../config/i18n.config';
@@ -33,6 +34,17 @@ export class I18nService {
     this.applyDomAttrs(this.currentLang());
   }
 
+  /** Load the saved locale before Angular renders the first page. */
+  async initialize(): Promise<void> {
+    const lang = this.currentLang();
+    try {
+      await loadDict(lang);
+    } catch {
+      this.currentLang.set('en');
+      this.applyDomAttrs('en');
+    }
+  }
+
   t(key: string, params?: Record<string, string | number>): string {
     // Track the signals so template calls re-evaluate on language change.
     const lang = this.currentLang();
@@ -40,9 +52,19 @@ export class I18nService {
     return fillTemplate(lookupKey(getDict(lang), key), params);
   }
 
-  setLang(lang: SupportedLang): void {
+  async setLang(lang: SupportedLang): Promise<void> {
     if (!SUPPORTED_LANGS.includes(lang)) return;
-    if (this.currentLang() === lang) return;
+    if (this.currentLang() === lang) {
+      await loadDict(lang);
+      return;
+    }
+    const request = ++this.languageChangeRequest;
+    try {
+      await loadDict(lang);
+    } catch {
+      return;
+    }
+    if (request !== this.languageChangeRequest) return;
     this.currentLang.set(lang);
     this.version.update((v) => v + 1);
     try {
@@ -52,6 +74,8 @@ export class I18nService {
     }
     this.applyDomAttrs(lang);
   }
+
+  private languageChangeRequest = 0;
 
   isRtl(): boolean {
     return this.dir() === 'rtl';

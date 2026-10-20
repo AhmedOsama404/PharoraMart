@@ -35,7 +35,7 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     subtotal: Signal<number>;
     applyCoupon(): void;
     onHotelChange(v: unknown): void;
-    submit(): void;
+    submit(): Promise<void>;
     quoteFailed: Signal<boolean>;
   };
   const x = (c: CheckoutPageComponent): Exposed => c as unknown as Exposed;
@@ -89,10 +89,13 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     x(comp).form.patchValue({ fullName: 'Hotel Guest', phone: '+201001234567', city: 'Marsa Alam' });
   }
 
-  it('shows the quoted hotel fee in the totals', () => {
+  it('shows the quoted hotel fee in the totals', async () => {
     cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
     fillContact();
     x(comp).onHotelChange('h1');
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('6');
@@ -144,11 +147,14 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     expect(x(comp).form.get('hotelId')?.invalid).toBeTrue();
   });
 
-  it('blocks submit when the quote fails instead of charging a guessed fee', () => {
+  it('blocks submit when the quote fails instead of charging a guessed fee', async () => {
     cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
     fillContact();
     x(comp).form.get('hotelId')?.setValue('gone');
     x(comp).onHotelChange('gone');
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
     fixture.detectChanges();
     let created = 0;
     spyOn(orders, 'create').and.callFake(() => {
@@ -160,22 +166,22 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     expect(x(comp).quoteFailed()).toBeTrue();
   });
 
-  it('submits with the hotel snapshot once quoted', (done) => {
+  it('submits with the hotel snapshot once quoted', async () => {
     cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
     fillContact();
     x(comp).form.get('hotelId')?.setValue('h1');
     x(comp).onHotelChange('h1');
     fixture.detectChanges();
-    x(comp).submit();
-    orders.list().subscribe((list) => {
-      expect(list.length).toBe(1);
-      expect(list[0].customer.hotelName).toBe('Hotel One');
-      expect(list[0].deliveryFee).toBe(6);
-      done();
+    await x(comp).submit();
+    const list = await new Promise<import('../../models/order.model').Order[]>((resolve) => {
+      orders.list().subscribe(resolve);
     });
+    expect(list.length).toBe(1);
+    expect(list[0].customer.hotelName).toBe('Hotel One');
+    expect(list[0].deliveryFee).toBe(6);
   });
 
-  it('refreshes live stock on an out-of-stock rejection (item 27)', () => {
+  it('refreshes live stock on an out-of-stock rejection (item 27)', async () => {
     cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
     fillContact();
     x(comp).form.get('hotelId')?.setValue('h1');
@@ -190,7 +196,7 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
       ),
     );
 
-    x(comp).submit();
+    await x(comp).submit();
 
     // The visitor must see current quantities/prices after a stock conflict.
     expect(refresh).toHaveBeenCalled();

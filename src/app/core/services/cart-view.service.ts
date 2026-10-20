@@ -1,4 +1,5 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { CartStore } from './cart.store';
 import { ProductService } from './product.service';
 import { effectivePrice, type Product } from '../../models/product.model';
@@ -41,6 +42,8 @@ export class CartViewService {
 
   readonly ready = computed(() => this.status() !== 'loading');
   readonly failed = computed(() => this.status() === 'error');
+  /** Typed failure for the shared error state; resets on every load. */
+  readonly error = signal<unknown>(null);
 
   readonly lines = computed<EnrichedCartLine[]>(() => {
     const byId = new Map(this.catalog().map((p) => [p.id, p]));
@@ -86,19 +89,57 @@ export class CartViewService {
     this.load(ids);
   }
 
+  /**
+   * Refetches prices immediately before a money action and resolves only when
+   * the authoritative answer arrived. Returns false on any failure so checkout
+   * can block instead of charging a stale total.
+   */
+  async ensureFresh(): Promise<boolean> {
+    const ids = [...new Set(this.cart.lines().map((line) => line.productId))];
+    if (ids.length === 0) {
+      this.catalog.set([]);
+      this.error.set(null);
+      this.status.set('ready');
+      return true;
+    }
+    this.lastRequestKey = ids.join('\u001f');
+    this.status.set('loading');
+    this.error.set(null);
+    try {
+      const items = await firstValueFrom(this.products.getByIdsMany(ids));
+      this.catalog.set(items);
+      this.status.set('ready');
+      return true;
+    } catch (err) {
+      this.catalog.set([]);
+      this.error.set(err);
+      this.status.set('error');
+      return false;
+    }
+  }
+
   private load(ids: string[], onCleanup?: (cleanupFn: () => void) => void): void {
     if (ids.length === 0) {
       this.catalog.set([]);
+      this.error.set(null);
       this.status.set('ready');
       return;
     }
     this.status.set('loading');
+    this.error.set(null);
     const subscription = this.products.getByIdsMany(ids).subscribe({
       next: (items) => {
         this.catalog.set(items);
         this.status.set('ready');
       },
-      error: () => this.status.set('error'),
+      error: (err: unknown) => {
+        // Never keep prices from a previous successful load: money must come
+        // from a fresh catalog answer, otherwise checkout would show stale
+        // totals while the backend is unreachable.
+        this.catalog.set([]);
+        this.error.set(err);
+        this.status.set('error');
+      },
     });
     onCleanup?.(() => subscription.unsubscribe());
   }

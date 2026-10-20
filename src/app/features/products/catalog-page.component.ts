@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
@@ -27,6 +28,7 @@ import type { Availability, CatalogQuery, Category, Product, SortKey } from '../
 import { environment } from '../../../environments/environment';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 
 interface SortOption {
   label: string;
@@ -44,7 +46,7 @@ interface SortOption {
   templateUrl: './catalog-page.component.html',
   styleUrl: './catalog-page.component.scss',
 })
-export class CatalogPageComponent implements OnInit {
+export class CatalogPageComponent implements OnInit, OnDestroy {
   protected i18n = inject(I18nService);
   protected currency = inject(CurrencyService);
   private prices = inject(PriceResolverService);
@@ -96,18 +98,65 @@ export class CatalogPageComponent implements OnInit {
   protected total = signal(0);
   protected page = signal(1);
   protected state = signal<'loading' | 'ok' | 'error'>('loading');
+  /** True after 3 s of loading, so a slow backend is explained, not hidden. */
+  protected slow = signal(false);
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
   // Active categories from the data source (drives the filter, never hardcoded).
   protected categories = signal<Category[]>([]);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private priceInputTimer: ReturnType<typeof setTimeout> | null = null;
   private syncingFromUrl = false;
+  private connectivity = inject(ConnectivityService);
+  /** One automatic refetch per outage; a second failure waits for the user. */
+  private autoRetried = false;
 
   constructor() {
     effect(() => {
       this.currency.code();
       this.minPriceInput.set(this.displayMinPrice());
       this.maxPriceInput.set(this.displayMaxPrice());
+      this.trackSlowHint(this.state() === 'loading' || this.priceInputPending());
     });
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.state() === 'error' && !this.autoRetried) {
+          this.autoRetried = true;
+          this.reload();
+        }
+      });
+  }
+
+  /** Explicit Retry: reset the breaker, probe health, refetch immediately. */
+  protected retry(): void {
+    this.autoRetried = true;
+    this.connectivity.retryNow();
+    this.reload();
+  }
+
+  ngOnDestroy(): void {
+    this.clearSlowTimer();
+  }
+
+  private trackSlowHint(busy: boolean): void {
+    if (!busy) {
+      this.clearSlowTimer();
+      this.slow.set(false);
+      return;
+    }
+    if (this.slowTimer) return;
+    this.slow.set(false);
+    this.slowTimer = setTimeout(() => {
+      this.slowTimer = null;
+      this.slow.set(true);
+    }, 3000);
+  }
+
+  private clearSlowTimer(): void {
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
   }
 
   // Memoized option lists keep stable references for PrimeNG selects.
@@ -147,7 +196,12 @@ export class CatalogPageComponent implements OnInit {
 
   ngOnInit(): void {
     // Filter categories come from the data source, independent of products.
-    this.products.categories().subscribe((cats) => this.categories.set(cats));
+    // A failed category request must not become an unhandled error and must
+    // not block the product list: fall back to "All categories".
+    this.products.categories().subscribe({
+      next: (cats) => this.categories.set(cats),
+      error: () => this.categories.set([]),
+    });
     // The URL is the source of truth: every query-param change rebuilds the
     // draft and reloads, which keeps back/forward and bookmarks consistent.
     // First entry lands at the top (like every fresh page); later emissions
@@ -214,6 +268,7 @@ export class CatalogPageComponent implements OnInit {
       next: (res) => {
         this.items.set(res.items);
         this.total.set(res.total);
+        this.autoRetried = false;
         this.state.set('ok');
       },
       error: () => this.state.set('error'),
