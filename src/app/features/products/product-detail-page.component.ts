@@ -24,6 +24,7 @@ import { ConnectivityService } from '../../core/resilience/connectivity.service'
 import { availabilityOf, discountPercent, effectivePrice, type Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
+import { MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
@@ -113,6 +114,12 @@ export class ProductDetailPageComponent implements OnDestroy {
   // the previous product's image index, quantity or variant picks never leak.
   protected activeImg = signal(0);
   protected qty = signal(1);
+
+  /** The most units that can be chosen: the stock, never more than the cap. */
+  protected maxQty(): number {
+    const stock = this.product()?.stock ?? 0;
+    return Math.max(1, Math.min(stock || 1, MAX_QTY_PER_LINE));
+  }
   protected selectedVariants: Record<string, string> = {};
   protected isFav = computed(() => {
     const p = this.product();

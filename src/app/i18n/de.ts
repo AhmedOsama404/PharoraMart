@@ -92,6 +92,7 @@ export const de: TranslationDict = {
     selectVariant: 'Variante wählen',
   },
   cart: {
+    maxPerItem: "Bitte nur {count} pro Artikel.",
     qtyReduced: "Wir haben die Menge von {from} auf {to} reduziert — mehr ist nicht auf Lager.",
     stockChanged: "Der Lagerbestand hat sich geändert, daher haben wir die Menge im Warenkorb angepasst.",
     unavailable: 'Derzeit nicht verfügbar',

@@ -92,6 +92,7 @@ export const it: TranslationDict = {
     selectVariant: 'Seleziona opzione',
   },
   cart: {
+    maxPerItem: "Solo {count} per articolo, per favore.",
     qtyReduced: "Abbiamo ridotto la quantità da {from} a {to} — è tutto ciò che abbiamo in magazzino.",
     stockChanged: "Le scorte sono cambiate, quindi abbiamo adeguato la quantità nel carrello.",
     unavailable: 'Non più disponibile',

@@ -10,7 +10,7 @@ import { Message } from 'primeng/message';
 import { Skeleton } from 'primeng/skeleton';
 import { I18nService } from '../../core/services/i18n.service';
 import { CurrencyService } from '../../core/services/currency.service';
-import { CartStore } from '../../core/services/cart.store';
+import { CartStore, MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { CartViewService } from '../../core/services/cart-view.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { environment } from '../../../environments/environment';
@@ -87,6 +87,11 @@ export class CartPageComponent {
     this.autoRetried = true;
     this.connectivity.retryNow();
     this.view.refresh();
+  }
+
+  /** The most units that can be chosen: the stock, never more than the cap. */
+  protected maxQty(stock: number): number {
+    return Math.max(1, Math.min(stock || 1, MAX_QTY_PER_LINE));
   }
 
   protected setQty(key: string, qty: number, max: number): void {
