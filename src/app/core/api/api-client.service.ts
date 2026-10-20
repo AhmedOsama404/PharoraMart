@@ -84,7 +84,7 @@ export class ApiClientService {
   constructor() {
     // A human Retry must be able to probe even while the breaker is cooling
     // down; otherwise the first click after an outage is a silent no-op.
-    this.connectivity.onRetry(() => this.breaker.reset());
+    this.connectivity.onRetry?.(() => this.breaker.reset());
   }
 
   /**

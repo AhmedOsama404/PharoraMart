@@ -12,22 +12,22 @@ describe('LocalizedPipe', () => {
     pipe = new LocalizedPipe(i18n);
   });
 
-  it('renders the translation for the active language', () => {
-    i18n.setLang('ar');
+  it('renders the translation for the active language', async () => {
+    await i18n.setLang('ar');
     expect(pipe.transform({ en: 'Cosmetics', ar: 'مستحضرات التجميل' }, 'Cosmetics')).toBe(
       'مستحضرات التجميل',
     );
   });
 
-  it('falls back to English, then to the given fallback', () => {
-    i18n.setLang('fr');
+  it('falls back to English, then to the given fallback', async () => {
+    await i18n.setLang('fr');
     expect(pipe.transform({ en: 'Cosmetics' }, 'Cosmetics')).toBe('Cosmetics');
     expect(pipe.transform(undefined, 'Cosmetics')).toBe('Cosmetics');
     expect(pipe.transform({ en: '   ', ar: 'مستحضرات' }, 'Cosmetics')).toBe('Cosmetics');
   });
 
-  it('treats a blank translation as missing rather than rendering empty text', () => {
-    i18n.setLang('ar');
+  it('treats a blank translation as missing rather than rendering empty text', async () => {
+    await i18n.setLang('ar');
     expect(pipe.transform({ en: 'Cosmetics', ar: '  ' }, 'Cosmetics')).toBe('Cosmetics');
   });
 });

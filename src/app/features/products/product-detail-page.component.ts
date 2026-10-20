@@ -1,7 +1,7 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { map, distinctUntilChanged, switchMap, catchError, startWith, of, type Observable } from 'rxjs';
@@ -20,6 +20,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService } from '../../core/services/pending-action.service';
 import { RecentlyViewedService } from '../../core/services/recently-viewed.service';
 import { ScrollService } from '../../core/services/scroll.service';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import { availabilityOf, discountPercent, effectivePrice, type Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
@@ -76,6 +77,7 @@ export class ProductDetailPageComponent implements OnDestroy {
   private gate = inject(PendingActionService);
   private recent = inject(RecentlyViewedService);
   private scroll = inject(ScrollService);
+  private connectivity = inject(ConnectivityService);
 
   // Route id as an observable (for the cancellable loader) and as a signal
   // (for UI resets and memoized view data) so in-place navigation — e.g.
@@ -103,6 +105,7 @@ export class ProductDetailPageComponent implements OnDestroy {
   /** True after 3 s of loading so a hung backend gets a visible hint + Retry. */
   protected slow = signal(false);
   private slowTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoRetried = false;
 
   protected product = computed(() => this.page().product);
 
@@ -165,6 +168,7 @@ export class ProductDetailPageComponent implements OnDestroy {
     effect(() => {
       const state = this.page();
       if (state.status === 'ready' && state.product) {
+        this.autoRetried = false;
         const product = state.product;
         untracked(() => {
           document.title = `${product.name} — Pharora`;
@@ -173,6 +177,15 @@ export class ProductDetailPageComponent implements OnDestroy {
       }
       this.trackSlowHint(state.status === 'loading');
     });
+
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.page().status === 'error' && !this.autoRetried) {
+          this.autoRetried = true;
+          this.retry();
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -231,6 +244,8 @@ export class ProductDetailPageComponent implements OnDestroy {
   }
 
   protected retry(): void {
+    this.autoRetried = true;
+    this.connectivity.retryNow();
     this.reloadNonce.update((n) => n + 1);
   }
 

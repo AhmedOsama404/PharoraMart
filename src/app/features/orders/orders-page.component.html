@@ -1,6 +1,6 @@
 <h1>{{ i18n.t('orders.title') }}</h1>
 <p class="sub">{{ i18n.t('orders.subtitle') }}</p>
-<app-data-boundary [state]="boundaryState()" [error]="error()" (retry)="load()">
+<app-data-boundary [state]="boundaryState()" [error]="error()" (retry)="retry()">
   <ng-template #skeleton>
     <div class="list" aria-busy="true">@for (i of [1,2,3]; track i) { <p-skeleton height="7rem" borderRadius="1rem" /> }</div>
   </ng-template>

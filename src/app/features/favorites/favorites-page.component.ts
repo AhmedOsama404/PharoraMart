@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { I18nService } from '../../core/services/i18n.service';
 import { ProductService } from '../../core/services/product.service';
@@ -40,14 +41,26 @@ export class FavoritesPageComponent {
     return this.items().length ? 'success' : 'empty';
   });
 
+  private autoRetried = false;
+
   constructor() {
     effect(() => {
       const ids = this.favorites.ids();
       this.load(ids);
     });
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.state() === 'error' && !this.autoRetried) {
+          this.autoRetried = true;
+          this.load(this.favorites.ids());
+        }
+      });
   }
 
   protected retry(): void {
+    this.autoRetried = true;
+    this.connectivity.retryNow();
     this.load(this.favorites.ids());
   }
 
@@ -62,6 +75,7 @@ export class FavoritesPageComponent {
     this.products.getByIdsMany(ids).subscribe({
       next: (items) => {
         this.catalog.set(items);
+        this.autoRetried = false;
         this.state.set('ok');
       },
       error: (err: unknown) => {

@@ -16,6 +16,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state.compone
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
 import { isApiFailure } from '../../core/resilience/api-failure';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 
 @Component({
   selector: 'app-order-detail-page',
@@ -32,6 +33,7 @@ export class OrderDetailPageComponent implements OnInit {
   private scroll = inject(ScrollService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private connectivity = inject(ConnectivityService);
 
   protected state = signal<'loading' | 'ok' | 'error' | 'not_found'>('loading');
   protected order = signal<Order | null>(null);
@@ -89,5 +91,11 @@ export class OrderDetailPageComponent implements OnInit {
 
   protected go(path: string): void {
     this.router.navigate([path]);
+  }
+
+  /** Explicit Retry after an outage: reset the breaker and refetch. */
+  protected retry(): void {
+    this.connectivity.retryNow();
+    this.load();
   }
 }

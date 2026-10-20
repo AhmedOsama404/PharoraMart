@@ -1,5 +1,6 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
@@ -66,7 +67,25 @@ export class CartPageComponent {
     return { free: false, text: this.i18n.t('cart.freeShippingHint', { amount: this.currency.format(missing) }) };
   });
 
+  private autoRetried = false;
+
+  constructor() {
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.view.failed() && !this.autoRetried) {
+          this.autoRetried = true;
+          this.view.refresh();
+        }
+      });
+    effect(() => {
+      if (!this.view.failed()) this.autoRetried = false;
+    });
+  }
+
   protected retry(): void {
+    this.autoRetried = true;
+    this.connectivity.retryNow();
     this.view.refresh();
   }
 

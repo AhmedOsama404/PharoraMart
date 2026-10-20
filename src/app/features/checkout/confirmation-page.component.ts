@@ -16,6 +16,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state.compone
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
 import { isApiFailure } from '../../core/resilience/api-failure';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import { SiteContentService } from '../../core/services/site-content.service';
 import type { SiteOrderConfirmationContent } from '../../models/site-content.model';
 
@@ -36,6 +37,7 @@ export class ConfirmationPageComponent implements OnInit {
   private scroll = inject(ScrollService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private connectivity = inject(ConnectivityService);
 
   protected state = signal<'loading' | 'ok' | 'error' | 'not_found'>('loading');
   protected order = signal<Order | null>(null);
@@ -92,6 +94,12 @@ export class ConfirmationPageComponent implements OnInit {
 
   protected show(key: 'showNextSteps' | 'showWhatsAppButton' | 'showEmailButton' | 'showDemoNotice'): boolean {
     return this.siteContent.orderConfirmation()?.[key] !== false;
+  }
+
+  /** Explicit Retry after an outage: reset the breaker and refetch. */
+  protected retry(): void {
+    this.connectivity.retryNow();
+    this.load();
   }
 
   // Both actions only OPEN the external app with a pre-filled message.

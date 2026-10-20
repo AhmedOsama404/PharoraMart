@@ -33,6 +33,18 @@ export class OrdersPageComponent implements OnInit {
   protected state = signal<'loading' | 'ok' | 'error'>('loading');
   protected orders = signal<Order[]>([]);
   protected error = signal<unknown>(null);
+  private autoRetried = false;
+
+  constructor() {
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.state() === 'error' && !this.autoRetried) {
+          this.autoRetried = true;
+          this.load();
+        }
+      });
+  }
 
   protected boundaryState = computed<BoundaryState>(() => {
     if (this.state() === 'loading') return 'loading';
@@ -52,6 +64,7 @@ export class OrdersPageComponent implements OnInit {
     this.orderService.list().subscribe({
       next: (items) => {
         this.orders.set(items);
+        this.autoRetried = false;
         this.state.set('ok');
       },
       error: (err: unknown) => {
@@ -59,6 +72,13 @@ export class OrdersPageComponent implements OnInit {
         this.state.set('error');
       },
     });
+  }
+
+  /** Explicit Retry: reset the breaker and refetch. */
+  protected retry(): void {
+    this.autoRetried = true;
+    this.connectivity.retryNow();
+    this.load();
   }
 
   protected dateOf(iso: string): string {

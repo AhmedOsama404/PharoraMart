@@ -1,5 +1,5 @@
 <p-button [label]="i18n.t('orders.backToOrders')" icon="pi pi-arrow-left" [text]="true" routerLink="/orders" />
-<app-data-boundary [state]="boundaryState()" [error]="error()" (retry)="load()">
+<app-data-boundary [state]="boundaryState()" [error]="error()" (retry)="retry()">
   <ng-template #skeleton>
     <p-skeleton height="16rem" borderRadius="1.2rem" />
   </ng-template>
