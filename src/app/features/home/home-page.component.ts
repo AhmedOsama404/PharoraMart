@@ -1,7 +1,7 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, type WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, effect, inject, signal, type WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
@@ -40,6 +40,8 @@ type HomeDataSection = 'categories' | 'featured' | 'newArrivals' | 'popular' | '
   styleUrl: './home-page.component.scss',
 })
 export class HomePageComponent implements OnInit {
+  @ViewChild('arrivalsTrack') private arrivalsTrack?: ElementRef<HTMLDivElement>;
+  private arrivalsAutoTimer: number | null = null;
   // The hero badge icon stays a config-owned bare PrimeIcons name (hero product
   // slots come from Website Content, with the versioned config as a fallback).
   private static readonly BADGE_ICONS = new Set(['leaf', 'tag', 'shopping-bag', 'building', 'truck', 'money-bill', 'refresh', 'check-circle', 'heart']);
@@ -160,6 +162,12 @@ export class HomePageComponent implements OnInit {
     this.loadPopular();
     this.loadContent();
     this.loadRecentlyViewed();
+    if (typeof window !== 'undefined') {
+      this.scheduleArrivalsAdvance();
+      this.destroyRef.onDestroy(() => {
+        if (this.arrivalsAutoTimer !== null) window.clearTimeout(this.arrivalsAutoTimer);
+      });
+    }
 
     // Reconnect/focus recovery: refetch only the regions that failed.
     this.connectivity.recovered$
@@ -349,6 +357,74 @@ export class HomePageComponent implements OnInit {
 
   protected go(path: string): void {
     this.router.navigate([path]);
+  }
+
+  protected scrollArrivals(direction: -1 | 1, manual = true): void {
+    const track = this.arrivalsTrack?.nativeElement;
+    if (!track) return;
+    if (manual) this.scheduleArrivalsAdvance();
+    const rtl = this.i18n.dir() === 'rtl';
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const firstCard = track.firstElementChild as HTMLElement | null;
+    const lastCard = track.lastElementChild as HTMLElement | null;
+    if (!firstCard || !lastCard || track.scrollWidth <= track.clientWidth + 1) return;
+    const trackBounds = track.getBoundingClientRect();
+    const firstBounds = firstCard.getBoundingClientRect();
+    const lastBounds = lastCard.getBoundingClientRect();
+    const atStart = rtl ? firstBounds.right <= trackBounds.right + 1 : firstBounds.left >= trackBounds.left - 1;
+    const atEnd = rtl ? lastBounds.left >= trackBounds.left - 1 : lastBounds.right <= trackBounds.right + 1;
+    if ((direction === 1 && atEnd) || (direction === -1 && atStart)) {
+      (direction === 1 ? firstCard : lastCard).scrollIntoView({
+        behavior: reducedMotion ? 'instant' : 'smooth',
+        block: 'nearest',
+        inline: 'start',
+      });
+      return;
+    }
+
+    const card = track.querySelector<HTMLElement>('.car-item');
+    const gap = Number.parseFloat(window.getComputedStyle(track).columnGap) || 0;
+    track.scrollBy({
+      left: direction * (rtl ? -1 : 1) * ((card?.getBoundingClientRect().width ?? track.clientWidth) + gap),
+      behavior: reducedMotion ? 'instant' : 'smooth',
+    });
+  }
+
+  private advanceArrivals(): void {
+    const track = this.arrivalsTrack?.nativeElement;
+    if (!track || this.newArrivals().length < 2 || document.visibilityState !== 'visible' ||
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      this.scheduleArrivalsAdvance();
+      return;
+    }
+    const trackBounds = track.getBoundingClientRect();
+    if (trackBounds.bottom <= 0 || trackBounds.top >= window.innerHeight || track.scrollWidth <= track.clientWidth + 1) {
+      this.scheduleArrivalsAdvance();
+      return;
+    }
+
+    this.scrollArrivals(1, false);
+    this.scheduleArrivalsAdvance();
+  }
+
+  private scheduleArrivalsAdvance(): void {
+    if (typeof window === 'undefined') return;
+    if (this.arrivalsAutoTimer !== null) window.clearTimeout(this.arrivalsAutoTimer);
+    this.arrivalsAutoTimer = window.setTimeout(() => {
+      this.arrivalsAutoTimer = null;
+      this.advanceArrivals();
+    }, 3_000);
+  }
+
+  protected pauseArrivalsOnHover(): void {
+    if (this.arrivalsAutoTimer !== null) {
+      window.clearTimeout(this.arrivalsAutoTimer);
+      this.arrivalsAutoTimer = null;
+    }
+  }
+
+  protected resumeArrivalsAfterHover(): void {
+    this.scheduleArrivalsAdvance();
   }
 
   protected goSale(): void {

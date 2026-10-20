@@ -169,15 +169,33 @@
             [link]="sectionViewAllUrl('newArrivals')" [linkLabel]="sectionViewAll('newArrivals')" />
           <app-data-boundary [state]="state.newArrivals()" [error]="error.newArrivals()" (retry)="loadNewArrivals()">
             <ng-template #skeleton>
-              <div class="arrivals-carousel" aria-hidden="true">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+              <div class="arrivals-carousel-shell arrivals-carousel-shell--skeleton">
+                <div class="arrivals-carousel" aria-hidden="true">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+              </div>
             </ng-template>
             <ng-template #content>
               @defer (on viewport) {
-                <div class="arrivals-carousel" role="region" tabindex="0" [attr.aria-label]="sectionTitle('newArrivals')">
-                  @for (p of newArrivals(); track p.id) {
-                    <div class="car-item">
-                      <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
-                    </div>
+                <div class="arrivals-carousel-shell" [class.arrivals-carousel-shell--controls]="newArrivals().length > 1">
+                  @if (newArrivals().length > 1) {
+                    <button class="arrivals-control" type="button" (click)="scrollArrivals(-1)"
+                      aria-controls="new-arrivals-track" [attr.aria-label]="i18n.t('aria.previousProducts')">
+                      <i class="pi pi-chevron-left flip-rtl" aria-hidden="true"></i>
+                    </button>
+                  }
+                  <div id="new-arrivals-track" #arrivalsTrack class="arrivals-carousel" role="region" tabindex="0"
+                    aria-roledescription="carousel" [attr.aria-label]="sectionTitle('newArrivals')">
+                    @for (p of newArrivals(); track p.id) {
+                      <div class="car-item" role="group" aria-roledescription="slide"
+                        (mouseenter)="pauseArrivalsOnHover()" (mouseleave)="resumeArrivalsAfterHover()">
+                        <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+                      </div>
+                    }
+                  </div>
+                  @if (newArrivals().length > 1) {
+                    <button class="arrivals-control" type="button" (click)="scrollArrivals(1)"
+                      aria-controls="new-arrivals-track" [attr.aria-label]="i18n.t('aria.nextProducts')">
+                      <i class="pi pi-chevron-right flip-rtl" aria-hidden="true"></i>
+                    </button>
                   }
                 </div>
               } @placeholder {

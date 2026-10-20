@@ -6,6 +6,9 @@ export const sk: TranslationDict = {
     filters: "Filtre",
     loadingProducts: "Načítavanie produktov",
     primary: "Hlavná navigácia",
+    carouselControls: "Ovládanie karuselu produktov",
+    previousProducts: "Predchádzajúce produkty",
+    nextProducts: "Ďalšie produkty",
   },
   app: { name: 'Pharora', tagline: 'Všetko, čo máte radi, s rýchlym doručením.' },
   nav: {

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { Button } from 'primeng/button';
 import { I18nService } from '../../core/services/i18n.service';
 import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
@@ -22,8 +21,8 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    NgTemplateOutlet, Button, DataBoundaryComponent, ErrorStateComponent,
-    SkeletonBlockComponent, SkeletonTextComponent, ProductCardSkeletonComponent,
+    Button, DataBoundaryComponent, ErrorStateComponent,
+    SkeletonBlockComponent, SkeletonTextComponent,
     ProductGridSkeletonComponent, TableSkeletonComponent,
   ],
   template: `

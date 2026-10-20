@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, effect, inject, signal } from '@angular/core';
-import { Button } from 'primeng/button';
 import { Subscription } from 'rxjs';
 import { I18nService } from '../../core/services/i18n.service';
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
@@ -12,7 +11,6 @@ import { ConnectivityService } from '../../core/resilience/connectivity.service'
   selector: 'app-connection-banner',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Button],
   template: `
     @if (visible()) {
       <div

@@ -19,4 +19,7 @@ export const environment = {
   businessHours: 'Daily 9:00 – 22:00 (Egypt time)',
   freeShippingThreshold: 75,
   pageSize: 12,
+  // Self-hosted LibreTranslate (free, unlimited, no API keys).
+  // Tests mock HTTP, so any value works; use a dummy localhost URL.
+  libreTranslateUrl: 'http://localhost:5000',
 };

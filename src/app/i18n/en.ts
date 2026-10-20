@@ -8,6 +8,9 @@ export const en: TranslationDict = {
     filters: "Filters",
     loadingProducts: "Loading products",
     primary: "Primary navigation",
+    carouselControls: "Product carousel controls",
+    previousProducts: "Previous products",
+    nextProducts: "Next products",
   },
   app: { name: 'Pharora', tagline: 'Everything you love, delivered fast.' },
   nav: {

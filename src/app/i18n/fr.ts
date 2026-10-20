@@ -6,6 +6,9 @@ export const fr: TranslationDict = {
     filters: "Filtres",
     loadingProducts: "Chargement des produits",
     primary: "Navigation principale",
+    carouselControls: "Commandes du carrousel de produits",
+    previousProducts: "Produits précédents",
+    nextProducts: "Produits suivants",
   },
   app: { name: 'Pharora', tagline: 'Tout ce que vous aimez, livré rapidement.' },
   nav: {

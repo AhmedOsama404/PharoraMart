@@ -16,6 +16,9 @@ export const environment = {
   // are quoted via DeliveryService; free shipping above the threshold below.
   freeShippingThreshold: 75,
   pageSize: 12,
+  // Self-hosted LibreTranslate (free, unlimited, no API keys).
+  // Deploy with: docker compose -f docker-compose.libretranslate.yml up -d
+  libreTranslateUrl: 'http://localhost:5000',
   // Resilience: hard per-attempt timeout (ms) and retry budget for idempotent GETs.
   requestTimeoutMs: 10000,
   getRetryAttempts: 2,

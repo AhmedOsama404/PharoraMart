@@ -30,7 +30,7 @@ export const LANG_DIRS: Record<SupportedLang, 'ltr' | 'rtl'> = {
   de: 'ltr',
 };
 
-import { RESILIENCE_DICTS } from '../../i18n/resilience';
+import { resilienceEn } from '../../i18n/resilience-en';
 
 /** Deep-merge resilience copy into every locale once at module load. */
 function mergeDict(base: TranslationDict, extra: TranslationDict): TranslationDict {
@@ -47,17 +47,38 @@ function mergeDict(base: TranslationDict, extra: TranslationDict): TranslationDi
 }
 
 const DICTS: Partial<Record<SupportedLang, TranslationDict>> = {
-  en: mergeDict(en, RESILIENCE_DICTS.en),
+  en: mergeDict(en, resilienceEn),
 };
 
 const DICT_LOADERS: Record<Exclude<SupportedLang, 'en'>, () => Promise<TranslationDict>> = {
-  ar: async () => mergeDict((await import('../../i18n/ar')).ar, RESILIENCE_DICTS.ar),
-  cs: async () => mergeDict((await import('../../i18n/cs')).cs, RESILIENCE_DICTS.cs),
-  de: async () => mergeDict((await import('../../i18n/de')).de, RESILIENCE_DICTS.de),
-  fr: async () => mergeDict((await import('../../i18n/fr')).fr, RESILIENCE_DICTS.fr),
-  it: async () => mergeDict((await import('../../i18n/it')).it, RESILIENCE_DICTS.it),
-  pl: async () => mergeDict((await import('../../i18n/pl')).pl, RESILIENCE_DICTS.pl),
-  sk: async () => mergeDict((await import('../../i18n/sk')).sk, RESILIENCE_DICTS.sk),
+  ar: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/ar'), import('../../i18n/resilience')]);
+    return mergeDict(base.ar, resilience.RESILIENCE_DICTS.ar);
+  },
+  cs: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/cs'), import('../../i18n/resilience')]);
+    return mergeDict(base.cs, resilience.RESILIENCE_DICTS.cs);
+  },
+  de: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/de'), import('../../i18n/resilience')]);
+    return mergeDict(base.de, resilience.RESILIENCE_DICTS.de);
+  },
+  fr: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/fr'), import('../../i18n/resilience')]);
+    return mergeDict(base.fr, resilience.RESILIENCE_DICTS.fr);
+  },
+  it: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/it'), import('../../i18n/resilience')]);
+    return mergeDict(base.it, resilience.RESILIENCE_DICTS.it);
+  },
+  pl: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/pl'), import('../../i18n/resilience')]);
+    return mergeDict(base.pl, resilience.RESILIENCE_DICTS.pl);
+  },
+  sk: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/sk'), import('../../i18n/resilience')]);
+    return mergeDict(base.sk, resilience.RESILIENCE_DICTS.sk);
+  },
 };
 
 const pendingLoads = new Map<SupportedLang, Promise<TranslationDict>>();
