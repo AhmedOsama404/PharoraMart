@@ -23,7 +23,7 @@ export const cs: TranslationDict = {
     promoTitle: 'Polosezónní výprodej až −40 %',
     promoSubtitle: 'Nejprodávanější přírodní kosmetika a byliny za speciální ceny. Do vyprodání zásob.',
     promoCta: 'Nakoupit ve výprodeji',
-    learnMore: 'Learn more',
+    learnMore: 'Zjistit více',
     recentlyViewedTitle: 'Nedávno zobrazené',
   },
   catalog: {
@@ -181,9 +181,9 @@ export const cs: TranslationDict = {
     orderSuccess: 'Objednávka byla úspěšně odeslána',
     duplicateBlocked: 'Vaše objednávka se již zpracovává. Počkejte prosím.',
     applyCoupon: 'Použít slevový kód', couponApplied: 'Slevový kód použit',
-    couponCode: 'Coupon code',
-    discount: 'Discount',
-    couponInvalid: 'This coupon is not valid for your order.',
+    couponCode: 'Kód kupónu',
+    discount: 'Sleva',
+    couponInvalid: 'Tento kupón nelze u vaší objednávky použít.',
     emptyCart: 'Košík je prázdný. Před pokladnou přidejte produkty.',
   },
   confirmation: {
@@ -324,7 +324,7 @@ export const cs: TranslationDict = {
     deliveryFeeUnavailable: 'Nepodařilo se potvrdit poplatek za doručení. Zkontrolujte údaje o doručení a zkuste to znovu.',
   },
   meta: {
-    home: 'Pharora — Natural beauty, delivered to your hotel',
+    home: 'Pharora — přirozená krása doručená do vašeho hotelu',
     catalog: 'Všechny produkty — Pharora',
     cart: 'Nákupní košík — Pharora',
     favorites: 'Oblíbené — Pharora',

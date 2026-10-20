@@ -23,7 +23,7 @@ export const ar: TranslationDict = {
     promoTitle: 'تخفيضات منتصف الموسم حتى 40%',
     promoSubtitle: 'الأكثر مبيعًا من منتجات الجمال الطبيعي والأعشاب بأسعار خاصة. حتى نفاد المخزون.',
     promoCta: 'تسوّق التخفيضات',
-    learnMore: 'Learn more',
+    learnMore: 'اعرف المزيد',
     recentlyViewedTitle: 'شاهدت مؤخرًا',
   },
   catalog: {
@@ -181,9 +181,9 @@ export const ar: TranslationDict = {
     orderSuccess: 'تم إرسال الطلب بنجاح',
     duplicateBlocked: 'طلبك قيد المعالجة بالفعل. يرجى الانتظار.',
     applyCoupon: 'تطبيق رمز الخصم', couponApplied: 'تم تطبيق رمز الخصم',
-    couponCode: 'Coupon code',
-    discount: 'Discount',
-    couponInvalid: 'This coupon is not valid for your order.',
+    couponCode: 'رمز الكوبون',
+    discount: 'خصم',
+    couponInvalid: 'هذا الكوبون غير صالح لطلبك.',
     emptyCart: 'سلتك فارغة. أضف منتجات قبل إتمام الطلب.',
   },
   confirmation: {
@@ -324,7 +324,7 @@ export const ar: TranslationDict = {
     deliveryFeeUnavailable: 'تعذّر تأكيد رسوم التوصيل. تحقّق من بيانات التوصيل وحاول مرة أخرى.',
   },
   meta: {
-    home: 'Pharora — Natural beauty, delivered to your hotel',
+    home: 'Pharora — جمال طبيعي يُوصل إلى فندقك',
     catalog: 'جميع المنتجات — Pharora',
     cart: 'سلة التسوق — Pharora',
     favorites: 'المفضلة — Pharora',
