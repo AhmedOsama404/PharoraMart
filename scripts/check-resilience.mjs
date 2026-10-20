@@ -61,6 +61,10 @@ for (const file of files) {
         const line = lineOf(source, tag);
         violations.push(`${rel}:${line}: <img> without appSafeImg`);
       }
+      if (!/(\[alt\]|\balt\s*=)/.test(tag)) {
+        const line = lineOf(source, tag);
+        violations.push(`${rel}:${line}: <img> without alt text`);
+      }
     }
     lines.forEach((text, index) => {
       if (/\[style\.(backgroundImage|background-image)\]/.test(text)) {
