@@ -94,6 +94,17 @@ export class CartPageComponent {
     return Math.max(1, Math.min(stock || 1, MAX_QTY_PER_LINE));
   }
 
+  /** The most units of one product an order may hold. */
+  protected readonly perItemCap = MAX_QTY_PER_LINE;
+
+  /**
+   * True when the line sits at the per-item cap and the stock is not the
+   * limit - the message has to say which one it is.
+   */
+  protected atPerItemCap(stock: number, qty: number): boolean {
+    return stock > MAX_QTY_PER_LINE && qty >= MAX_QTY_PER_LINE;
+  }
+
   protected setQty(key: string, qty: number, max: number): void {
     this.cart.setQty(key, qty, Math.max(1, max));
   }

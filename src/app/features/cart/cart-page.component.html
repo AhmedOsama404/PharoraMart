@@ -38,6 +38,8 @@
                   <span class="unit">{{ l.unit | money }} / {{ i18n.t('product.qty') }}</span>
                   @if (l.qty >= l.product.stock) {
                     <p-message severity="warn" size="small" [text]="i18n.t('product.maxStock', { count: l.product.stock })" />
+                  } @else if (atPerItemCap(l.product.stock, l.qty)) {
+                    <p-message severity="warn" size="small" [text]="i18n.t('cart.maxPerItem', { count: perItemCap })" />
                   }
                 </div>
                 <div class="l-actions">

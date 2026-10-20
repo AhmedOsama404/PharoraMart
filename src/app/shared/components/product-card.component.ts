@@ -7,6 +7,7 @@ import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 import { I18nService } from '../../core/services/i18n.service';
 import { FavoritesStore } from '../../core/services/favorites.store';
+import { MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { handleImgError } from '../utils/image-fallback.utils';
 import { discountPercent, effectivePrice, type Product } from '../../models/product.model';
 import { ResolvedMoneyPipe } from '../pipes/resolved-money.pipe';
@@ -36,6 +37,14 @@ export class ProductCardComponent {
 
   protected effective(): number {
     return effectivePrice(this.product);
+  }
+
+  /**
+   * The most units that can be chosen: the live stock, never more than the
+   * per-item cap of an order.
+   */
+  protected maxQty(): number {
+    return Math.max(1, Math.min(this.product?.stock || 1, MAX_QTY_PER_LINE));
   }
 
   protected discount(): number {

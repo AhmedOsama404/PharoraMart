@@ -71,7 +71,11 @@
         <label>{{ i18n.t('product.qty') }}</label>
         <app-qty-selector [qty]="qty()" [min]="1" [max]="maxQty()" (qtyChange)="qty.set($event)" />
         @if (product()!.stock > 0 && qty() >= maxQty()) {
-          <small class="warn">{{ i18n.t('product.maxStock', { count: maxQty() }) }}</small>
+          @if (atPerItemCap()) {
+            <small class="warn">{{ i18n.t('cart.maxPerItem', { count: perItemCap }) }}</small>
+          } @else {
+            <small class="warn">{{ i18n.t('product.maxStock', { count: product()!.stock }) }}</small>
+          }
         }
       </div>
       <div class="cta">

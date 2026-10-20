@@ -120,6 +120,18 @@ export class ProductDetailPageComponent implements OnDestroy {
     const stock = this.product()?.stock ?? 0;
     return Math.max(1, Math.min(stock || 1, MAX_QTY_PER_LINE));
   }
+
+  /** The most units of one product an order may hold. */
+  protected readonly perItemCap = MAX_QTY_PER_LINE;
+
+  /**
+   * True when the limit the customer hit is the per-item cap (and not the
+   * live stock) - the message has to say which one it is.
+   */
+  protected atPerItemCap(): boolean {
+    const stock = this.product()?.stock ?? 0;
+    return stock > MAX_QTY_PER_LINE && this.qty() >= MAX_QTY_PER_LINE;
+  }
   protected selectedVariants: Record<string, string> = {};
   protected isFav = computed(() => {
     const p = this.product();
