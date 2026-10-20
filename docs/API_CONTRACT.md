@@ -1,9 +1,13 @@
 # PharoraMart API Integration Contract (Frontend → Future Backend)
 
-> Current phase is **frontend-only**. The app runs in **mock mode**
-> (`useMockApi: true` in `src/environments/environment*.ts`) with all data
-> served locally. This document is the contract a real backend must implement
-> so the UI can be connected **without rewriting components**.
+> **Historical design contract (not authoritative).** The app now runs against
+> the live ASP.NET Core API (`useMockApi: false`). For the current endpoint
+> inventory, auth flow, trust boundaries and known mismatches, see
+> `D:\_prod_readiness\INTEGRATION-MAP.md` and the generated OpenAPI snapshot
+> `D:\_prod_readiness\baselines\swagger.json`. Keep this document only for
+> historical intent; do not use it as an integration source of truth.
+>
+> The original text below was written when the storefront ran in mock mode.
 
 ## 0. Conventions
 

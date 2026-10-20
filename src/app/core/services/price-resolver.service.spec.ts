@@ -15,6 +15,7 @@ describe('PriceResolverService', () => {
   };
 
   beforeEach(() => {
+    localStorage.removeItem('novamart.currency');
     TestBed.configureTestingModule({
       providers: [{
         provide: ExchangeRatesService,

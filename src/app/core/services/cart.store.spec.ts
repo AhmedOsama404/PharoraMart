@@ -54,6 +54,21 @@ describe('CartStore', () => {
     expect(store.isEmpty()).toBeTrue();
   });
 
+  it('merges guest and server cart lines, summing matching product variants', () => {
+    store.add('p1', 2, 'M', 'Size M');
+    store.add('guest-only', 1);
+    store.mergeAll([
+      { productId: 'p1', variantKey: 'M', variantLabel: 'Size M', qty: 3 },
+      { productId: 'server-only', qty: 4 },
+    ]);
+
+    expect(store.lines().map(({ productId, qty }) => [productId, qty])).toEqual([
+      ['p1', 5],
+      ['guest-only', 1],
+      ['server-only', 4],
+    ]);
+  });
+
   it('persists guest cart to localStorage and restores it', () => {
     store.add('p1', 2, 'M', 'Size M');
     const raw = localStorage.getItem('novamart.cart.v1');

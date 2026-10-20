@@ -1,7 +1,29 @@
 @use 'sass:color';
 
+/* Resilience kit (skeletons, states, connection banner, safe images) */
+@use './app/shared/resilience/resilience';
+
 /* PrimeIcons */
 @import 'primeicons/primeicons.css';
+
+/* Home arrivals carousel: scoped to its host so these rules stay isolated. */
+app-home-page .block { margin: clamp(3rem, 5.2vw, 4.5rem) 0; }
+app-home-page .home-section app-section-header .section-head { align-items: center; margin-bottom: 1.45rem; padding-bottom: 0.9rem; border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 76%, white); }
+app-home-page .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.15rem; }
+@media (max-width: 1024px) { app-home-page .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { app-home-page .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { app-home-page .grid { grid-template-columns: 1fr; } }
+app-home-page .arrivals-carousel-shell { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; }
+app-home-page .arrivals-carousel-shell--controls { grid-template-columns: 2.65rem minmax(0, 1fr) 2.65rem; gap: 0.75rem; }
+app-home-page .arrivals-carousel-shell--skeleton { grid-template-columns: minmax(0, 1fr); }
+app-home-page .arrivals-control { display: grid; width: 2.65rem; height: 2.65rem; place-items: center; border: 1px solid var(--surface-border); border-radius: 50%; background: var(--surface-card); color: var(--primary); box-shadow: 0 2px 8px rgb(16 41 31 / 6%); cursor: pointer; transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+app-home-page .arrivals-control:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--primary) 40%, var(--surface-border)); background: color-mix(in srgb, var(--primary) 8%, white); box-shadow: 0 5px 14px rgb(16 41 31 / 10%); }
+app-home-page .arrivals-control:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+app-home-page .arrivals-carousel { --arrival-card-width: clamp(15.5rem, calc((100% - 3rem) / 4), 18rem); display: flex; gap: 1rem; overflow-x: auto; padding: 0.45rem 0.25rem 1rem; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
+app-home-page .arrivals-carousel::-webkit-scrollbar { display: none; }
+app-home-page .car-item, app-home-page .arrivals-carousel > p-skeleton { flex: 0 0 var(--arrival-card-width); min-width: 0; }
+app-home-page .car-item { scroll-snap-align: start; }
+@media (max-width: 760px) { app-home-page .arrivals-carousel { --arrival-card-width: min(78vw, 18rem); } app-home-page .arrivals-carousel-shell--controls { grid-template-columns: 2.35rem minmax(0, 1fr) 2.35rem; gap: 0.4rem; } app-home-page .arrivals-control { width: 2.35rem; height: 2.35rem; } }
 
 /* ============ Pharora design tokens (warm ivory, botanical green, soft sand, restrained gold) ============ */
 :root {
@@ -113,6 +135,15 @@ body {
 [dir='rtl'] .p-icon-field .p-inputicon:first-child {
   left: auto;
   right: 0.75rem;
+}
+
+/* Pagination direction follows reading order: first/last and prev/next point
+   the opposite way in RTL even though PrimeNG already orders the buttons. */
+[dir='rtl'] .p-paginator-first-icon,
+[dir='rtl'] .p-paginator-prev-icon,
+[dir='rtl'] .p-paginator-next-icon,
+[dir='rtl'] .p-paginator-last-icon {
+  transform: scaleX(-1);
 }
 
 /* Focus visibility (a11y) */

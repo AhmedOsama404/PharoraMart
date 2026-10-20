@@ -1,75 +1,76 @@
 <h1>{{ i18n.t('cart.title') }}</h1>
 <p class="sub">{{ i18n.t('cart.subtitle') }}</p>
-@if (!view.ready()) {
-  <div class="lines" aria-busy="true">
-    @for (i of [1, 2, 3]; track i) { <p-skeleton height="7rem" borderRadius="1rem" /> }
-  </div>
-} @else if (view.failed()) {
-  <app-empty-state icon="pi-exclamation-triangle" [title]="i18n.t('catalog.errorTitle')"
-    [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="retry()" />
-} @else if (cart.isEmpty()) {
-  <app-empty-state icon="pi-shopping-cart" [title]="i18n.t('cart.emptyTitle')"
-    [subtitle]="i18n.t('cart.emptySubtitle')" [actionLabel]="i18n.t('cart.startShopping')" (actionClick)="go('/products')" />
-} @else {
-  <div class="layout">
-    <div class="lines">
-      @for (l of view.lines(); track l.key) {
-        @if (l.unavailable || !l.product) {
-          <p-card>
-            <div class="line unavailable-row">
-              <div class="unavailable-icon"><i class="pi pi-exclamation-circle"></i></div>
-              <div class="l-info">
-                <span class="l-name">{{ i18n.t('cart.unavailable') }}</span>
-                <small class="variant">{{ l.productId }}</small>
-              </div>
-              <div class="l-actions">
-                <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
-                  [attr.aria-label]="i18n.t('cart.remove')" (onClick)="remove(l.key)" />
-              </div>
-            </div>
-          </p-card>
-        } @else {
-          <p-card>
-            <div class="line">
-              <a [routerLink]="['/products', l.product.id]"><img [src]="l.product.images[0]" [alt]="l.product.name" loading="lazy" (error)="imgFallback($event, l.product.id)" /></a>
-              <div class="l-info">
-                <a [routerLink]="['/products', l.product.id]" class="l-name">{{ l.product.name }}</a>
-                @if (l.variantLabel) { <small class="variant">{{ l.variantLabel }}</small> }
-                <span class="unit">{{ l.unit | money }} / {{ i18n.t('product.qty') }}</span>
-                @if (l.qty >= l.product.stock) {
-                  <p-message severity="warn" size="small" [text]="i18n.t('product.maxStock', { count: l.product.stock })" />
-                }
-              </div>
-              <div class="l-actions">
-                <app-qty-selector [qty]="l.qty" [min]="1" [max]="l.product.stock || 1"
-                  (qtyChange)="setQty(l.key, $event, l.product.stock)" />
-                <strong class="l-total">{{ l.lineTotal | money }}</strong>
-                <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
-                  [attr.aria-label]="i18n.t('cart.remove')" (onClick)="remove(l.key)" />
-              </div>
-            </div>
-          </p-card>
-        }
-      }
-      <div class="row-between">
-        <p-button [label]="i18n.t('cart.continueShopping')" severity="secondary" [outlined]="true"
-          icon="pi pi-arrow-left" iconPos="left" (onClick)="go('/products')" />
-        <p-button [label]="i18n.t('cart.clear')" severity="danger" [outlined]="true"
-          icon="pi pi-trash" (onClick)="askClear()" />
-      </div>
+<app-data-boundary [state]="boundaryState()" [error]="view.error()" (retry)="retry()">
+  <ng-template #skeleton>
+    <div class="lines" aria-busy="true">
+      @for (i of [1, 2, 3]; track i) { <p-skeleton height="7rem" borderRadius="1rem" /> }
     </div>
-    <p-card class="summary">
-      <h2>{{ i18n.t('confirmation.totals') }}</h2>
-      @if (freeShipHint(); as hint) {
-        <p-message [severity]="hint.free ? 'success' : 'info'" [text]="hint.text" />
-      }
-      <div class="t-row"><span>{{ i18n.t('cart.subtotal') }}</span><strong>{{ subtotal() | money }}</strong></div>
-      <div class="t-row"><span>{{ i18n.t('cart.delivery') }}</span>
-        <strong class="hint-inline">{{ i18n.t('cart.calculatedAtCheckout') }}</strong>
+  </ng-template>
+  <ng-template #empty>
+    <app-empty-state icon="pi-shopping-cart" [title]="i18n.t('cart.emptyTitle')"
+      [subtitle]="i18n.t('cart.emptySubtitle')" [actionLabel]="i18n.t('cart.startShopping')" (actionClick)="go('/products')" />
+  </ng-template>
+  <ng-template #content>
+    <div class="layout">
+      <div class="lines">
+        @for (l of view.lines(); track l.key) {
+          @if (l.unavailable || !l.product) {
+            <p-card>
+              <div class="line unavailable-row">
+                <div class="unavailable-icon"><i class="pi pi-exclamation-circle"></i></div>
+                <div class="l-info">
+                  <span class="l-name">{{ i18n.t('cart.unavailable') }}</span>
+                  <small class="variant">{{ l.productId }}</small>
+                </div>
+                <div class="l-actions">
+                  <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                    [attr.aria-label]="i18n.t('cart.remove')" (onClick)="remove(l.key)" />
+                </div>
+              </div>
+            </p-card>
+          } @else {
+            <p-card>
+              <div class="line">
+                <a [routerLink]="['/products', l.product.id]"><img appSafeImg="product" [src]="l.product.images[0]" [alt]="l.product.name" loading="lazy" /></a>
+                <div class="l-info">
+                  <a [routerLink]="['/products', l.product.id]" class="l-name">{{ l.product.name }}</a>
+                  @if (l.variantLabel) { <small class="variant">{{ l.variantLabel }}</small> }
+                  <span class="unit">{{ l.unit | money }} / {{ i18n.t('product.qty') }}</span>
+                  @if (l.qty >= l.product.stock) {
+                    <p-message severity="warn" size="small" [text]="i18n.t('product.maxStock', { count: l.product.stock })" />
+                  }
+                </div>
+                <div class="l-actions">
+                  <app-qty-selector [qty]="l.qty" [min]="1" [max]="l.product.stock || 1"
+                    (qtyChange)="setQty(l.key, $event, l.product.stock)" />
+                  <strong class="l-total">{{ l.lineTotal | money }}</strong>
+                  <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                    [attr.aria-label]="i18n.t('cart.remove')" (onClick)="remove(l.key)" />
+                </div>
+              </div>
+            </p-card>
+          }
+        }
+        <div class="row-between">
+          <p-button [label]="i18n.t('cart.continueShopping')" severity="secondary" [outlined]="true"
+            icon="pi pi-arrow-left" iconPos="left" (onClick)="go('/products')" />
+          <p-button [label]="i18n.t('cart.clear')" severity="danger" [outlined]="true"
+            icon="pi pi-trash" (onClick)="askClear()" />
+        </div>
       </div>
-      <p-divider />
-      <div class="t-row grand"><span>{{ i18n.t('cart.total') }}</span><strong>{{ subtotal() | money }}</strong></div>
-      <p-button [label]="i18n.t('cart.checkout')" icon="pi pi-lock" [fluid]="true" (onClick)="go('/checkout')" />
-    </p-card>
-  </div>
-}
+      <p-card class="summary">
+        <h2>{{ i18n.t('confirmation.totals') }}</h2>
+        @if (freeShipHint(); as hint) {
+          <p-message [severity]="hint.free ? 'success' : 'info'" [text]="hint.text" />
+        }
+        <div class="t-row"><span>{{ i18n.t('cart.subtotal') }}</span><strong>{{ subtotal() | money }}</strong></div>
+        <div class="t-row"><span>{{ i18n.t('cart.delivery') }}</span>
+          <strong class="hint-inline">{{ i18n.t('cart.calculatedAtCheckout') }}</strong>
+        </div>
+        <p-divider />
+        <div class="t-row grand"><span>{{ i18n.t('cart.total') }}</span><strong>{{ subtotal() | money }}</strong></div>
+        <p-button [label]="i18n.t('cart.checkout')" icon="pi pi-lock" [fluid]="true" (onClick)="go('/checkout')" />
+      </p-card>
+    </div>
+  </ng-template>
+</app-data-boundary>

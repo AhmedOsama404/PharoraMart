@@ -3,6 +3,15 @@ export interface TranslationDict {
 }
 
 export const en: TranslationDict = {
+  aria: {
+    breadcrumb: "Breadcrumb",
+    filters: "Filters",
+    loadingProducts: "Loading products",
+    primary: "Primary navigation",
+    carouselControls: "Product carousel controls",
+    previousProducts: "Previous products",
+    nextProducts: "Next products",
+  },
   app: { name: 'Pharora', tagline: 'Everything you love, delivered fast.' },
   nav: {
     home: 'Home',
@@ -182,7 +191,7 @@ export const en: TranslationDict = {
     backToCart: 'Back to cart',
     orderSuccess: 'Order placed successfully',
     duplicateBlocked: 'Your order is already being processed. Please wait.',
-    applyCoupon: 'Apply',
+    applyCoupon: 'Apply promo code', couponApplied: 'Promo code applied',
     couponCode: 'Coupon code',
     discount: 'Discount',
     couponInvalid: 'This coupon is not valid for your order.',

@@ -99,6 +99,24 @@ export class CartStore {
     this.persist();
   }
 
+  /** Merge guest and account carts without letting an empty server cart erase guest items. */
+  mergeAll(lines: { productId: string; variantKey?: string; variantLabel?: string; qty: number }[]): void {
+    const merged = new Map<string, CartLine>();
+    for (const line of [...this.lines(), ...(lines ?? [])]) {
+      if (!line || typeof line.productId !== 'string' || line.productId.trim() === '' || !Number.isFinite(line.qty)) {
+        continue;
+      }
+      const key = cartLineKey(line.productId, line.variantKey);
+      const qty = Math.max(1, Math.min(9999, Math.floor(line.qty)));
+      const existing = merged.get(key);
+      merged.set(key, existing
+        ? { ...existing, qty: Math.min(9999, existing.qty + qty) }
+        : { ...line, qty, key });
+    }
+    this.lines.set([...merged.values()]);
+    this.persist();
+  }
+
   qtyOf(productId: string, variantKey?: string): number {
     return this.lines().find((l) => l.key === cartLineKey(productId, variantKey))?.qty ?? 0;
   }

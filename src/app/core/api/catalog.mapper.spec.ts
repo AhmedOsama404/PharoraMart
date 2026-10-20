@@ -65,6 +65,29 @@ describe('catalog.mapper', () => {
     expect(p.descriptions?.en).toBe('Fragrance-free.');
   });
 
+  it('passes localized attribute and variant labels through to the storefront', () => {
+    const product = toProduct({
+      ...baseProduct,
+      attributes: [{
+        name: 'Material',
+        value: 'cotton',
+        names: { en: 'Material', ar: 'الخامة' },
+        values: { en: 'cotton', ar: 'قطن' },
+      }],
+      variants: [{
+        id: 'size',
+        name: 'Size',
+        options: ['Small'],
+        names: { en: 'Size', ar: 'المقاس' },
+        optionTranslations: [{ en: 'Small', ar: 'صغير' }],
+      }],
+    });
+    expect(product.attributes[0].names?.ar).toBe('الخامة');
+    expect(product.attributes[0].values?.ar).toBe('قطن');
+    expect(product.variants?.[0].names?.ar).toBe('المقاس');
+    expect(product.variants?.[0].optionTranslations?.[0]?.ar).toBe('صغير');
+  });
+
   it('normalizes nullish collections and drops null variants/salePrice', () => {
     const p = toProduct({
       ...baseProduct,

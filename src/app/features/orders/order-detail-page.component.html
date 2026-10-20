@@ -1,27 +1,31 @@
 <p-button [label]="i18n.t('orders.backToOrders')" icon="pi pi-arrow-left" [text]="true" routerLink="/orders" />
-@if (state() === 'loading') {
-  <p-skeleton height="16rem" borderRadius="1.2rem" />
-} @else if (!order()) {
-  <app-empty-state icon="pi-exclamation-circle" [title]="i18n.t('orders.notFound')"
-    [actionLabel]="i18n.t('orders.backToOrders')" (actionClick)="go('/orders')" />
-} @else {
-  <h1>{{ i18n.t('orders.detailTitle') }} {{ order()!.orderNumber }}</h1>
-  <p-card>
-    <div class="kv"><span>{{ i18n.t('orders.date') }}</span><strong>{{ dateOf(order()!.createdAt) }}</strong></div>
-    <div class="kv"><span>{{ i18n.t('orders.status') }}</span><p-tag [value]="statusLabel(order()!.status)" [severity]="statusSeverity(order()!.status)" /></div>
-    <div class="kv"><span>{{ i18n.t('orders.payment') }}</span><strong>{{ i18n.t('confirmation.cashOnDelivery') }}</strong></div>
-    <p-divider />
-    <ul class="items">
-      @for (i of order()!.items; track i.productId + (i.variantLabel ?? '')) {
-        <li><img [src]="i.image" [alt]="i.productName" loading="lazy" (error)="imgFallback($event, i.productId)" />
-          <span>{{ i.productName }} <small>× {{ i.qty }}</small></span>
-          <strong>{{ i.unitPrice * i.qty | money: order()!.currency }}</strong></li>
-      }
-    </ul>
-    <p-divider />
-    <div class="kv"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ order()!.subtotal | money: order()!.currency }}</strong></div>
-    <div class="kv"><span>{{ i18n.t('checkout.delivery') }}</span><strong>{{ order()!.deliveryFee | money: order()!.currency }}</strong></div>
-    <div class="kv grand"><span>{{ i18n.t('orders.total') }}</span><strong>{{ order()!.total | money: order()!.currency }}</strong></div>
-    <p class="addr">{{ order()!.customer.fullName }} — {{ order()!.customer.hotelName }}, {{ order()!.customer.city }}</p>
-  </p-card>
-}
+<app-data-boundary [state]="boundaryState()" [error]="error()" (retry)="retry()">
+  <ng-template #skeleton>
+    <p-skeleton height="16rem" borderRadius="1.2rem" />
+  </ng-template>
+  <ng-template #empty>
+    <app-empty-state icon="pi-exclamation-circle" [title]="i18n.t('orders.notFound')"
+      [actionLabel]="i18n.t('orders.backToOrders')" (actionClick)="go('/orders')" />
+  </ng-template>
+  <ng-template #content>
+    <h1>{{ i18n.t('orders.detailTitle') }} {{ order()!.orderNumber }}</h1>
+    <p-card>
+      <div class="kv"><span>{{ i18n.t('orders.date') }}</span><strong>{{ dateOf(order()!.createdAt) }}</strong></div>
+      <div class="kv"><span>{{ i18n.t('orders.status') }}</span><p-tag [value]="statusLabel(order()!.status)" [severity]="statusSeverity(order()!.status)" /></div>
+      <div class="kv"><span>{{ i18n.t('orders.payment') }}</span><strong>{{ i18n.t('confirmation.cashOnDelivery') }}</strong></div>
+      <p-divider />
+      <ul class="items">
+        @for (i of order()!.items; track i.productId + (i.variantLabel ?? '')) {
+          <li><img appSafeImg="product" [src]="i.image" [alt]="i.productName" loading="lazy" />
+            <span>{{ i.productName }} <small>× {{ i.qty }}</small></span>
+            <strong>{{ i.unitPrice * i.qty | money: order()!.currency }}</strong></li>
+        }
+      </ul>
+      <p-divider />
+      <div class="kv"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ order()!.subtotal | money: order()!.currency }}</strong></div>
+      <div class="kv"><span>{{ i18n.t('checkout.delivery') }}</span><strong>{{ order()!.deliveryFee | money: order()!.currency }}</strong></div>
+      <div class="kv grand"><span>{{ i18n.t('orders.total') }}</span><strong>{{ order()!.total | money: order()!.currency }}</strong></div>
+      <p class="addr">{{ order()!.customer.fullName }} — {{ order()!.customer.hotelName }}, {{ order()!.customer.city }}</p>
+    </p-card>
+  </ng-template>
+</app-data-boundary>

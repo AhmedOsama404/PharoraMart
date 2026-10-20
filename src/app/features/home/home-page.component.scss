@@ -1,6 +1,3 @@
-.block { margin: clamp(3rem, 5.2vw, 4.5rem) 0; }
-:host ::ng-deep .home-section app-section-header .section-head { align-items: center; margin-bottom: 1.45rem; padding-bottom: 0.9rem; border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 76%, white); }
-.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.15rem; }
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 18rem)); gap: 1rem; }
 .cat-card { position: relative; isolation: isolate; border: 1px solid color-mix(in srgb, var(--surface-border) 65%, transparent); border-radius: 1.15rem; overflow: hidden; display: block; min-height: 13rem; box-shadow: var(--shadow-card); transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease; }
 .cat-card::after { content: ""; position: absolute; z-index: 0; inset: 0; background: linear-gradient(180deg, transparent 38%, rgb(9 32 23 / 18%) 100%); pointer-events: none; }
@@ -23,8 +20,16 @@
 .promo .promo-cta .p-button { min-height: 2.9rem; padding-inline: 1.15rem; border: 1px solid #e8c86a; border-radius: 0.75rem; background: #d8b85f; color: #183021; font-weight: 750; box-shadow: 0 0.45rem 1.1rem rgb(0 0 0 / 12%); transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
 .promo .promo-cta .p-button:hover { transform: translateY(-1px); border-color: #f1db94; background: #e7c96e; box-shadow: 0 0.65rem 1.35rem rgb(0 0 0 / 18%); }
 .promo .promo-cta .p-button:focus-visible { outline: 3px solid #f3de9d; outline-offset: 3px; }
-.car-item { height: 100%; padding: 0.45rem; }
 @media (prefers-reduced-motion: reduce) { .cat-card, .cat-card img, .promo img, .promo .p-button { transition: none; } }
-@media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .promo { grid-template-columns: 1fr; gap: 1.35rem; } .promo > a { height: clamp(12rem, 52vw, 18rem); } }
-@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .promo { grid-template-columns: 1fr; gap: 1.35rem; } .promo > a { height: clamp(12rem, 52vw, 18rem); } }
+
+/* RTL: next moves content leftward, so it belongs on the left of the carousel;
+   the outward-pointing promo arrow mirrors too. */
+:host-context([dir='rtl']) ::ng-deep .p-carousel-next-button { order: -1; }
+:host-context([dir='rtl']) ::ng-deep .p-carousel-prev-button { order: 2; }
+:host-context([dir='rtl']) ::ng-deep .p-carousel-prev-button .p-icon,
+:host-context([dir='rtl']) ::ng-deep .p-carousel-next-button .p-icon { transform: scaleX(-1); }
+:host-context([dir='rtl']) ::ng-deep .promo-cta .pi-arrow-up-right { transform: scaleX(-1); }
+.defer-placeholder {
+  min-height: 22rem;
+}

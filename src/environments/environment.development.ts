@@ -1,8 +1,11 @@
 export const environment = {
   production: false,
   // Local backend for live-API testing (set useMockApi:false to use it).
+  // run-api.ps1 starts the API on http://localhost:5086.
   apiBaseUrl: 'https://localhost:44389/api/v1',
   useMockApi: false,
+  requestTimeoutMs: 10000,
+  getRetryAttempts: 2,
   // Public business identity (all frontend-bundled values are public by
   // definition — never put secrets here). The future dashboard owns the real
   // values; these defaults keep the storefront coherent until then.
@@ -17,4 +20,7 @@ export const environment = {
   // are quoted via DeliveryService; free shipping above the threshold below.
   freeShippingThreshold: 75,
   pageSize: 12,
+  // Self-hosted LibreTranslate (free, unlimited, no API keys).
+  // Deploy with: docker compose -f docker-compose.libretranslate.yml up -d
+  libreTranslateUrl: 'http://localhost:5000',
 };

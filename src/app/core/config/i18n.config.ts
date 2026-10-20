@@ -1,11 +1,4 @@
 import { en, type TranslationDict } from '../../i18n/en';
-import { ar } from '../../i18n/ar';
-import { cs } from '../../i18n/cs';
-import { de } from '../../i18n/de';
-import { fr } from '../../i18n/fr';
-import { it } from '../../i18n/it';
-import { pl } from '../../i18n/pl';
-import { sk } from '../../i18n/sk';
 
 // Eight supported storefront languages. Arabic is the only RTL language:
 // every other language renders LTR (see LANG_DIRS).
@@ -37,10 +30,78 @@ export const LANG_DIRS: Record<SupportedLang, 'ltr' | 'rtl'> = {
   de: 'ltr',
 };
 
-const DICTS: Record<SupportedLang, TranslationDict> = { en, ar, cs, it, pl, fr, sk, de };
+import { resilienceEn } from '../../i18n/resilience-en';
+
+/** Deep-merge resilience copy into every locale once at module load. */
+function mergeDict(base: TranslationDict, extra: TranslationDict): TranslationDict {
+  const out: TranslationDict = { ...base };
+  for (const [key, value] of Object.entries(extra)) {
+    const current = out[key];
+    if (value && typeof value === 'object' && current && typeof current === 'object') {
+      out[key] = mergeDict(current as TranslationDict, value as TranslationDict);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+const DICTS: Partial<Record<SupportedLang, TranslationDict>> = {
+  en: mergeDict(en, resilienceEn),
+};
+
+const DICT_LOADERS: Record<Exclude<SupportedLang, 'en'>, () => Promise<TranslationDict>> = {
+  ar: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/ar'), import('../../i18n/resilience')]);
+    return mergeDict(base.ar, resilience.RESILIENCE_DICTS.ar);
+  },
+  cs: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/cs'), import('../../i18n/resilience')]);
+    return mergeDict(base.cs, resilience.RESILIENCE_DICTS.cs);
+  },
+  de: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/de'), import('../../i18n/resilience')]);
+    return mergeDict(base.de, resilience.RESILIENCE_DICTS.de);
+  },
+  fr: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/fr'), import('../../i18n/resilience')]);
+    return mergeDict(base.fr, resilience.RESILIENCE_DICTS.fr);
+  },
+  it: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/it'), import('../../i18n/resilience')]);
+    return mergeDict(base.it, resilience.RESILIENCE_DICTS.it);
+  },
+  pl: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/pl'), import('../../i18n/resilience')]);
+    return mergeDict(base.pl, resilience.RESILIENCE_DICTS.pl);
+  },
+  sk: async () => {
+    const [base, resilience] = await Promise.all([import('../../i18n/sk'), import('../../i18n/resilience')]);
+    return mergeDict(base.sk, resilience.RESILIENCE_DICTS.sk);
+  },
+};
+
+const pendingLoads = new Map<SupportedLang, Promise<TranslationDict>>();
+
+export function loadDict(lang: SupportedLang): Promise<TranslationDict> {
+  const cached = DICTS[lang];
+  if (cached) return Promise.resolve(cached);
+  const pending = pendingLoads.get(lang);
+  if (pending) return pending;
+  const load = DICT_LOADERS[lang as Exclude<SupportedLang, 'en'>]().then((dict) => {
+    DICTS[lang] = dict;
+    pendingLoads.delete(lang);
+    return dict;
+  }, (error: unknown) => {
+    pendingLoads.delete(lang);
+    throw error;
+  });
+  pendingLoads.set(lang, load);
+  return load;
+}
 
 export function getDict(lang: SupportedLang): TranslationDict {
-  return DICTS[lang] ?? en;
+  return DICTS[lang] ?? DICTS.en!;
 }
 
 export function lookupKey(dict: unknown, key: string): string {

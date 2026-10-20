@@ -1,6 +1,8 @@
+import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -8,6 +10,7 @@ import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
+import { Skeleton } from 'primeng/skeleton';
 import { Textarea } from 'primeng/textarea';
 import { I18nService } from '../../core/services/i18n.service';
 import { CurrencyService } from '../../core/services/currency.service';
@@ -22,7 +25,7 @@ import { ApiClientService } from '../../core/api/api-client.service';
 import { ApiErrorService } from '../../core/services/api-error.service';
 import { firstErrorKey, phoneValidator } from '../../shared/utils/validators';
 import { PhoneInputComponent } from '../../shared/components/phone-input.component';
-import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import type { CreateOrderRequest } from '../../models/order.model';
 import type { Hotel } from '../../models/hotel.model';
 import { environment } from '../../../environments/environment';
@@ -37,9 +40,9 @@ import type { SiteCheckoutContent } from '../../models/site-content.model';
   selector: 'app-checkout-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [SafeImageDirective, 
     ReactiveFormsModule, Button, Card, Divider, InputText, Message,
-    Select, Textarea, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
+    Select, Textarea, Skeleton, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],
   templateUrl: './checkout-page.component.html',
   styleUrl: './checkout-page.component.scss',
@@ -61,6 +64,7 @@ export class CheckoutPageComponent implements OnInit {
   private apiError = inject(ApiErrorService);
   private router = inject(Router);
   private scroll = inject(ScrollService);
+  private connectivity = inject(ConnectivityService);
 
   protected placing = signal(false);
   protected submitError = signal('');
@@ -94,6 +98,8 @@ export class CheckoutPageComponent implements OnInit {
   protected couponError = signal('');
   protected couponBusy = signal(false);
   private quoteSequence = 0;
+  private couponValidationSequence = 0;
+  private lastCouponValidationKey = '';
 
   // Memoized so p-select keeps a referentially stable options array.
   protected contactOptions = computed(() => [
@@ -122,8 +128,16 @@ export class CheckoutPageComponent implements OnInit {
   protected cityOptions = computed(() => this.cities().map((c) => ({ label: c, value: c })));
 
   constructor() {
-    this.delivery.hotels().subscribe((list) => this.hotels.set(list));
-    this.delivery.cities().subscribe((list) => this.cities.set(list));
+    // The directory is required to choose a hotel/city; if it cannot load the
+    // form stays open (no crash) and submit is blocked by validation/quote.
+    this.delivery.hotels().subscribe({
+      next: (list) => this.hotels.set(list),
+      error: () => this.hotels.set([]),
+    });
+    this.delivery.cities().subscribe({
+      next: (list) => this.cities.set(list),
+      error: () => this.cities.set([]),
+    });
     effect(() => {
       const code = this.currency.code();
       const subtotal = this.subtotal();
@@ -131,11 +145,35 @@ export class CheckoutPageComponent implements OnInit {
       if (hotelId) untracked(() => this.refreshQuote(hotelId));
       void code; void subtotal;
     });
+    // A validated discount uses the currency and subtotal from its validation.
+    // Revalidate when prices or the header currency change so the displayed
+    // total stays in step with the order request.
+    effect(() => {
+      const code = this.couponApplied();
+      if (!code) {
+        this.lastCouponValidationKey = '';
+        return;
+      }
+      const subtotal = this.subtotal();
+      const currencyCode = this.currency.code();
+      const key = this.couponValidationKey(code, subtotal, currencyCode);
+      if (key !== this.lastCouponValidationKey) {
+        untracked(() => this.validateCoupon(code, subtotal, currencyCode));
+      }
+    });
     // Pre-fill from the demo session when available; guests fill it manually.
     const u = this.auth.user();
     if (u) {
       this.form.patchValue({ fullName: u.name, email: u.email, phone: u.phone ?? '' });
     }
+    // When the backend comes back, unblock the money flow without a reload.
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.view.failed()) this.view.refresh();
+        const hotelId = this.selectedHotel();
+        if (hotelId) this.refreshQuote(hotelId);
+      });
   }
 
   ngOnInit(): void {
@@ -178,25 +216,36 @@ export class CheckoutPageComponent implements OnInit {
   // Asks the quote boundary for the hotel fee and publishes it. Unknown or
   // inactive hotels fail loudly and block submit — never charge a guessed fee.
   private refreshQuote(hotelId: string): void {
+    void this.quoteOnce(hotelId);
+  }
+
+  /** Fresh quote used at submit time, after prices were re-pulled. */
+  private quoteOnce(hotelId: string): Promise<boolean> {
     const seq = ++this.quoteSequence;
     this.quoteFailed.set(false);
     if (!hotelId) {
       this.quotedFee.set(null);
       this.quoteRateDate.set(null);
-      return;
+      return Promise.resolve(false);
     }
     this.quotedFee.set(null);
     this.quoteRateDate.set(null);
-    this.delivery.quoteFor(hotelId, this.subtotal(), this.currency.code()).subscribe({
-      next: (q) => { if (seq !== this.quoteSequence) return; this.quotedFee.set(q.fee); this.quoteRateDate.set(q.exchangeRateDate ?? null); },
-      error: () => {
-        if (seq !== this.quoteSequence) return;
-        this.quotedFee.set(null);
-        this.quoteFailed.set(true);
-        // The interceptor already shows the localized reason once; the inline
-        // state blocks submit until a fee can be trusted again.
-      },
-    });
+    return firstValueFrom(this.delivery.quoteFor(hotelId, this.subtotal(), this.currency.code()))
+      .then((q) => {
+        if (seq !== this.quoteSequence) return false;
+        this.quotedFee.set(q.fee);
+        this.quoteRateDate.set(q.exchangeRateDate ?? null);
+        return true;
+      })
+      .catch(() => {
+        if (seq === this.quoteSequence) {
+          this.quotedFee.set(null);
+          this.quoteFailed.set(true);
+          // The interceptor already shows the localized reason once; the inline
+          // state blocks submit until a fee can be trusted again.
+        }
+        return false;
+      });
   }
 
   /**
@@ -210,32 +259,63 @@ export class CheckoutPageComponent implements OnInit {
     this.couponError.set('');
     if (!code) return;
     if (environment.useMockApi) {
+      this.couponApplied.set('');
+      this.couponDiscount.set(0);
       this.couponError.set(this.i18n.t('checkout.couponInvalid'));
       return;
     }
+    this.validateCoupon(code, this.subtotal(), this.currency.code());
+  }
+
+  private couponValidationKey(code: string, subtotal: number, currencyCode: string): string {
+    return `${code.trim().toUpperCase()}|${currencyCode}|${subtotal.toFixed(2)}`;
+  }
+
+  private validateCoupon(code: string, subtotal: number, currencyCode: string): void {
+    const normalizedCode = code.trim().toUpperCase();
+    const key = this.couponValidationKey(normalizedCode, subtotal, currencyCode);
+    if (!normalizedCode || key === this.lastCouponValidationKey) return;
+
+    this.lastCouponValidationKey = key;
+    const sequence = ++this.couponValidationSequence;
     this.couponBusy.set(true);
+    this.couponDiscount.set(0);
+    this.couponError.set('');
+
     this.api
       .post<CouponValidationResponse>(
         'coupons/validate',
-        { code, subtotal: this.subtotal() },
+        { code: normalizedCode, subtotal },
         undefined,
         { silent: true },
       )
       .subscribe({
         next: (res) => {
+          if (sequence !== this.couponValidationSequence) return;
+          // Prices may change while the request is in flight. Discard its
+          // result and validate again against the current cart total.
+          if (currencyCode !== this.currency.code() || subtotal !== this.subtotal()) {
+            this.couponBusy.set(false);
+            this.validateCoupon(normalizedCode, this.subtotal(), this.currency.code());
+            return;
+          }
           this.couponBusy.set(false);
           if (res.valid) {
-            this.couponApplied.set(code.toUpperCase());
+            this.couponApplied.set(normalizedCode);
             this.couponDiscount.set(res.discount);
             return;
           }
-          // Ineligible (already used, expired, min order, …): show the exact,
-          // localized reason and keep no discount applied.
           this.couponApplied.set('');
           this.couponDiscount.set(0);
           this.couponError.set(this.apiError.messageForCode(res.code, res.args));
         },
         error: (err: unknown) => {
+          if (sequence !== this.couponValidationSequence) return;
+          if (currencyCode !== this.currency.code() || subtotal !== this.subtotal()) {
+            this.couponBusy.set(false);
+            this.validateCoupon(normalizedCode, this.subtotal(), this.currency.code());
+            return;
+          }
           this.couponBusy.set(false);
           this.couponApplied.set('');
           this.couponDiscount.set(0);
@@ -278,10 +358,20 @@ export class CheckoutPageComponent implements OnInit {
     return firstErrorKey(this.form.get(name));
   }
 
-  // Review thumbnails share the two-stage recovery (fixed-size box).
-  protected imgFallback(ev: Event, seed: string): void {
-    handleImgError(ev, seed);
-  }
+  /**
+   * Money can never be placed from a stale or half-loaded cart: the button is
+   * disabled until fresh prices resolved, and the submit handler re-checks.
+   */
+  protected checkoutBlocked = computed(
+    () => !this.view.ready() || this.view.failed() || this.quoteFailed() || this.connectivity.status() === 'offline',
+  );
+
+  protected blockedReason = computed(() => {
+    if (this.connectivity.status() === 'offline') return this.i18n.t('resilience.offlineBody');
+    if (this.view.failed()) return this.i18n.t('resilience.cart.checkoutBlocked');
+    if (this.quoteFailed()) return this.i18n.t('errors.deliveryFeeUnavailable');
+    return '';
+  });
 
   protected copy(key: keyof SiteCheckoutContent, fallbackKey: string): string {
     const content = this.siteContent.checkout();
@@ -292,10 +382,10 @@ export class CheckoutPageComponent implements OnInit {
     this.router.navigate([path]);
   }
 
-  protected submit(): void {
+  protected async submit(): Promise<void> {
     // Belt and braces: the button disables while placing, but keyboard
     // submits and double taps must also be harmless.
-    if (this.placing()) {
+    if (this.placing() || this.couponBusy()) {
       this.notify.info('checkout.duplicateBlocked');
       return;
     }
@@ -303,23 +393,44 @@ export class CheckoutPageComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    if (!this.lines().length) {
-      // Nothing orderable (empty cart, or only unavailable lines left):
-      // explain instead of placing an empty order.
-      this.submitError.set(this.i18n.t('checkout.emptyCart'));
+    if (this.connectivity.status() === 'offline') {
+      this.submitError.set(this.i18n.t('resilience.offlineBody'));
       return;
     }
-    if (this.quoteFailed() || this.quotedFee() == null) {
-      // No trustworthy fee (unknown hotel or failed quote): block instead of
-      // charging a guessed amount.
+    if (this.quoteFailed()) {
+      // Fast fail when the fee is already known to be untrustworthy.
       this.submitError.set(this.i18n.t('errors.deliveryFeeUnavailable'));
       return;
     }
     this.placing.set(true);
     this.submitError.set('');
+
+    // Money flow: never submit the totals that happen to be on screen. Re-pull
+    // the catalog, then re-quote the hotel fee against the fresh subtotal.
+    const fresh = await this.view.ensureFresh();
+    if (!fresh) {
+      this.placing.set(false);
+      this.submitError.set(this.i18n.t('resilience.cart.checkoutBlocked'));
+      return;
+    }
+    if (!this.lines().length) {
+      // Nothing orderable (empty cart, or only unavailable lines left):
+      // explain instead of placing an empty order.
+      this.placing.set(false);
+      this.submitError.set(this.i18n.t('checkout.emptyCart'));
+      return;
+    }
+    const v = this.form.getRawValue();
+    const quoteOk = await this.quoteOnce(v.hotelId);
+    if (!quoteOk || this.quotedFee() == null) {
+      // No trustworthy fee (unknown hotel or failed quote): block instead of
+      // charging a guessed amount.
+      this.placing.set(false);
+      this.submitError.set(this.i18n.t('errors.deliveryFeeUnavailable'));
+      return;
+    }
     this.submittedKey ??= `ck-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6)}`;
     const key = this.submittedKey;
-    const v = this.form.getRawValue();
     const hotel = this.delivery.hotelById(v.hotelId);
     const req: CreateOrderRequest = {
       customer: {

@@ -9,13 +9,13 @@ import { hermeticApi } from '../../../testing/hermetic-api';
 describe('CartViewService (badge/page/checkout agreement)', () => {
   let view: CartViewService;
   let cart: CartStore;
-  let allImpl: () => ReturnType<ProductService['all']>;
+  let byIdsImpl: () => ReturnType<ProductService['getByIdsMany']>;
 
   beforeEach(() => {
     localStorage.clear();
-    allImpl = () => of(MOCK_PRODUCTS);
+    byIdsImpl = () => of(MOCK_PRODUCTS);
     TestBed.configureTestingModule({
-      providers: [...hermeticApi(), { provide: ProductService, useValue: { all: () => allImpl() } }],
+      providers: [...hermeticApi(), { provide: ProductService, useValue: { getByIdsMany: () => byIdsImpl() } }],
     });
     cart = TestBed.inject(CartStore);
     view = TestBed.inject(CartViewService);
@@ -24,6 +24,7 @@ describe('CartViewService (badge/page/checkout agreement)', () => {
   it('renders every stored line: stale ids become explicit unavailable rows', () => {
     cart.add('ghost-from-old-catalog', 2);
     cart.add(MOCK_PRODUCTS[0].id, 1);
+    TestBed.flushEffects();
     const lines = view.lines();
     // Badge counts everything…
     expect(cart.count()).toBe(3);
@@ -39,6 +40,7 @@ describe('CartViewService (badge/page/checkout agreement)', () => {
   it('excludes unavailable lines from money', () => {
     cart.add('ghost-from-old-catalog', 5);
     cart.add(MOCK_PRODUCTS[0].id, 2);
+    TestBed.flushEffects();
     const valid = MOCK_PRODUCTS[0];
     const unit = valid.salePrice ?? valid.price;
     expect(view.pricedSubtotal()).toBe(2 * unit);
@@ -47,13 +49,16 @@ describe('CartViewService (badge/page/checkout agreement)', () => {
 
   it('distinguishes loading, ready and error states', () => {
     const gate = new Subject<typeof MOCK_PRODUCTS>();
-    allImpl = () => gate;
+    byIdsImpl = () => gate;
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [...hermeticApi(), { provide: ProductService, useValue: { all: () => allImpl() } }],
+      providers: [...hermeticApi(), { provide: ProductService, useValue: { getByIdsMany: () => byIdsImpl() } }],
     });
     localStorage.clear();
+    cart = TestBed.inject(CartStore);
     const v2 = TestBed.inject(CartViewService);
+    cart.add('p1', 1);
+    TestBed.flushEffects();
     expect(v2.ready()).toBeFalse();
     gate.next(MOCK_PRODUCTS);
     expect(v2.ready()).toBeTrue();
@@ -61,15 +66,18 @@ describe('CartViewService (badge/page/checkout agreement)', () => {
   });
 
   it('recovers from catalog failure via refresh', () => {
-    allImpl = () => throwError(() => new Error('down'));
+    byIdsImpl = () => throwError(() => new Error('down'));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [...hermeticApi(), { provide: ProductService, useValue: { all: () => allImpl() } }],
+      providers: [...hermeticApi(), { provide: ProductService, useValue: { getByIdsMany: () => byIdsImpl() } }],
     });
     localStorage.clear();
+    cart = TestBed.inject(CartStore);
+    cart.add('p1', 1);
     const v2 = TestBed.inject(CartViewService);
+    TestBed.flushEffects();
     expect(v2.failed()).toBeTrue();
-    allImpl = () => of(MOCK_PRODUCTS);
+    byIdsImpl = () => of(MOCK_PRODUCTS);
     v2.refresh();
     expect(v2.failed()).toBeFalse();
     expect(v2.ready()).toBeTrue();

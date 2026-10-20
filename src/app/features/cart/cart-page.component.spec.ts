@@ -30,7 +30,7 @@ describe('CartPageComponent (translated summary)', () => {
         provideRouter([]),
         provideNoopAnimations(),
         ConfirmationService,
-        { provide: ProductService, useValue: { all: () => of(MOCK_PRODUCTS) } },
+        { provide: ProductService, useValue: { all: () => of(MOCK_PRODUCTS), getByIdsMany: () => of(MOCK_PRODUCTS) } },
         { provide: NotificationService, useValue: { success: () => undefined, error: () => undefined, info: () => undefined } },
       ],
     }).compileComponents();
@@ -64,8 +64,8 @@ describe('CartPageComponent (translated summary)', () => {
     expect(text('.lines')).not.toContain('cart.unavailable');
   });
 
-  it('renders the Arabic summary correctly in RTL', () => {
-    i18n.setLang('ar');
+  it('renders the Arabic summary correctly in RTL', async () => {
+    await i18n.setLang('ar');
     fixture.detectChanges();
     expect(text('.summary h2')).toBe('الإجماليات');
     expect(document.documentElement.getAttribute('dir')).toBe('rtl');

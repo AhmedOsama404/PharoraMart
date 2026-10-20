@@ -1,4 +1,4 @@
-<nav class="crumbs" aria-label="breadcrumb">
+﻿<nav class="crumbs" [attr.aria-label]="i18n.t('aria.breadcrumb')">
   <a routerLink="/" class="crumb-home">{{ i18n.t('product.breadcrumbsHome') }}</a>
   <span aria-hidden="true">/</span><span aria-current="page">{{ i18n.t('catalog.title') }}</span>
 </nav>
@@ -32,7 +32,7 @@
 }
 
 <div class="layout">
-  <aside class="filters" aria-label="filters">
+  <aside class="filters" [attr.aria-label]="i18n.t('aria.filters')">
     <ng-container *ngTemplateOutlet="filterBody" />
   </aside>
   <section class="results" aria-live="polite" [attr.aria-busy]="state() === 'loading' || priceInputPending()">
@@ -43,8 +43,18 @@
         {{ i18n.t('catalog.results', { count: total() }) }}
       }
     </p>
+    @if (slow()) {
+      <div class="rs-slow" role="status">
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        <div>
+          <strong>{{ i18n.t('resilience.slowTitle') }}</strong>
+          <span>{{ i18n.t('resilience.slowHint') }}</span>
+        </div>
+        <p-button [label]="i18n.t('resilience.retry')" icon="pi pi-refresh" severity="secondary" [text]="true" (onClick)="retry()" />
+      </div>
+    }
     @if (state() === 'loading' || priceInputPending()) {
-      <div class="grid skeleton-grid" aria-label="Loading products">
+      <div class="grid skeleton-grid" [attr.aria-label]="i18n.t('aria.loadingProducts')">
         @for (i of [1,2,3,4,5,6]; track i) {
           <article class="product-skeleton" aria-hidden="true">
             <p-skeleton class="skeleton-media" height="auto" borderRadius="0" />
@@ -59,7 +69,7 @@
       </div>
     } @else if (state() === 'error') {
       <app-empty-state icon="pi-exclamation-triangle" [title]="i18n.t('catalog.errorTitle')"
-        [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="reload()" />
+        [subtitle]="i18n.t('catalog.errorSubtitle')" [actionLabel]="i18n.t('catalog.retry')" (actionClick)="retry()" />
     } @else if (!items().length) {
       <app-empty-state icon="pi-search" [title]="i18n.t('catalog.emptyTitle')"
         [subtitle]="i18n.t('catalog.emptySubtitle')" [actionLabel]="i18n.t('catalog.clearAll')" (actionClick)="clearAll()" />
@@ -75,7 +85,7 @@
   </section>
 </div>
 
-<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" position="left">
+<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
   <ng-container *ngTemplateOutlet="filterBody" />
   <p-button [label]="i18n.t('catalog.clearAll')" [text]="true" (onClick)="clearAll()" />
 </p-drawer>
@@ -88,7 +98,7 @@
   </div>
   <div class="f-group">
     <label>{{ i18n.t('catalog.priceRange') }}: {{ i18n.t('catalog.maxPrice') }} {{ currency.format(displayPriceLimit(), filterCurrency()) }}</label>
-    <p-slider [ngModel]="displayMaxPrice()" (onChange)="setMaxPrice($event.value)" [min]="0"
+    <p-slider [ngModel]="draft.maxPrice() ?? displayPriceLimit()" (onChange)="setMaxPrice($event.value)" [min]="0"
       [max]="displayPriceLimit()" [step]="displayPriceStep()" [disabled]="!priceConversionAvailable()" />
     <div class="price-inputs">
       <input pInputText type="number" step="0.01" [ngModel]="minPriceInput()" (ngModelChange)="onPriceInput('min', $event)"
@@ -112,3 +122,4 @@
   </div>
   <p-button [label]="i18n.t('catalog.clearAll')" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="clearAll()" />
 </ng-template>
+

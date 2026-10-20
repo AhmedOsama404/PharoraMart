@@ -27,4 +27,5 @@ h1 { margin: 0; font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.2; letter-
 .grand strong { color: var(--primary); font-size: 1.2rem; font-weight: 800; }
 .summary p-button { display: block; margin-top: 0.45rem; }
 :host ::ng-deep .summary .p-card-body { padding: 1.1rem; }
+:host-context([dir='rtl']) ::ng-deep .pi-arrow-left { transform: scaleX(-1); }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .summary { position: static; } .line { grid-template-columns: 4.5rem 1fr; gap: 0.75rem; } .line img { width: 4.5rem; height: 3.8rem; } .l-actions { grid-column: 1 / -1; justify-content: space-between; align-items: center; } .unavailable-row .l-actions { justify-content: flex-end; } }

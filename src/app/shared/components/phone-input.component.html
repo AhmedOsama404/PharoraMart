@@ -17,13 +17,13 @@
     [disabled]="disabled()">
     <ng-template #selectedItem let-option>
       <span class="opt opt--selected">
-        <img class="opt__flag" [src]="countryFlagPath(option.value)" alt="" aria-hidden="true" />
+        <img appSafeImg="generic" class="opt__flag" [src]="countryFlagPath(option.value)" alt="" aria-hidden="true" />
         <span class="opt__dial" dir="ltr">+{{ option.dial }}</span>
       </span>
     </ng-template>
     <ng-template #item let-option>
       <span class="opt">
-        <img
+        <img appSafeImg="generic"
           class="opt__flag"
           [src]="countryFlagPath(option.value)"
           loading="lazy"

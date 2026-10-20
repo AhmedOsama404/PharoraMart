@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Observable, delay, of, throwError, map, tap } from 'rxjs';
+import { Observable, delay, forkJoin, of, throwError, map, tap } from 'rxjs';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../../data-access/mock-data';
 import { queryProducts } from '../../data-access/catalog.utils';
 import type { CatalogQuery, Category, Product } from '../../models/product.model';
@@ -86,6 +86,28 @@ export class ProductService {
     }
     const byId = new Map(this.products().map((product) => [product.id, product]));
     return of(orderedIds.map((id) => byId.get(id)).filter((product): product is Product => !!product));
+  }
+
+  /** Resolve larger local joins (such as a cart) without downloading the full catalog. */
+  getByIdsMany(ids: readonly string[]): Observable<Product[]> {
+    const orderedIds = ids.filter((id, index) => !!id && ids.indexOf(id) === index);
+    if (!orderedIds.length) return of([]);
+    if (environment.useMockApi) {
+      if (this.forceError()) return throwError(() => new Error('mock-catalog-failure')).pipe(delay(400));
+      const wanted = new Set(orderedIds);
+      return of(this.products().filter((product) => wanted.has(product.id)));
+    }
+
+    const batches: string[][] = [];
+    for (let index = 0; index < orderedIds.length; index += 100) {
+      batches.push(orderedIds.slice(index, index + 100));
+    }
+    return forkJoin(batches.map((batch) =>
+      this.api.post<BackendProduct[]>('products/by-ids', { ids: batch }).pipe(map((items) => items.map(toProduct))),
+    )).pipe(map((groups) => {
+      const byId = new Map(groups.flat().map((product) => [product.id, product]));
+      return orderedIds.map((id) => byId.get(id)).filter((product): product is Product => !!product);
+    }));
   }
 
   /**

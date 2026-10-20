@@ -15,8 +15,8 @@ const ENV_FILE = resolve(process.cwd(), 'src/environments/environment.ts');
 const raw = process.env.API_BASE_URL?.trim();
 
 if (!raw) {
-  console.log('[set-api-url] API_BASE_URL is not set; keeping the committed value.');
-  process.exit(0);
+  console.error('[set-api-url] API_BASE_URL is required for a production deployment.');
+  process.exit(1);
 }
 
 const apiBaseUrl = raw.replace(/\/+$/, '');

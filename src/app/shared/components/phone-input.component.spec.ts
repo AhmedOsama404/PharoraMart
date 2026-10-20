@@ -48,14 +48,14 @@ describe('PhoneInputComponent', () => {
   });
 
 
-  it('follows the selected language direction while keeping the number field LTR', () => {
+  it('follows the selected language direction while keeping the number field LTR', async () => {
     const i18n = TestBed.inject(I18nService);
-    i18n.setLang('ar');
+    await i18n.setLang('ar');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.phone').getAttribute('dir')).toBe('rtl');
     expect(numberInput().getAttribute('dir')).toBe('ltr');
 
-    i18n.setLang('en');
+    await i18n.setLang('en');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.phone').getAttribute('dir')).toBe('ltr');
   });

@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { delay, Observable, of, tap, throwError } from 'rxjs';
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from '../../models/user.model';
 import { environment } from '../../../environments/environment';
@@ -8,6 +9,9 @@ import { FavoritesStore } from './favorites.store';
 
 const SESSION_KEY = 'novamart.session.v1';
 const USERS_KEY = 'novamart.mock-users.v1';
+
+/** Account routes a dead session cannot serve; expiry drops the user at sign-in. */
+const ACCOUNT_ROUTES = ['/profile', '/orders', '/favorites', '/checkout'];
 
 interface StoredSession {
   user: User;
@@ -56,6 +60,7 @@ export class AuthService {
 
   constructor(
     private api: ApiClientService,
+    private router: Router,
     private cart: CartStore,
     private favorites: FavoritesStore,
   ) {}
@@ -140,6 +145,23 @@ export class AuthService {
       localStorage.removeItem('novamart.orders.v1');
     } catch {
       /* ignore */
+    }
+  }
+
+  /**
+   * A stored token stopped being accepted (HTTP 401 on a request that carried
+   * it). Reset session state exactly like a logout — the same user re-signs in
+   * and the server still holds their cart/favorites, so nothing is lost — and
+   * when the visitor is mid-journey on an account page, drop them at sign-in
+   * with the destination preserved. Never calls the API; safe to invoke for
+   * every failing request (it runs once, then the session is already null).
+   */
+  sessionExpired(): void {
+    if (!this.session()) return;
+    this.logout();
+    const url = this.router.url;
+    if (ACCOUNT_ROUTES.some((route) => url === route || url.startsWith(`${route}/`) || url.startsWith(`${route}?`))) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: url } });
     }
   }
 

@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
+import { provideRouter, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
 describe('AuthService (mock)', () => {
@@ -64,5 +66,70 @@ describe('AuthService (mock)', () => {
       expect(r.ok).toBeTrue();
       done();
     });
+  });
+});
+
+@Component({ selector: 'app-page-host', standalone: true, template: '' })
+class PageHost {}
+
+describe('AuthService.sessionExpired', () => {
+  const seed = () =>
+    localStorage.setItem(
+      'novamart.session.v1',
+      JSON.stringify({ user: { id: 'u-1', name: 'T', email: 't@example.com' }, token: 'dead' }),
+    );
+
+  function setup(): { svc: AuthService; router: Router } {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([
+          { path: 'orders', component: PageHost },
+          { path: 'home', component: PageHost },
+          { path: 'auth/login', component: PageHost },
+        ]),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const svc = TestBed.inject(AuthService);
+    return { svc, router };
+  }
+
+  it('signs the visitor out without touching the network', () => {
+    seed();
+    const { svc, router } = setup();
+    expect(svc.isLoggedIn()).toBeTrue();
+
+    svc.sessionExpired();
+
+    expect(svc.isLoggedIn()).toBeFalse();
+    expect(localStorage.getItem('novamart.session.v1')).toBeNull();
+    expect(router.url).toBe('/');
+  });
+
+  it('returns to sign-in with the destination when on an account page', async () => {
+    seed();
+    const { svc, router } = setup();
+    await router.navigate(['/orders']);
+    expect(router.url).toContain('/orders');
+
+    svc.sessionExpired();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(svc.isLoggedIn()).toBeFalse();
+    expect(decodeURIComponent(router.url)).toBe('/auth/login?returnUrl=/orders');
+  });
+
+  it('lets public pages downgrade to guest with no redirect', async () => {
+    seed();
+    const { svc, router } = setup();
+    await router.navigate(['/home']);
+
+    svc.sessionExpired();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(svc.isLoggedIn()).toBeFalse();
+    expect(router.url).toBe('/home');
   });
 });
