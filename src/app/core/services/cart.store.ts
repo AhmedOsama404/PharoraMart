@@ -18,7 +18,11 @@ function load(): CartLine[] {
         productId: i.productId,
         variantKey: i.variantKey,
         variantLabel: i.variantLabel,
-        qty: Math.max(1, Math.min(99, Math.floor(i.qty))),
+        // The ceiling is the same one the server uses. The real limit is the
+        // live stock, and the cart view applies it as soon as the catalog is
+        // known — a lower ceiling here would silently change a quantity the
+        // customer never touched.
+        qty: Math.max(1, Math.min(9999, Math.floor(i.qty))),
       }))
       .map((i) => ({ ...i, key: cartLineKey(i.productId, i.variantKey) }));
   } catch {
@@ -48,7 +52,7 @@ export class CartStore {
   }
 
   /** Add qty to an existing line or create it. Same product+variant never duplicates. Returns final qty. */
-  add(productId: string, qty = 1, variantKey?: string, variantLabel?: string, maxStock = 99): number {
+  add(productId: string, qty = 1, variantKey?: string, variantLabel?: string, maxStock = 9999): number {
     const key = cartLineKey(productId, variantKey);
     const safeQty = Math.max(1, Math.floor(qty));
     let finalQty = safeQty;
@@ -67,7 +71,7 @@ export class CartStore {
     return finalQty;
   }
 
-  setQty(key: string, qty: number, maxStock = 99): void {
+  setQty(key: string, qty: number, maxStock = 9999): void {
     const safe = Math.max(1, Math.min(maxStock, Math.floor(qty)));
     this.lines.update((lines) => lines.map((l) => (l.key === key ? { ...l, qty: safe } : l)));
     this.persist();
