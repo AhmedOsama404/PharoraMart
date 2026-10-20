@@ -42,6 +42,7 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
 
   const stubProducts = {
     all: () => of(MOCK_PRODUCTS.map((product) => ({ ...product, currency: product.currency ?? 'USD' }))),
+    getByIdsMany: () => of(MOCK_PRODUCTS.map((product) => ({ ...product, currency: product.currency ?? 'USD' }))),
     list: () => of({ items: MOCK_PRODUCTS.map((product) => ({ ...product, currency: product.currency ?? 'USD' })), total: MOCK_PRODUCTS.length }),
   };
   const stubDelivery = {

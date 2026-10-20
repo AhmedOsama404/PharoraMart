@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { CartStore } from './cart.store';
 import { ProductService } from './product.service';
 import { effectivePrice, type Product } from '../../models/product.model';
@@ -37,6 +37,7 @@ export type CartViewStatus = 'loading' | 'ready' | 'error';
 export class CartViewService {
   private catalog = signal<Product[]>([]);
   private status = signal<CartViewStatus>('loading');
+  private lastRequestKey = '';
 
   readonly ready = computed(() => this.status() !== 'loading');
   readonly failed = computed(() => this.status() === 'error');
@@ -69,18 +70,36 @@ export class CartViewService {
     private prices: PriceResolverService,
     private currency: CurrencyService,
   ) {
-    this.refresh();
+    effect((onCleanup) => {
+      const ids = [...new Set(this.cart.lines().map((line) => line.productId))];
+      const key = ids.join('\u001f');
+      if (key === this.lastRequestKey) return;
+      this.lastRequestKey = key;
+      this.load(ids, onCleanup);
+    });
   }
 
-  /** (Re)loads the catalog snapshot. Safe to call for retry after an error. */
+  /** (Re)loads only products represented by cart lines. Safe to retry after an error. */
   refresh(): void {
+    const ids = [...new Set(this.cart.lines().map((line) => line.productId))];
+    this.lastRequestKey = ids.join('\u001f');
+    this.load(ids);
+  }
+
+  private load(ids: string[], onCleanup?: (cleanupFn: () => void) => void): void {
+    if (ids.length === 0) {
+      this.catalog.set([]);
+      this.status.set('ready');
+      return;
+    }
     this.status.set('loading');
-    this.products.all().subscribe({
+    const subscription = this.products.getByIdsMany(ids).subscribe({
       next: (items) => {
         this.catalog.set(items);
         this.status.set('ready');
       },
       error: () => this.status.set('error'),
     });
+    onCleanup?.(() => subscription.unsubscribe());
   }
 }

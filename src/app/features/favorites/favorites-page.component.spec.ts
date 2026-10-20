@@ -31,6 +31,7 @@ describe('FavoritesPageComponent (single-mutation entry points)', () => {
           provide: ProductService,
           useValue: {
             all: () => of(MOCK_PRODUCTS),
+            getByIdsMany: () => of(MOCK_PRODUCTS),
             list: () => of({ items: MOCK_PRODUCTS, total: MOCK_PRODUCTS.length }),
           },
         },

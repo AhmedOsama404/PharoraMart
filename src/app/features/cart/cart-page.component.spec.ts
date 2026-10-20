@@ -30,7 +30,7 @@ describe('CartPageComponent (translated summary)', () => {
         provideRouter([]),
         provideNoopAnimations(),
         ConfirmationService,
-        { provide: ProductService, useValue: { all: () => of(MOCK_PRODUCTS) } },
+        { provide: ProductService, useValue: { all: () => of(MOCK_PRODUCTS), getByIdsMany: () => of(MOCK_PRODUCTS) } },
         { provide: NotificationService, useValue: { success: () => undefined, error: () => undefined, info: () => undefined } },
       ],
     }).compileComponents();
