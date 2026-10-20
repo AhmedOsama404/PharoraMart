@@ -20,7 +20,7 @@ import type { Category, Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
-import { catchError, forkJoin, of, retry, throwError, timer } from 'rxjs';
+import { catchError, of, retry, throwError, timer } from 'rxjs';
 
 @Component({
   selector: 'app-home-page',
@@ -155,7 +155,7 @@ export class HomePageComponent implements OnInit {
     // Recently viewed ids are local-only; resolve them against the catalog.
     const ids = this.recent.list();
     if (ids.length) {
-      this.products.all().subscribe((items) => {
+      this.products.getByIdsMany(ids).subscribe((items) => {
         const byId = new Map(items.map((p) => [p.id, p]));
         this.recentlyViewed.set(ids.map((id) => byId.get(id)).filter((p): p is Product => !!p).slice(0, 4));
       });
@@ -176,8 +176,8 @@ export class HomePageComponent implements OnInit {
       next([]);
       return;
     }
-    forkJoin(ids.map((id) => this.products.getById(id).pipe(catchError(() => of(null)))))
-      .subscribe((items) => next(items.filter((item): item is Product => !!item)));
+    this.products.getByIdsMany(ids).pipe(catchError(() => of([])))
+      .subscribe(next);
   }
 
   protected addToCart({ product: p, quantity }: { product: Product; quantity: number }): void {

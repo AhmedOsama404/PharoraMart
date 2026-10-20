@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { I18nService } from '../../core/services/i18n.service';
 import { ProductService } from '../../core/services/product.service';
@@ -6,6 +6,7 @@ import { CartStore } from '../../core/services/cart.store';
 import { FavoritesStore } from '../../core/services/favorites.store';
 import { NotificationService } from '../../core/services/notification.service';
 import type { Product } from '../../models/product.model';
+import { catchError, of } from 'rxjs';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 
@@ -28,7 +29,13 @@ export class FavoritesPageComponent {
   private catalog = signal<Product[]>([]);
 
   constructor() {
-    this.products.all().subscribe((items) => this.catalog.set(items));
+    effect((onCleanup) => {
+      const ids = this.favorites.ids();
+      const subscription = this.products.getByIdsMany(ids)
+        .pipe(catchError(() => of([])))
+        .subscribe((items) => this.catalog.set(items));
+      onCleanup(() => subscription.unsubscribe());
+    });
   }
 
   // Saved ids resolved against the catalog (a favorite whose product vanished

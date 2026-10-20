@@ -104,7 +104,10 @@ export class ProductService {
     }
     return forkJoin(batches.map((batch) =>
       this.api.post<BackendProduct[]>('products/by-ids', { ids: batch }).pipe(map((items) => items.map(toProduct))),
-    )).pipe(map((groups) => groups.flat()));
+    )).pipe(map((groups) => {
+      const byId = new Map(groups.flat().map((product) => [product.id, product]));
+      return orderedIds.map((id) => byId.get(id)).filter((product): product is Product => !!product);
+    }));
   }
 
   /**
