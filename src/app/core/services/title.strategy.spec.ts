@@ -37,7 +37,7 @@ describe('LocalizedTitleStrategy', () => {
 
   it('re-applies the title on language switch without navigation', async () => {
     await harness.navigateByUrl('/a', DummyAComponent);
-    i18n.setLang('de');
+    await i18n.setLang('de');
     await harness.fixture.whenStable();
     expect(document.title).toBe('Warenkorb — Pharora');
   });

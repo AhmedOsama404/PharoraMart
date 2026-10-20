@@ -4,3 +4,4 @@
   margin: 0 auto 1rem; background: var(--surface-ground); color: var(--text-secondary); font-size: 1.5rem; }
 h3 { margin: 0 0 0.4rem; color: var(--text-primary); }
 p { margin: 0 0 1.2rem; color: var(--text-secondary); }
+:host-context([dir='rtl']) ::ng-deep .pi-arrow-right { transform: scaleX(-1); }

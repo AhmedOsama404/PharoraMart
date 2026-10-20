@@ -1,6 +1,15 @@
 import type { TranslationDict } from './en';
 
 export const sk: TranslationDict = {
+  aria: {
+    breadcrumb: "Drobková navigácia",
+    filters: "Filtre",
+    loadingProducts: "Načítavanie produktov",
+    primary: "Hlavná navigácia",
+    carouselControls: "Ovládanie karuselu produktov",
+    previousProducts: "Predchádzajúce produkty",
+    nextProducts: "Ďalšie produkty",
+  },
   app: { name: 'Pharora', tagline: 'Všetko, čo máte radi, s rýchlym doručením.' },
   nav: {
     home: 'Domov',
@@ -23,7 +32,7 @@ export const sk: TranslationDict = {
     promoTitle: 'Polosezónny výpredaj až −40 %',
     promoSubtitle: 'Bestsellery prírodnej kozmetiky a bylín za špeciálne ceny. Do vypredania zásob.',
     promoCta: 'Nakúpiť vo výpredaji',
-    learnMore: 'Learn more',
+    learnMore: 'Zistiť viac',
     recentlyViewedTitle: 'Nedávno zobrazené',
   },
   catalog: {
@@ -180,10 +189,10 @@ export const sk: TranslationDict = {
     backToCart: 'Späť do košíka',
     orderSuccess: 'Objednávka bola úspešne odoslaná',
     duplicateBlocked: 'Vaša objednávka sa už spracúva. Počkajte prosím.',
-    applyCoupon: 'Apply',
-    couponCode: 'Coupon code',
-    discount: 'Discount',
-    couponInvalid: 'This coupon is not valid for your order.',
+    applyCoupon: 'Uplatniť zľavový kód', couponApplied: 'Zľavový kód použitý',
+    couponCode: 'Kód kupónu',
+    discount: 'Zľava',
+    couponInvalid: 'Tento kupón nie je platný pre vašu objednávku.',
     emptyCart: 'Košík je prázdny. Pred pokladňou pridajte produkty.',
   },
   confirmation: {
@@ -325,7 +334,7 @@ export const sk: TranslationDict = {
       'Nepodarilo sa potvrdiť poplatok za doručenie. Skontrolujte údaje o doručení a skúste to znova.',
   },
   meta: {
-    home: 'Pharora — Natural beauty, delivered to your hotel',
+    home: 'Pharora — prírodná krása doručená do vášho hotela',
     catalog: 'Všetky produkty — Pharora',
     cart: 'Košík — Pharora',
     favorites: 'Obľúbené — Pharora',

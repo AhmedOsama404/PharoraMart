@@ -1,6 +1,15 @@
 import type { TranslationDict } from './en';
 
 export const cs: TranslationDict = {
+  aria: {
+    breadcrumb: "Drobečková navigace",
+    filters: "Filtry",
+    loadingProducts: "Načítání produktů",
+    primary: "Hlavní navigace",
+    carouselControls: "Ovládání karuselu produktů",
+    previousProducts: "Předchozí produkty",
+    nextProducts: "Další produkty",
+  },
   app: { name: 'Pharora', tagline: 'Vše, co máte rádi, s rychlým doručením.' },
   nav: {
     home: 'Domů',
@@ -23,7 +32,7 @@ export const cs: TranslationDict = {
     promoTitle: 'Polosezónní výprodej až −40 %',
     promoSubtitle: 'Nejprodávanější přírodní kosmetika a byliny za speciální ceny. Do vyprodání zásob.',
     promoCta: 'Nakoupit ve výprodeji',
-    learnMore: 'Learn more',
+    learnMore: 'Zjistit více',
     recentlyViewedTitle: 'Nedávno zobrazené',
   },
   catalog: {
@@ -180,10 +189,10 @@ export const cs: TranslationDict = {
     backToCart: 'Zpět do košíku',
     orderSuccess: 'Objednávka byla úspěšně odeslána',
     duplicateBlocked: 'Vaše objednávka se již zpracovává. Počkejte prosím.',
-    applyCoupon: 'Apply',
-    couponCode: 'Coupon code',
-    discount: 'Discount',
-    couponInvalid: 'This coupon is not valid for your order.',
+    applyCoupon: 'Použít slevový kód', couponApplied: 'Slevový kód použit',
+    couponCode: 'Kód kupónu',
+    discount: 'Sleva',
+    couponInvalid: 'Tento kupón nelze u vaší objednávky použít.',
     emptyCart: 'Košík je prázdný. Před pokladnou přidejte produkty.',
   },
   confirmation: {
@@ -234,7 +243,7 @@ export const cs: TranslationDict = {
     removedFromCart: 'Odebráno z košíku',
     addedToFav: 'Přidáno do oblíbených',
     removedFromFav: 'Odebráno z oblíbených',
-    loadFailed: 'Něco se pokazilo. Zkuste to znovu.',
+    loadFailed: 'Něco se pokazilo. Zkuste to prosím znovu.',
     saved: 'Uloženo',
   },
   common: {
@@ -324,7 +333,7 @@ export const cs: TranslationDict = {
     deliveryFeeUnavailable: 'Nepodařilo se potvrdit poplatek za doručení. Zkontrolujte údaje o doručení a zkuste to znovu.',
   },
   meta: {
-    home: 'Pharora — Natural beauty, delivered to your hotel',
+    home: 'Pharora — přirozená krása doručená do vašeho hotelu',
     catalog: 'Všechny produkty — Pharora',
     cart: 'Nákupní košík — Pharora',
     favorites: 'Oblíbené — Pharora',

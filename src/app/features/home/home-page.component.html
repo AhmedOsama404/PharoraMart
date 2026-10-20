@@ -56,29 +56,29 @@
           @if (heroSlotMode()) {
             @if (heroSlotProducts()[0]; as hero) {
               <a [routerLink]="['/products', hero.id]" class="hero-card">
-                <img [src]="hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.names | localized: hero.name" fetchpriority="high" (error)="fbImg($event)" />
+                <img appSafeImg="product" [src]="hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.names | localized: hero.name" fetchpriority="high" />
                 <span class="hero-info"><span class="hero-name">{{ hero.names | localized: hero.name }}</span><span class="hero-price">{{ hero.salePrice ?? hero.price | resolvedMoney: hero.currency }}</span></span>
               </a>
             } @else {
-              <div class="hero-card"><img src="/hero-product-fallback.svg" alt="" fetchpriority="high" /></div>
+              <div class="hero-card"><img appSafeImg="product" src="/hero-product-fallback.svg" alt="" fetchpriority="high" /></div>
             }
             <div class="hero-tiles">
               @for (product of heroSlotProducts().slice(1); track $index) {
                 @if (product; as selectedProduct) {
-                  <a [routerLink]="['/products', selectedProduct.id]"><img [src]="selectedProduct.images[0] || '/hero-product-fallback.svg'" [alt]="selectedProduct.names | localized: selectedProduct.name" loading="lazy" (error)="fbImg($event)" /></a>
+                  <a [routerLink]="['/products', selectedProduct.id]"><img appSafeImg="product" [src]="selectedProduct.images[0] || '/hero-product-fallback.svg'" [alt]="selectedProduct.names | localized: selectedProduct.name" loading="lazy" /></a>
                 }
               }
             </div>
           } @else {
             @if (heroProduct()) {
               <a [routerLink]="['/products', heroProduct()!.id]" class="hero-card">
-                <img [src]="storefront.sectionSettings('hero')?.imageUrl || heroProduct()!.images[0]" [alt]="heroProduct()!.names | localized: heroProduct()!.name" fetchpriority="high" (error)="fbImg($event)" />
+                <img appSafeImg="product" [src]="storefront.sectionSettings('hero')?.imageUrl || heroProduct()!.images[0]" [alt]="heroProduct()!.names | localized: heroProduct()!.name" fetchpriority="high" />
                 <span class="hero-info"><span class="hero-name">{{ heroProduct()!.name }}</span><span class="hero-price">{{ heroProduct()!.salePrice ?? heroProduct()!.price | resolvedMoney: heroProduct()!.currency }}</span></span>
               </a>
             }
             <div class="hero-tiles">
               @for (p of heroTiles(); track p.id) {
-                <a [routerLink]="['/products', p.id]"><img [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" (error)="fbImg($event)" /></a>
+                <a [routerLink]="['/products', p.id]"><img appSafeImg="product" [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" /></a>
               }
             </div>
           }
@@ -89,18 +89,21 @@
     @case ('categories') {
       <section #catsEl class="block home-section categories-section">
         <app-section-header [title]="siteContent.text(siteContent.categoriesSection()?.sectionTitle, i18n.currentLang())" [subtitle]="siteContent.text(siteContent.categoriesSection()?.sectionBody, i18n.currentLang())" />
-        @if (loading()) {
-          <div class="cat-grid">@for (i of [1,2,3,4,5]; track i) { <p-skeleton height="12rem" borderRadius="1rem" /> }</div>
-        } @else {
-          <div class="cat-grid">
-            @for (c of categories(); track c.id) {
-              <a class="cat-card" [routerLink]="['/products']" [queryParams]="{ category: c.id }">
-                <img [src]="c.image" [alt]="categoryName(c)" loading="lazy" (error)="fbImg($event)" />
-                <span class="cat-label"><strong>{{ categoryName(c) }}</strong><small>{{ categoryDescription(c) }}</small></span>
-              </a>
-            }
-          </div>
-        }
+        <app-data-boundary [state]="state.categories()" [error]="error.categories()" (retry)="loadCategories()">
+          <ng-template #skeleton>
+            <div class="cat-grid">@for (i of [1,2,3,4,5]; track i) { <p-skeleton height="12rem" borderRadius="1rem" /> }</div>
+          </ng-template>
+          <ng-template #content>
+            <div class="cat-grid">
+              @for (c of categories(); track c.id) {
+                <a class="cat-card" [routerLink]="['/products']" [queryParams]="{ category: c.id }">
+                  <img appSafeImg="category" [src]="c.image" [alt]="categoryName(c)" loading="lazy" />
+                  <span class="cat-label"><strong>{{ categoryName(c) }}</strong><small>{{ categoryDescription(c) }}</small></span>
+                </a>
+              }
+            </div>
+          </ng-template>
+        </app-data-boundary>
       </section>
     }
     @case ('featured') {
@@ -108,15 +111,22 @@
         <section class="block home-section featured-section">
           <app-section-header [title]="sectionTitle('featured')" [subtitle]="sectionBody('featured')"
             [link]="sectionViewAllUrl('featured')" [linkLabel]="sectionViewAll('featured')" />
-          @if (loading()) {
-            <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
-          } @else {
-            <div class="grid">
-              @for (p of featured(); track p.id) {
-                <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+          <app-data-boundary [state]="state.featured()" [error]="error.featured()" (retry)="loadFeatured()">
+            <ng-template #skeleton>
+              <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+            </ng-template>
+            <ng-template #content>
+              @defer (on viewport) {
+                <div class="grid">
+                  @for (p of featured(); track p.id) {
+                    <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+                  }
+                </div>
+              } @placeholder {
+                <div class="grid defer-placeholder" aria-hidden="true"></div>
               }
-            </div>
-          }
+            </ng-template>
+          </app-data-boundary>
         </section>
       }
     }
@@ -131,7 +141,7 @@
             }
           </div>
           @if (saleProduct()) {
-            <a [routerLink]="['/products', saleProduct()!.id]"><img [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.names | localized: saleProduct()!.name" loading="lazy" (error)="fbImg($event)" /></a>
+            <a [routerLink]="['/products', saleProduct()!.id]"><img appSafeImg="product" [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.names | localized: saleProduct()!.name" loading="lazy" /></a>
           }
         </section>
       }
@@ -147,7 +157,7 @@
             }
           </div>
           @if (b.imageUrl) {
-            <img [src]="b.imageUrl" [alt]="blockTitle(b)" loading="lazy" (error)="fbImg($event)" />
+            <img appSafeImg="banner" [src]="b.imageUrl" [alt]="blockTitle(b)" loading="lazy" />
           }
         </section>
       }
@@ -157,13 +167,42 @@
         <section class="block home-section arrivals-section">
           <app-section-header [title]="sectionTitle('newArrivals')" [subtitle]="sectionBody('newArrivals')"
             [link]="sectionViewAllUrl('newArrivals')" [linkLabel]="sectionViewAll('newArrivals')" />
-          @if (!loading()) {
-            <p-carousel [value]="newArrivals()" [numVisible]="4" [numScroll]="2" [responsiveOptions]="carouselOpts" [showIndicators]="false">
-              <ng-template let-p #item>
-                <div class="car-item"><app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" /></div>
-              </ng-template>
-            </p-carousel>
-          }
+          <app-data-boundary [state]="state.newArrivals()" [error]="error.newArrivals()" (retry)="loadNewArrivals()">
+            <ng-template #skeleton>
+              <div class="arrivals-carousel-shell arrivals-carousel-shell--skeleton">
+                <div class="arrivals-carousel" aria-hidden="true">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+              </div>
+            </ng-template>
+            <ng-template #content>
+              @defer (on viewport) {
+                <div class="arrivals-carousel-shell" [class.arrivals-carousel-shell--controls]="newArrivals().length > 1">
+                  @if (newArrivals().length > 1) {
+                    <button class="arrivals-control" type="button" (click)="scrollArrivals(-1)"
+                      aria-controls="new-arrivals-track" [attr.aria-label]="i18n.t('aria.previousProducts')">
+                      <i class="pi pi-chevron-left flip-rtl" aria-hidden="true"></i>
+                    </button>
+                  }
+                  <div id="new-arrivals-track" #arrivalsTrack class="arrivals-carousel" role="region" tabindex="0"
+                    aria-roledescription="carousel" [attr.aria-label]="sectionTitle('newArrivals')">
+                    @for (p of newArrivals(); track p.id) {
+                      <div class="car-item" role="group" aria-roledescription="slide"
+                        (mouseenter)="pauseArrivalsOnHover()" (mouseleave)="resumeArrivalsAfterHover()">
+                        <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+                      </div>
+                    }
+                  </div>
+                  @if (newArrivals().length > 1) {
+                    <button class="arrivals-control" type="button" (click)="scrollArrivals(1)"
+                      aria-controls="new-arrivals-track" [attr.aria-label]="i18n.t('aria.nextProducts')">
+                      <i class="pi pi-chevron-right flip-rtl" aria-hidden="true"></i>
+                    </button>
+                  }
+                </div>
+              } @placeholder {
+                <div class="grid defer-placeholder" aria-hidden="true"></div>
+              }
+            </ng-template>
+          </app-data-boundary>
         </section>
       }
     }
@@ -172,13 +211,22 @@
         <section class="block home-section popular-section">
           <app-section-header [title]="sectionTitle('popular')" [subtitle]="sectionBody('popular')"
             [link]="sectionViewAllUrl('popular')" [linkLabel]="sectionViewAll('popular')" />
-          @if (!loading()) {
-            <div class="grid">
-              @for (p of popular(); track p.id) {
-                <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+          <app-data-boundary [state]="state.popular()" [error]="error.popular()" (retry)="loadPopular()">
+            <ng-template #skeleton>
+              <div class="grid">@for (i of [1,2,3,4]; track i) { <p-skeleton height="22rem" borderRadius="1rem" /> }</div>
+            </ng-template>
+            <ng-template #content>
+              @defer (on viewport) {
+                <div class="grid">
+                  @for (p of popular(); track p.id) {
+                    <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+                  }
+                </div>
+              } @placeholder {
+                <div class="grid defer-placeholder" aria-hidden="true"></div>
               }
-            </div>
-          }
+            </ng-template>
+          </app-data-boundary>
         </section>
       }
     }
@@ -186,11 +234,15 @@
       @if (recentlyViewed().length) {
         <section class="block home-section recently-section">
           <app-section-header [title]="i18n.t('home.recentlyViewedTitle')" />
-          <div class="grid">
-            @for (p of recentlyViewed(); track p.id) {
-              <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
-            }
-          </div>
+          @defer (on viewport) {
+            <div class="grid">
+              @for (p of recentlyViewed(); track p.id) {
+                <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
+              }
+            </div>
+          } @placeholder {
+            <div class="grid defer-placeholder" aria-hidden="true"></div>
+          }
         </section>
       }
     }

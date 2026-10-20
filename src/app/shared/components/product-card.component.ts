@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../resilience/safe-image.directive';
 import { LocalizedPipe } from '../pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -15,7 +16,7 @@ import { QtySelectorComponent } from './qty-selector.component';
   selector: 'app-product-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Button, Tag, Tooltip, ResolvedMoneyPipe, QtySelectorComponent,
+  imports: [SafeImageDirective, RouterLink, Button, Tag, Tooltip, ResolvedMoneyPipe, QtySelectorComponent,
     LocalizedPipe,
   ],
   templateUrl: './product-card.component.html',

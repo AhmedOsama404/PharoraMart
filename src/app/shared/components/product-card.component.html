@@ -1,11 +1,10 @@
 <article class="product-card" [attr.aria-label]="product.names | localized: product.name">
   <a class="media img-frame" [routerLink]="['/products', product.id]" [attr.aria-label]="product.names | localized: product.name">
     <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-    <img
+    <img appSafeImg="product"
       [src]="product.images[0]"
       [alt]="product.names | localized: product.name"
       loading="lazy"
-      (error)="onImgError($event)"
     />
     <span class="badges">
       @if (product.salePrice != null) {

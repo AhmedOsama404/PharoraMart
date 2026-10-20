@@ -3,12 +3,17 @@ export type Availability = 'in_stock' | 'low_stock' | 'out_of_stock';
 export interface ProductAttribute {
   name: string;
   value: string;
+  names?: LocalizedText;
+  values?: LocalizedText;
 }
 
 export interface ProductVariant {
   id: string;
   name: string;
   options: string[];
+  names?: LocalizedText;
+  /** Index-aligned with options; older API payloads omit this field. */
+  optionTranslations?: (LocalizedText | null)[];
 }
 
 export interface Product {

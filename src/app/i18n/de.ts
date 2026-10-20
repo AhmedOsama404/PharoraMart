@@ -1,6 +1,15 @@
 import type { TranslationDict } from './en';
 
 export const de: TranslationDict = {
+  aria: {
+    breadcrumb: "Brotkrümelnavigation",
+    filters: "Filter",
+    loadingProducts: "Produkte werden geladen",
+    primary: "Hauptnavigation",
+    carouselControls: "Produktkarussell-Steuerung",
+    previousProducts: "Vorherige Produkte",
+    nextProducts: "Nächste Produkte",
+  },
   app: { name: 'Pharora', tagline: 'Alles, was du liebst – schnell geliefert.' },
   nav: {
     home: 'Start',
@@ -23,7 +32,7 @@ export const de: TranslationDict = {
     promoTitle: 'Mid-Season-Sale mit bis zu 40 % Rabatt',
     promoSubtitle: 'Naturkosmetik- und Kräuter-Bestseller zu Sonderpreisen. Nur solange der Vorrat reicht.',
     promoCta: 'Sale entdecken',
-    learnMore: 'Learn more',
+    learnMore: 'Mehr erfahren',
     recentlyViewedTitle: 'Zuletzt angesehen',
   },
   catalog: {
@@ -73,7 +82,7 @@ export const de: TranslationDict = {
     description: 'Beschreibung',
     attributes: 'Details',
     related: 'Ähnliche Produkte',
-    sale: 'Sale',
+    sale: 'Angebot',
     new: 'Neu',
     popular: 'Beliebt',
     off: '{percent} % Rabatt',
@@ -180,10 +189,10 @@ export const de: TranslationDict = {
     backToCart: 'Zurück zum Warenkorb',
     orderSuccess: 'Bestellung erfolgreich aufgegeben',
     duplicateBlocked: 'Deine Bestellung wird bereits verarbeitet. Bitte warte.',
-    applyCoupon: 'Apply',
-    couponCode: 'Coupon code',
-    discount: 'Discount',
-    couponInvalid: 'This coupon is not valid for your order.',
+    applyCoupon: 'Gutscheincode anwenden', couponApplied: 'Gutscheincode angewendet',
+    couponCode: 'Gutscheincode',
+    discount: 'Rabatt',
+    couponInvalid: 'Dieser Gutschein ist für Ihre Bestellung nicht gültig.',
     emptyCart: 'Dein Warenkorb ist leer. Lege erst Produkte hinein.',
   },
   confirmation: {
@@ -325,7 +334,7 @@ export const de: TranslationDict = {
       'Die Liefergebühr konnte nicht bestätigt werden. Prüfen Sie Ihre Lieferangaben und versuchen Sie es erneut.',
   },
   meta: {
-    home: 'Pharora — Natural beauty, delivered to your hotel',
+    home: 'Pharora — natürliche Schönheit, direkt ins Hotel geliefert',
     catalog: 'Alle Produkte — Pharora',
     cart: 'Warenkorb — Pharora',
     favorites: 'Favoriten — Pharora',

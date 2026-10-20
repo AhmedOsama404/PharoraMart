@@ -1,6 +1,15 @@
 import type { TranslationDict } from './en';
 
 export const ar: TranslationDict = {
+  aria: {
+    breadcrumb: "مسار التنقل",
+    filters: "الفلاتر",
+    loadingProducts: "جارٍ تحميل المنتجات",
+    primary: "التنقل الرئيسي",
+    carouselControls: "أدوات التنقل بين المنتجات",
+    previousProducts: "المنتجات السابقة",
+    nextProducts: "المنتجات التالية",
+  },
   app: { name: 'Pharora', tagline: 'كل ما تحب، بتوصيل سريع.' },
   nav: {
     home: 'الرئيسية',
@@ -23,7 +32,7 @@ export const ar: TranslationDict = {
     promoTitle: 'تخفيضات منتصف الموسم حتى 40%',
     promoSubtitle: 'الأكثر مبيعًا من منتجات الجمال الطبيعي والأعشاب بأسعار خاصة. حتى نفاد المخزون.',
     promoCta: 'تسوّق التخفيضات',
-    learnMore: 'Learn more',
+    learnMore: 'اعرف المزيد',
     recentlyViewedTitle: 'شاهدت مؤخرًا',
   },
   catalog: {
@@ -133,7 +142,7 @@ export const ar: TranslationDict = {
     showPassword: 'إظهار كلمة المرور',
     hidePassword: 'إخفاء كلمة المرور',
     loginButton: 'تسجيل الدخول',
-    registerButton: 'إنشاء الحساب',
+    registerButton: 'إنشاء حساب',
     forgotButton: 'إرسال رابط الاستعادة',
     forgotSent: 'إذا كان هذا البريد موجودًا، سيتم إرسال التعليمات. (تجريبي فقط.)',
     noAccount: 'ليس لديك حساب؟',
@@ -180,10 +189,10 @@ export const ar: TranslationDict = {
     backToCart: 'عودة إلى السلة',
     orderSuccess: 'تم إرسال الطلب بنجاح',
     duplicateBlocked: 'طلبك قيد المعالجة بالفعل. يرجى الانتظار.',
-    applyCoupon: 'Apply',
-    couponCode: 'Coupon code',
-    discount: 'Discount',
-    couponInvalid: 'This coupon is not valid for your order.',
+    applyCoupon: 'تطبيق رمز الخصم', couponApplied: 'تم تطبيق رمز الخصم',
+    couponCode: 'رمز الكوبون',
+    discount: 'خصم',
+    couponInvalid: 'هذا الكوبون غير صالح لطلبك.',
     emptyCart: 'سلتك فارغة. أضف منتجات قبل إتمام الطلب.',
   },
   confirmation: {
@@ -234,7 +243,7 @@ export const ar: TranslationDict = {
     removedFromCart: 'تمت الإزالة من السلة',
     addedToFav: 'تمت الإضافة إلى المفضلة',
     removedFromFav: 'تمت الإزالة من المفضلة',
-    loadFailed: 'حدث خطأ. حاول مرة أخرى.',
+    loadFailed: 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
     saved: 'تم الحفظ',
   },
   common: {
@@ -324,7 +333,7 @@ export const ar: TranslationDict = {
     deliveryFeeUnavailable: 'تعذّر تأكيد رسوم التوصيل. تحقّق من بيانات التوصيل وحاول مرة أخرى.',
   },
   meta: {
-    home: 'Pharora — Natural beauty, delivered to your hotel',
+    home: 'Pharora — جمال طبيعي يُوصل إلى فندقك',
     catalog: 'جميع المنتجات — Pharora',
     cart: 'سلة التسوق — Pharora',
     favorites: 'المفضلة — Pharora',

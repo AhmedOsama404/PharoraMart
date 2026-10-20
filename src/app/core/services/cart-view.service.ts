@@ -1,8 +1,10 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { CartStore } from './cart.store';
 import { ProductService } from './product.service';
 import { effectivePrice, type Product } from '../../models/product.model';
 import { PriceResolverService } from './price-resolver.service';
+import { CurrencyService } from './currency.service';
 
 export interface EnrichedCartLine {
   key: string;
@@ -36,15 +38,22 @@ export type CartViewStatus = 'loading' | 'ready' | 'error';
 export class CartViewService {
   private catalog = signal<Product[]>([]);
   private status = signal<CartViewStatus>('loading');
+  private lastRequestKey = '';
 
   readonly ready = computed(() => this.status() !== 'loading');
   readonly failed = computed(() => this.status() === 'error');
+  /** Typed failure for the shared error state; resets on every load. */
+  readonly error = signal<unknown>(null);
 
   readonly lines = computed<EnrichedCartLine[]>(() => {
     const byId = new Map(this.catalog().map((p) => [p.id, p]));
     return this.cart.lines().map((l) => {
       const product = byId.get(l.productId) ?? null;
-      const resolved = product ? this.prices.resolve(effectivePrice(product), product.currency ?? '') : null;
+      // Older API records and local mock products omit currency; their amount
+      // is already expressed in the visitor's selected currency.
+      const resolved = product
+        ? this.prices.resolve(effectivePrice(product), product.currency ?? this.currency.code())
+        : null;
       if (!product || !resolved) {
         return { ...l, product, unit: 0, lineTotal: 0, unavailable: true };
       }
@@ -62,19 +71,76 @@ export class CartViewService {
     private cart: CartStore,
     private products: ProductService,
     private prices: PriceResolverService,
+    private currency: CurrencyService,
   ) {
-    this.refresh();
+    effect((onCleanup) => {
+      const ids = [...new Set(this.cart.lines().map((line) => line.productId))];
+      const key = ids.join('\u001f');
+      if (key === this.lastRequestKey) return;
+      this.lastRequestKey = key;
+      this.load(ids, onCleanup);
+    });
   }
 
-  /** (Re)loads the catalog snapshot. Safe to call for retry after an error. */
+  /** (Re)loads only products represented by cart lines. Safe to retry after an error. */
   refresh(): void {
+    const ids = [...new Set(this.cart.lines().map((line) => line.productId))];
+    this.lastRequestKey = ids.join('\u001f');
+    this.load(ids);
+  }
+
+  /**
+   * Refetches prices immediately before a money action and resolves only when
+   * the authoritative answer arrived. Returns false on any failure so checkout
+   * can block instead of charging a stale total.
+   */
+  async ensureFresh(): Promise<boolean> {
+    const ids = [...new Set(this.cart.lines().map((line) => line.productId))];
+    if (ids.length === 0) {
+      this.catalog.set([]);
+      this.error.set(null);
+      this.status.set('ready');
+      return true;
+    }
+    this.lastRequestKey = ids.join('\u001f');
     this.status.set('loading');
-    this.products.all().subscribe({
+    this.error.set(null);
+    try {
+      const items = await firstValueFrom(this.products.getByIdsMany(ids));
+      this.catalog.set(items);
+      this.status.set('ready');
+      return true;
+    } catch (err) {
+      this.catalog.set([]);
+      this.error.set(err);
+      this.status.set('error');
+      return false;
+    }
+  }
+
+  private load(ids: string[], onCleanup?: (cleanupFn: () => void) => void): void {
+    if (ids.length === 0) {
+      this.catalog.set([]);
+      this.error.set(null);
+      this.status.set('ready');
+      return;
+    }
+    this.status.set('loading');
+    this.error.set(null);
+    const subscription = this.products.getByIdsMany(ids).subscribe({
       next: (items) => {
         this.catalog.set(items);
         this.status.set('ready');
       },
-      error: () => this.status.set('error'),
+      error: (err: unknown) => {
+        // Never keep prices from a previous successful load: money must come
+        // from a fresh catalog answer, otherwise checkout would show stale
+        // totals while the backend is unreachable.
+        this.catalog.set([]);
+        this.error.set(err);
+        this.status.set('error');
+      },
     });
+    onCleanup?.(() => subscription.unsubscribe());
   }
 }

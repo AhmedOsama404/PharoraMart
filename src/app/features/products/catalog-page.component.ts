@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
@@ -27,6 +28,7 @@ import type { Availability, CatalogQuery, Category, Product, SortKey } from '../
 import { environment } from '../../../environments/environment';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 
 interface SortOption {
   label: string;
@@ -44,7 +46,7 @@ interface SortOption {
   templateUrl: './catalog-page.component.html',
   styleUrl: './catalog-page.component.scss',
 })
-export class CatalogPageComponent implements OnInit {
+export class CatalogPageComponent implements OnInit, OnDestroy {
   protected i18n = inject(I18nService);
   protected currency = inject(CurrencyService);
   private prices = inject(PriceResolverService);
@@ -67,26 +69,25 @@ export class CatalogPageComponent implements OnInit {
   protected displayPriceLimit = computed(() =>
     this.prices.convert(this.maxPrice, 'USD', this.filterCurrency()) ?? this.maxPrice,
   );
-  protected displayMinPrice = computed(() =>
-    this.prices.convert(this.draft.minPrice(), 'USD', this.filterCurrency()) ?? this.draft.minPrice(),
-  );
-  protected displayMaxPrice = computed(() =>
-    this.prices.convert(this.draft.maxPrice(), 'USD', this.filterCurrency()) ?? this.maxPrice,
-  );
   protected displayPriceStep = computed(() => Math.max(1, Math.round(this.displayPriceLimit() / 100)));
   protected pageSize = environment.pageSize;
   protected drawer = signal(false);
   protected minPriceInput = signal<number | string>(0);
-  protected maxPriceInput = signal<number | string>(this.maxPrice);
+  protected maxPriceInput = signal<number | string>('');
   protected priceInputPending = signal(false);
 
   // Draft filter state. Applied to the URL (debounced for search) so listings
   // stay bookmarkable and survive refresh/back-forward navigation.
+  //
+  // Price bounds live in the VISITOR'S SELECTED CURRENCY — exactly what the
+  // slider, the two number fields and the chips show. The only conversion to
+  // the server's USD contract happens in `currentQuery()`, so UI and applied
+  // state can never disagree. `maxPrice: null` means "no upper bound".
   protected draft = {
     q: signal(''),
     category: signal(''),
     minPrice: signal(0),
-    maxPrice: signal(this.maxPrice),
+    maxPrice: signal<number | null>(null),
     availability: signal<'all' | Availability>('all'),
     sale: signal(false),
     sort: signal<SortKey>('recommended'),
@@ -96,18 +97,104 @@ export class CatalogPageComponent implements OnInit {
   protected total = signal(0);
   protected page = signal(1);
   protected state = signal<'loading' | 'ok' | 'error'>('loading');
+  /** True after 3 s of loading, so a slow backend is explained, not hidden. */
+  protected slow = signal(false);
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
   // Active categories from the data source (drives the filter, never hardcoded).
   protected categories = signal<Category[]>([]);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private priceInputTimer: ReturnType<typeof setTimeout> | null = null;
   private syncingFromUrl = false;
+  private connectivity = inject(ConnectivityService);
+  /** One automatic refetch per outage; a second failure waits for the user. */
+  private autoRetried = false;
+
+  /** Currency of the price bounds before the latest currency switch. */
+  private lastPriceCurrency: string | null = null;
 
   constructor() {
     effect(() => {
-      this.currency.code();
-      this.minPriceInput.set(this.displayMinPrice());
-      this.maxPriceInput.set(this.displayMaxPrice());
+      const code = this.currency.code();
+      // Track rate arrival too: once conversion is possible the (empty-form)
+      // upper field should show the catalog ceiling in the selected currency.
+      this.displayPriceLimit();
+      const pending = this.priceInputPending();
+      untracked(() => this.onPriceCurrencyChanged(code, pending));
+      this.trackSlowHint(this.state() === 'loading' || pending);
     });
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.state() === 'error' && !this.autoRetried) {
+          this.autoRetried = true;
+          this.reload();
+        }
+      });
+  }
+
+  /**
+   * Keeps the price UI bounded to one source of truth: the draft in the
+   * selected currency. On a currency switch the bounds' MEANING is preserved
+   * by pivoting through USD ("≤ 200 EGP" stays "≤ 200 EGP-worth") and the
+   * form, chips, URL and product list re-apply automatically. Values are
+   * never converted back and forth while the visitor is mid-typing.
+   */
+  private onPriceCurrencyChanged(code: string, pending: boolean): void {
+    const previous = this.lastPriceCurrency;
+    this.lastPriceCurrency = code;
+    let rebound = false;
+    if (previous !== null && previous !== code && this.filterCurrency() !== 'USD') {
+      this.draft.minPrice.set(this.pivotPrice(this.draft.minPrice(), previous, this.filterCurrency()));
+      this.draft.maxPrice.set(
+        this.draft.maxPrice() === null ? null : this.pivotPrice(this.draft.maxPrice()!, previous, this.filterCurrency()),
+      );
+      rebound = true;
+    }
+    if (!pending) {
+      this.minPriceInput.set(this.draft.minPrice());
+      this.maxPriceInput.set(this.draft.maxPrice() ?? this.displayPriceLimit());
+    }
+    if (rebound) this.refresh();
+  }
+
+  /** Re-expresses a bound in another currency via the USD pivot. */
+  private pivotPrice(amount: number, from: string, to: string): number {
+    if (from === to) return amount;
+    const usd = this.prices.convertPrecise(amount, from, 'USD');
+    if (usd == null) return amount;
+    return this.prices.convert(usd, 'USD', to) ?? amount;
+  }
+
+  /** Explicit Retry: reset the breaker, probe health, refetch immediately. */
+  protected retry(): void {
+    this.autoRetried = true;
+    this.connectivity.retryNow();
+    this.reload();
+  }
+
+  ngOnDestroy(): void {
+    this.clearSlowTimer();
+  }
+
+  private trackSlowHint(busy: boolean): void {
+    if (!busy) {
+      this.clearSlowTimer();
+      this.slow.set(false);
+      return;
+    }
+    if (this.slowTimer) return;
+    this.slow.set(false);
+    this.slowTimer = setTimeout(() => {
+      this.slowTimer = null;
+      this.slow.set(true);
+    }, 3000);
+  }
+
+  private clearSlowTimer(): void {
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
   }
 
   // Memoized option lists keep stable references for PrimeNG selects.
@@ -138,8 +225,8 @@ export class CatalogPageComponent implements OnInit {
     const chips: { key: string; label: string }[] = [];
     if (this.draft.q()) chips.push({ key: 'q', label: `“${this.draft.q()}”` });
     if (this.draft.category()) chips.push({ key: 'category', label: this.products.categoryName(this.draft.category()!) });
-    if (this.draft.minPrice() > 0) chips.push({ key: 'min', label: `≥ ${this.currency.format(this.displayMinPrice(), this.filterCurrency())}` });
-    if (this.draft.maxPrice() < this.maxPrice) chips.push({ key: 'max', label: `≤ ${this.currency.format(this.displayMaxPrice(), this.filterCurrency())}` });
+    if (this.draft.minPrice() > 0) chips.push({ key: 'min', label: `≥ ${this.currency.format(this.draft.minPrice(), this.filterCurrency())}` });
+    if (this.draft.maxPrice() !== null) chips.push({ key: 'max', label: `≤ ${this.currency.format(this.draft.maxPrice()!, this.filterCurrency())}` });
     if (this.draft.availability() !== 'all') chips.push({ key: 'avail', label: this.draft.availability() });
     if (this.draft.sale()) chips.push({ key: 'sale', label: this.i18n.t('catalog.onSaleOnly') });
     return chips;
@@ -147,7 +234,12 @@ export class CatalogPageComponent implements OnInit {
 
   ngOnInit(): void {
     // Filter categories come from the data source, independent of products.
-    this.products.categories().subscribe((cats) => this.categories.set(cats));
+    // A failed category request must not become an unhandled error and must
+    // not block the product list: fall back to "All categories".
+    this.products.categories().subscribe({
+      next: (cats) => this.categories.set(cats),
+      error: () => this.categories.set([]),
+    });
     // The URL is the source of truth: every query-param change rebuilds the
     // draft and reloads, which keeps back/forward and bookmarks consistent.
     // First entry lands at the top (like every fresh page); later emissions
@@ -157,10 +249,16 @@ export class CatalogPageComponent implements OnInit {
       this.syncingFromUrl = true;
       this.draft.q.set(params.get('q') ?? '');
       this.draft.category.set(params.get('category') ?? '');
-      this.draft.minPrice.set(Number(params.get('min') ?? 0) || 0);
-      this.draft.maxPrice.set(Number(params.get('max') ?? this.maxPrice) || this.maxPrice);
-      this.minPriceInput.set(this.displayMinPrice());
-      this.maxPriceInput.set(this.displayMaxPrice());
+      // Price params are numbers in the CURRENTLY SELECTED currency, matching
+      // what the controls show. An absent `max` means "no upper bound".
+      this.draft.minPrice.set(Math.max(0, Number(params.get('min') ?? 0) || 0));
+      const maxParam = params.get('max');
+      const maxNumber = maxParam == null || maxParam === '' ? Number.NaN : Number(maxParam);
+      this.draft.maxPrice.set(Number.isFinite(maxNumber) ? maxNumber : null);
+      if (!this.priceInputPending()) {
+        this.minPriceInput.set(this.draft.minPrice());
+        this.maxPriceInput.set(this.draft.maxPrice() ?? this.displayPriceLimit());
+      }
       this.draft.availability.set((params.get('avail') as 'all' | Availability) ?? 'all');
       this.draft.sale.set(params.get('sale') === '1');
       this.draft.sort.set((params.get('sort') as SortKey) ?? 'recommended');
@@ -175,11 +273,21 @@ export class CatalogPageComponent implements OnInit {
   }
 
   private currentQuery(): CatalogQuery {
+    // Single conversion point: the visitor's bounds go to the server's USD
+    // contract here and nowhere else. An unusable rate simply omits a bound
+    // instead of guessing a meaning for the typed number.
+    const filterCurrency = this.filterCurrency();
+    const minUsd = this.draft.minPrice() > 0
+      ? this.prices.convertPrecise(this.draft.minPrice(), filterCurrency, 'USD')
+      : null;
+    const maxUsd = this.draft.maxPrice() !== null
+      ? this.prices.convertPrecise(this.draft.maxPrice()!, filterCurrency, 'USD')
+      : null;
     return {
       search: this.draft.q() || undefined,
       categoryId: this.draft.category() || undefined,
-      minPrice: this.draft.minPrice() || undefined,
-      maxPrice: this.draft.maxPrice() < this.maxPrice ? this.draft.maxPrice() : undefined,
+      minPrice: minUsd ?? undefined,
+      maxPrice: maxUsd ?? undefined,
       availability: this.draft.availability(),
       onSaleOnly: this.draft.sale() || undefined,
       sort: this.draft.sort(),
@@ -196,7 +304,7 @@ export class CatalogPageComponent implements OnInit {
         q: this.draft.q() || null,
         category: this.draft.category() || null,
         min: this.draft.minPrice() || null,
-        max: this.draft.maxPrice() < this.maxPrice ? this.draft.maxPrice() : null,
+        max: this.draft.maxPrice(),
         priceMode: null,
         avail: this.draft.availability() !== 'all' ? this.draft.availability() : null,
         sale: this.draft.sale() ? 1 : null,
@@ -214,6 +322,7 @@ export class CatalogPageComponent implements OnInit {
       next: (res) => {
         this.items.set(res.items);
         this.total.set(res.total);
+        this.autoRetried = false;
         this.state.set('ok');
       },
       error: () => this.state.set('error'),
@@ -244,15 +353,18 @@ export class CatalogPageComponent implements OnInit {
   }
 
   protected setMaxPrice(v: number | string | number[] | undefined): void {
+    if (!this.priceConversionAvailable()) return;
     const n = Array.isArray(v) ? v[0] : Number(v);
     if (!Number.isFinite(n)) return;
-    const displayValue = Math.max(0, Math.min(this.displayPriceLimit(), n));
-    const baseValue = this.prices.convertPrecise(displayValue, this.currency.code(), 'USD');
-    if (baseValue == null) return;
-    const maxPrice = Math.max(this.draft.minPrice(), Math.min(this.maxPrice, baseValue));
-    this.draft.maxPrice.set(maxPrice);
-    this.maxPriceInput.set(this.prices.convert(maxPrice, 'USD', this.filterCurrency()) ?? displayValue);
-    this.refresh();
+    const limit = this.displayPriceLimit();
+    const displayValue = Math.max(0, Math.min(limit, n));
+    // Reaching the catalog ceiling means "no upper bound" again.
+    const maxValue = displayValue >= limit ? null : displayValue;
+    const nextMax = maxValue === null ? null : Math.max(this.draft.minPrice(), maxValue);
+    const changed = nextMax !== this.draft.maxPrice();
+    this.draft.maxPrice.set(nextMax);
+    this.maxPriceInput.set(nextMax ?? '');
+    if (changed) this.refresh();
   }
 
   protected onPriceInput(bound: 'min' | 'max', value: number | string): void {
@@ -272,30 +384,29 @@ export class CatalogPageComponent implements OnInit {
 
     const minRaw = String(this.minPriceInput()).trim();
     const maxRaw = String(this.maxPriceInput()).trim();
+    // An emptied field clears its bound; numbers mean the selected currency.
     const minDisplay = minRaw === '' ? 0 : Number(minRaw);
-    const maxDisplay = maxRaw === '' ? this.displayPriceLimit() : Number(maxRaw);
-    if (!Number.isFinite(minDisplay) || !Number.isFinite(maxDisplay)) {
+    const maxDisplay: number | null = maxRaw === '' ? null : Number(maxRaw);
+    if (
+      !Number.isFinite(minDisplay) ||
+      (maxDisplay !== null && !Number.isFinite(maxDisplay)) ||
+      !this.priceConversionAvailable()
+    ) {
+      // Unusable input or no usable rate: refuse to apply a guessed meaning.
       this.priceInputPending.set(false);
       return;
     }
 
     const limit = this.displayPriceLimit();
-    const normalizedMin = Math.max(0, Math.min(limit, minDisplay));
-    const normalizedMax = Math.max(normalizedMin, Math.min(limit, maxDisplay));
-    const minPrice = this.prices.convertPrecise(normalizedMin, this.filterCurrency(), 'USD');
-    const maxPrice = this.prices.convertPrecise(normalizedMax, this.filterCurrency(), 'USD');
-    if (minPrice == null || maxPrice == null) {
-      this.priceInputPending.set(false);
-      return;
-    }
-
-    const nextMin = Math.max(0, Math.min(this.maxPrice, minPrice));
-    const nextMax = Math.max(nextMin, Math.min(this.maxPrice, maxPrice));
+    const nextMin = Math.max(0, Math.min(limit, minDisplay));
+    const nextMax = maxDisplay === null ? null : Math.max(nextMin, Math.min(limit, maxDisplay));
     const changed = nextMin !== this.draft.minPrice() || nextMax !== this.draft.maxPrice();
     this.draft.minPrice.set(nextMin);
     this.draft.maxPrice.set(nextMax);
-    this.minPriceInput.set(this.prices.convert(nextMin, 'USD', this.filterCurrency()) ?? normalizedMin);
-    this.maxPriceInput.set(this.prices.convert(nextMax, 'USD', this.filterCurrency()) ?? normalizedMax);
+    // Echo the normalized values so the form never lies about what is applied
+    // (e.g. a value beyond the catalog ceiling snaps back to the ceiling).
+    this.minPriceInput.set(nextMin);
+    this.maxPriceInput.set(nextMax ?? '');
     this.priceInputPending.set(false);
     if (changed) this.refresh();
   }
@@ -323,7 +434,7 @@ export class CatalogPageComponent implements OnInit {
     if (key === 'q') this.draft.q.set('');
     if (key === 'category') this.draft.category.set('');
     if (key === 'min') this.draft.minPrice.set(0);
-    if (key === 'max') this.draft.maxPrice.set(this.maxPrice);
+    if (key === 'max') this.draft.maxPrice.set(null);
     if (key === 'avail') this.draft.availability.set('all');
     if (key === 'sale') this.draft.sale.set(false);
     this.refresh();
@@ -336,7 +447,7 @@ export class CatalogPageComponent implements OnInit {
     this.draft.q.set('');
     this.draft.category.set('');
     this.draft.minPrice.set(0);
-    this.draft.maxPrice.set(this.maxPrice);
+    this.draft.maxPrice.set(null);
     this.draft.availability.set('all');
     this.draft.sale.set(false);
     this.draft.sort.set('recommended');

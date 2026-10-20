@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../shared/resilience/safe-image.directive';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +12,7 @@ import { SiteContentService } from '../core/services/site-content.service';
   selector: 'app-footer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FormsModule, Select, BrandLogoComponent],
+  imports: [SafeImageDirective, RouterLink, FormsModule, Select, BrandLogoComponent],
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.scss',
 })

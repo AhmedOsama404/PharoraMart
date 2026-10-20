@@ -1,6 +1,7 @@
+import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toObservable, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { map, distinctUntilChanged, switchMap, catchError, startWith, of, type Observable } from 'rxjs';
@@ -19,6 +20,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PendingActionService } from '../../core/services/pending-action.service';
 import { RecentlyViewedService } from '../../core/services/recently-viewed.service';
 import { ScrollService } from '../../core/services/scroll.service';
+import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import { availabilityOf, discountPercent, effectivePrice, type Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
@@ -26,6 +28,8 @@ import { SectionHeaderComponent } from '../../shared/components/section-header.c
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
 import { handleImgError } from '../../shared/utils/image-fallback.utils';
+import { pickLocaleText } from '../../shared/utils/localized.utils';
+import type { ProductVariant } from '../../models/product.model';
 
 // Stable RouterLinkActive options shared by every breadcrumb item below.
 // PrimeNG Breadcrumb renders `[routerLinkActiveOptions]="item.options || { exact: false }"`:
@@ -53,7 +57,7 @@ const LOADING_STATE: ProductDetailState = { status: 'loading', product: null, re
   selector: 'app-product-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [SafeImageDirective, 
     RouterLink, FormsModule, Breadcrumb, Button, Select, Skeleton,
     Tabs, TabList, Tab, TabPanels, TabPanel, Tag,
     ProductCardComponent, QtySelectorComponent, SectionHeaderComponent, EmptyStateComponent, ResolvedMoneyPipe,
@@ -62,7 +66,7 @@ const LOADING_STATE: ProductDetailState = { status: 'loading', product: null, re
   templateUrl: './product-detail-page.component.html',
   styleUrl: './product-detail-page.component.scss',
 })
-export class ProductDetailPageComponent {
+export class ProductDetailPageComponent implements OnDestroy {
   protected i18n = inject(I18nService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -73,6 +77,7 @@ export class ProductDetailPageComponent {
   private gate = inject(PendingActionService);
   private recent = inject(RecentlyViewedService);
   private scroll = inject(ScrollService);
+  private connectivity = inject(ConnectivityService);
 
   // Route id as an observable (for the cancellable loader) and as a signal
   // (for UI resets and memoized view data) so in-place navigation — e.g.
@@ -96,6 +101,11 @@ export class ProductDetailPageComponent {
     ),
     { initialValue: LOADING_STATE },
   );
+
+  /** True after 3 s of loading so a hung backend gets a visible hint + Retry. */
+  protected slow = signal(false);
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoRetried = false;
 
   protected product = computed(() => this.page().product);
 
@@ -152,19 +162,55 @@ export class ProductDetailPageComponent {
         this.selectedVariants = {};
         this.variantOptionCache.clear();
       });
-    }, { allowSignalWrites: true });
+    });
 
     // Side effects that belong to a successful load only.
     effect(() => {
       const state = this.page();
       if (state.status === 'ready' && state.product) {
+        this.autoRetried = false;
         const product = state.product;
         untracked(() => {
           document.title = `${product.name} — Pharora`;
           this.recent.push(product.id);
         });
       }
+      this.trackSlowHint(state.status === 'loading');
     });
+
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.page().status === 'error' && !this.autoRetried) {
+          this.autoRetried = true;
+          this.retry();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.clearSlowTimer();
+  }
+
+  private trackSlowHint(loading: boolean): void {
+    if (!loading) {
+      this.clearSlowTimer();
+      this.slow.set(false);
+      return;
+    }
+    if (this.slowTimer) return;
+    this.slow.set(false);
+    this.slowTimer = setTimeout(() => {
+      this.slowTimer = null;
+      this.slow.set(true);
+    }, 3000);
+  }
+
+  private clearSlowTimer(): void {
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
   }
 
   // Loads one terminal state for a product id. Never rejects and never hangs:
@@ -198,14 +244,20 @@ export class ProductDetailPageComponent {
   }
 
   protected retry(): void {
+    this.autoRetried = true;
+    this.connectivity.retryNow();
     this.reloadNonce.update((n) => n + 1);
   }
 
-  protected variantOptions(variantId: string, options: string[]): { label: string; value: string }[] {
-    const key = `${variantId}:${options.join('|')}`;
+  protected variantOptions(variant: ProductVariant): { label: string; value: string }[] {
+    const locale = this.i18n.currentLang();
+    const key = `${locale}:${variant.id}:${variant.options.join('|')}`;
     let cached = this.variantOptionCache.get(key);
     if (!cached) {
-      cached = options.map((o) => ({ label: o, value: o }));
+      cached = variant.options.map((value, index) => ({
+        label: pickLocaleText(variant.optionTranslations?.[index] ?? undefined, locale) || value,
+        value,
+      }));
       this.variantOptionCache.set(key, cached);
     }
     return cached;
@@ -214,9 +266,15 @@ export class ProductDetailPageComponent {
   private variantSelection(): { key?: string; label?: string } {
     const p = this.product();
     if (!p?.variants?.length) return {};
-    const parts = p.variants.map((v) => this.selectedVariants[v.id] ?? '').filter(Boolean);
-    if (!parts.length) return {};
-    return { key: parts.join('|'), label: parts.join(' / ') };
+    const selected = p.variants.map((variant) => {
+      const value = this.selectedVariants[variant.id];
+      if (!value) return null;
+      const index = variant.options.indexOf(value);
+      return pickLocaleText(variant.optionTranslations?.[index] ?? undefined, this.i18n.currentLang()) || value;
+    }).filter((value): value is string => value !== null);
+    const keys = p.variants.map((variant) => this.selectedVariants[variant.id]).filter((value): value is string => Boolean(value));
+    if (!keys.length) return {};
+    return { key: keys.join('|'), label: selected.join(' / ') };
   }
 
   protected addToCart(): void {

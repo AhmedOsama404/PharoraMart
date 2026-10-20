@@ -1,6 +1,15 @@
 import type { TranslationDict } from './en';
 
 export const it: TranslationDict = {
+  aria: {
+    breadcrumb: "Percorso di navigazione",
+    filters: "Filtri",
+    loadingProducts: "Caricamento prodotti",
+    primary: "Navigazione principale",
+    carouselControls: "Controlli del carosello prodotti",
+    previousProducts: "Prodotti precedenti",
+    nextProducts: "Prodotti successivi",
+  },
   app: { name: 'Pharora', tagline: 'Tutto ciò che ami, con consegna veloce.' },
   nav: {
     home: 'Home',
@@ -23,7 +32,7 @@ export const it: TranslationDict = {
     promoTitle: 'Saldi di mezza stagione fino al −40 %',
     promoSubtitle: 'Best seller di bellezza naturale ed erbe a prezzi speciali. Fino a esaurimento scorte.',
     promoCta: 'Acquista i saldi',
-    learnMore: 'Learn more',
+    learnMore: 'Scopri di più',
     recentlyViewedTitle: 'Visti di recente',
   },
   catalog: {
@@ -180,10 +189,10 @@ export const it: TranslationDict = {
     backToCart: 'Torna al carrello',
     orderSuccess: 'Ordine inviato con successo',
     duplicateBlocked: 'Il tuo ordine è già in elaborazione. Attendi.',
-    applyCoupon: 'Apply',
-    couponCode: 'Coupon code',
-    discount: 'Discount',
-    couponInvalid: 'This coupon is not valid for your order.',
+    applyCoupon: 'Applica codice promozionale', couponApplied: 'Codice promozionale applicato',
+    couponCode: 'Codice coupon',
+    discount: 'Sconto',
+    couponInvalid: 'Questo coupon non è valido per il tuo ordine.',
     emptyCart: 'Il carrello è vuoto. Aggiungi prodotti prima della cassa.',
   },
   confirmation: {
@@ -325,7 +334,7 @@ export const it: TranslationDict = {
       'Impossibile confermare la spesa di consegna. Controlla i dati di consegna e riprova.',
   },
   meta: {
-    home: 'Pharora — Natural beauty, delivered to your hotel',
+    home: 'Pharora — bellezza naturale, consegnata al tuo hotel',
     catalog: 'Tutti i prodotti — Pharora',
     cart: 'Carrello — Pharora',
     favorites: 'Preferiti — Pharora',

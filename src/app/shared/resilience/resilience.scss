@@ -1,0 +1,244 @@
+/* ==========================================================================
+   Resilience kit (R1) — shared across every page.
+   Pure CSS: transform/opacity only, no JS animation loops.
+   ========================================================================== */
+
+.rs-sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.rs-skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--surface-border) 55%, transparent) 0%,
+    color-mix(in srgb, var(--surface-card) 92%, var(--surface-border)) 46%,
+    color-mix(in srgb, var(--surface-border) 55%, transparent) 100%
+  );
+  background-size: 300% 100%;
+  animation: rs-shimmer 1.35s ease-in-out infinite;
+  min-height: 0.5rem;
+}
+
+.rs-skeleton--circle {
+  aspect-ratio: 1 / 1;
+}
+
+@keyframes rs-shimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+.p-dark .rs-skeleton,
+.rs-dark .rs-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.05) 0%,
+    rgb(255 255 255 / 0.12) 46%,
+    rgb(255 255 255 / 0.05) 100%
+  );
+  background-size: 300% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-skeleton {
+    animation: none;
+    background: color-mix(in srgb, var(--surface-border) 60%, transparent);
+    opacity: 0.75;
+  }
+}
+
+.rs-skeleton-text {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.rs-skeleton-fallback {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.rs-skeleton-fallback .rs-skeleton { height: 0.9rem; border-radius: 999px; }
+.rs-skeleton-fallback .rs-skeleton:nth-child(2) { width: 80%; }
+.rs-skeleton-fallback .rs-skeleton:nth-child(3) { width: 56%; }
+
+.rs-boundary { display: block; }
+
+.rs-slow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--surface-border);
+  border-radius: var(--radius-md, 0.7rem);
+  background: color-mix(in srgb, var(--surface-card) 80%, transparent);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm, 0.88rem);
+}
+
+.rs-slow > i { color: var(--accent); font-size: 1.1rem; }
+.rs-slow > div { display: grid; gap: 0.15rem; min-width: 0; }
+.rs-slow strong { color: var(--text-primary); font-size: var(--font-size-sm, 0.88rem); }
+.rs-slow .p-button { margin-inline-start: auto; }
+
+/* ------------------------------- states ---------------------------------- */
+
+.rs-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.25rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card, none);
+}
+
+.rs-state--compact { padding: 0.9rem; gap: 0.75rem; }
+.rs-state--compact .rs-state__icon { width: 2.2rem; height: 2.2rem; font-size: 1rem; }
+.rs-state--compact h3 { font-size: var(--font-size-base, 1rem); }
+
+.rs-state__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  font-size: 1.35rem;
+}
+
+.rs-state--error .rs-state__icon {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.rs-state__copy { display: grid; gap: 0.3rem; min-width: 0; }
+.rs-state__copy h3 { margin: 0; font-size: var(--font-size-lg, 1.15rem); line-height: var(--line-height-tight, 1.25); }
+.rs-state__copy p { margin: 0; color: var(--text-secondary); font-size: var(--font-size-sm, 0.88rem); }
+.rs-state__ref { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: var(--font-size-xs, 0.78rem); }
+.rs-state__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.rs-state__home { color: var(--primary); font-size: var(--font-size-sm, 0.88rem); text-decoration: underline; }
+
+.rs-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.rs-link:focus-visible,
+.rs-state__home:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.2rem;
+}
+
+.rs-stale {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--surface-border));
+  border-radius: var(--radius-md, 0.7rem);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-card));
+  color: var(--text-primary);
+  font-size: var(--font-size-sm, 0.88rem);
+}
+
+.rs-stale > i { color: var(--accent); }
+
+/* ----------------------------- connection -------------------------------- */
+
+.rs-connection {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-card));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, var(--surface-border));
+  color: var(--text-primary);
+  font-size: var(--font-size-sm, 0.88rem);
+  text-align: center;
+}
+
+.rs-connection--ok {
+  background: color-mix(in srgb, var(--success) 16%, var(--surface-card));
+  border-bottom-color: color-mix(in srgb, var(--success) 40%, var(--surface-border));
+}
+
+.rs-connection > i { color: var(--accent); }
+.rs-connection--ok > i { color: var(--success); }
+
+/* ------------------------------ skeletons -------------------------------- */
+
+.rs-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--rs-cols, 4), minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 960px) { .rs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .rs-grid { grid-template-columns: 1fr; } }
+
+.rs-product-skeleton {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--surface-card);
+}
+
+.rs-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+
+.rs-table {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.5rem 0;
+}
+
+.rs-table__row {
+  display: grid;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+/* ------------------------------- images ---------------------------------- */
+
+img.rs-safe-image {
+  object-fit: cover;
+  background: var(--surface-border);
+}
+
+/* Keep the loaded image from shifting the box while it decodes. */
+img[data-safe-image='loading'] { opacity: 0.001; }
+img[data-safe-image='loaded'],
+img[data-safe-image='fallback'] { opacity: 1; transition: opacity 160ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  img[data-safe-image='loaded'],
+  img[data-safe-image='fallback'] { transition: none; }
+}

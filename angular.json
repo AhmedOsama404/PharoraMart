@@ -54,7 +54,13 @@
               "outputHashing": "all",
               // Fonts stay as runtime <link> (see index.html): build-time
               // inlining would require network access to Google Fonts.
-              "optimization": { "scripts": true, "styles": true, "fonts": false }
+              "optimization": { "scripts": true, "styles": true, "fonts": false },
+              "fileReplacements": [
+                {
+                  "replace": "src/app/features/dev-gallery/gallery.routes.ts",
+                  "with": "src/app/features/dev-gallery/gallery.routes.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,

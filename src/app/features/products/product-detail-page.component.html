@@ -1,4 +1,14 @@
 @if (page().status === 'loading') {
+  @if (slow()) {
+    <div class="rs-slow" role="status">
+      <i class="pi pi-clock" aria-hidden="true"></i>
+      <div>
+        <strong>{{ i18n.t('resilience.slowTitle') }}</strong>
+        <span>{{ i18n.t('resilience.slowHint') }}</span>
+      </div>
+      <p-button [label]="i18n.t('resilience.retry')" icon="pi pi-refresh" severity="secondary" [text]="true" (onClick)="retry()" />
+    </div>
+  }
   <div class="detail"><p-skeleton height="26rem" borderRadius="1.2rem" /><div><p-skeleton height="2.4rem" /><br /><p-skeleton height="8rem" /></div></div>
 } @else if (page().status === 'error') {
   <app-empty-state icon="pi-exclamation-triangle" [title]="i18n.t('catalog.errorTitle')"
@@ -12,14 +22,14 @@
     <div class="gallery">
       <div class="img-frame main-frame">
         <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-        <img class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name" (error)="fbImg($event, 'novamart-detail')" />
+        <img appSafeImg="product" class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name" />
       </div>
       <div class="thumbs" role="tablist" aria-label="product images">
         @for (src of images(); track src; let i = $index) {
           <button [class.active]="i === activeImg()" (click)="activeImg.set(i)" [attr.aria-label]="'image ' + (i + 1)">
             <span class="img-frame thumb-frame">
               <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-              <img [src]="src" [alt]="product()!.names | localized: product()!.name" loading="lazy" (error)="fbImg($event, 'novamart-thumb-' + i)" />
+              <img appSafeImg="product" [src]="src" [alt]="product()!.names | localized: product()!.name" loading="lazy" />
             </span>
           </button>
         }
@@ -50,8 +60,8 @@
       @if (product()!.variants?.length) {
         @for (v of product()!.variants!; track v.id) {
           <div class="variant">
-            <label [attr.for]="'variant-' + v.id">{{ v.name }}</label>
-            <p-select [inputId]="'variant-' + v.id" [options]="variantOptions(v.id, v.options)" [(ngModel)]="selectedVariants[v.id]"
+            <label [attr.for]="'variant-' + v.id">{{ v.names | localized: v.name }}</label>
+            <p-select [inputId]="'variant-' + v.id" [options]="variantOptions(v)" [(ngModel)]="selectedVariants[v.id]"
               [placeholder]="i18n.t('product.selectVariant')" optionLabel="label" optionValue="value" [fluid]="true"
               appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
           </div>
@@ -83,7 +93,7 @@
             @if (product()!.attributes && product()!.attributes.length) {
               <dl class="attrs">
                 @for (a of product()!.attributes; track a.name) {
-                  <div><dt>{{ a.name }}</dt><dd>{{ a.value }}</dd></div>
+                  <div><dt>{{ a.names | localized: a.name }}</dt><dd>{{ a.values | localized: a.value }}</dd></div>
                 }
               </dl>
             } @else {

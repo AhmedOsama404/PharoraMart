@@ -1,5 +1,5 @@
 import { Injectable, effect, signal, untracked } from '@angular/core';
-import { catchError, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiClientService } from '../api/api-client.service';
 import { AuthService } from './auth.service';
@@ -20,6 +20,8 @@ interface ServerCart {
 export class AccountSyncService {
   private suppressPush = signal(false);
   private pushTimer: ReturnType<typeof setTimeout> | undefined;
+  private lastPulledUserId: string | null = null;
+  private serverFavoriteIds = new Set<string>();
 
   constructor(
     private auth: AuthService,
@@ -30,7 +32,14 @@ export class AccountSyncService {
     // Pull once per session start.
     effect(() => {
       const user = this.auth.user();
-      if (environment.useMockApi || !user) return;
+      if (environment.useMockApi) return;
+      if (!user) {
+        this.lastPulledUserId = null;
+        this.serverFavoriteIds.clear();
+        return;
+      }
+      if (this.lastPulledUserId === user.id) return;
+      this.lastPulledUserId = user.id;
       untracked(() => this.pull());
     });
     // Push local mutations back (debounced; suppressed while pulling).
@@ -46,19 +55,18 @@ export class AccountSyncService {
   pull(): void {
     if (environment.useMockApi || !this.auth.isLoggedIn()) return;
     this.suppressPush.set(true);
-    this.api
-      .get<ServerCart>('cart')
-      .pipe(catchError(() => of({ lines: [] } as ServerCart)))
-      .subscribe((res) => {
-        this.cart.replaceAll(res.lines ?? []);
-        this.api
-          .get<{ productIds: string[] }>('favorites')
-          .pipe(catchError(() => of({ productIds: [] })))
-          .subscribe((fav) => {
-            this.favorites.replaceAll(fav.productIds ?? []);
-            this.suppressPush.set(false);
-          });
-      });
+    forkJoin({
+      cart: this.api.get<ServerCart>('cart').pipe(catchError(() => of({ lines: [] } as ServerCart))),
+      favorites: this.api.get<{ productIds: string[] }>('favorites').pipe(catchError(() => of({ productIds: [] }))),
+    }).subscribe(({ cart, favorites }) => {
+      // Merge the latest local state when the responses arrive. This preserves
+      // guest edits made while the two account reads were in flight.
+      this.cart.mergeAll(cart.lines ?? []);
+      const serverIds = (favorites.productIds ?? []).filter((id): id is string => typeof id === 'string');
+      this.serverFavoriteIds = new Set(serverIds);
+      this.favorites.replaceAll([...new Set([...serverIds, ...this.favorites.ids()])]);
+      this.suppressPush.set(false);
+    });
   }
 
   private pushSoon(
@@ -68,10 +76,20 @@ export class AccountSyncService {
     clearTimeout(this.pushTimer);
     this.pushTimer = setTimeout(() => {
       this.api.put('cart', { lines }).pipe(catchError(() => of(null))).subscribe();
-      // Favorites push is best-effort per id: backend is id-keyed, so a full
-      // replace is emulated by adding missing ids (removals sync on pull).
+      // Keep the server set aligned with local changes. This sends only the
+      // delta and makes removals persist across sessions.
       for (const id of ids) {
-        this.api.post('favorites', { productId: id }).pipe(catchError(() => of(null))).subscribe();
+        if (this.serverFavoriteIds.has(id)) continue;
+        this.api.post('favorites', { productId: id }).pipe(catchError(() => of(false))).subscribe((result) => {
+          if (result !== false) this.serverFavoriteIds.add(id);
+        });
+      }
+      const nextIds = new Set(ids);
+      for (const id of this.serverFavoriteIds) {
+        if (nextIds.has(id)) continue;
+        this.api.delete(`favorites/${encodeURIComponent(id)}`).pipe(catchError(() => of(false))).subscribe((result) => {
+          if (result !== false) this.serverFavoriteIds.delete(id);
+        });
       }
     }, 800);
   }
