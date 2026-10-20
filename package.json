@@ -8,7 +8,8 @@
     "build:deploy": "node scripts/set-api-url.mjs && ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint:resilience": "node scripts/check-resilience.mjs"
+    "lint:resilience": "node scripts/check-resilience.mjs",
+    "i18n:check": "node scripts/i18n-check.mjs"
   },
   "prettier": {
     "printWidth": 100,
