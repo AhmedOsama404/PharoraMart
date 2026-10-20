@@ -92,6 +92,8 @@ export const ar: TranslationDict = {
     selectVariant: 'اختر الخيار',
   },
   cart: {
+    qtyReduced: "قُلّلنا الكمية من {from} إلى {to} — وهذا كل ما هو متوفر في المخزون.",
+    stockChanged: "تغيّر المخزون، ولذلك عدّلنا الكمية في سلتك.",
     unavailable: 'غير متوفر حاليًا',
     calculatedAtCheckout: 'يُحسب عند إتمام الطلب',
     title: 'سلة التسوق',

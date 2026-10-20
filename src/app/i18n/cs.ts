@@ -92,6 +92,8 @@ export const cs: TranslationDict = {
     selectVariant: 'Vyberte variantu',
   },
   cart: {
+    qtyReduced: "Snížili jsme množství z {from} na {to} — tolik je skladem k dispozici.",
+    stockChanged: "Skladem se změnil, proto jsme upravili množství v košíku.",
     unavailable: 'Momentálně nedostupné',
     calculatedAtCheckout: 'Vypočítá se v pokladně',
     title: 'Nákupní košík',

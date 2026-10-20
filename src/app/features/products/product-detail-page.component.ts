@@ -283,7 +283,15 @@ export class ProductDetailPageComponent implements OnDestroy {
     const { key, label } = this.variantSelection();
     // Guests sign in first; the exact qty + variant choice completes on return.
     if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: this.qty(), variantKey: key, variantLabel: label })) return;
-    this.cart.add(p.id, this.qty(), key, label, p.stock);
+    const wanted = this.qty();
+    const finalQty = this.cart.add(p.id, wanted, key, label, p.stock);
+    if (finalQty < wanted) {
+      // The shop has less than the customer asked for: say so instead of
+      // pretending the whole quantity went in.
+      this.notify.info('cart.qtyReduced', { from: wanted, to: finalQty });
+      return;
+    }
+
     this.notify.success('notifications.addedToCart');
   }
 

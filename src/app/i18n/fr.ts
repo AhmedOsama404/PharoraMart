@@ -92,6 +92,8 @@ export const fr: TranslationDict = {
     selectVariant: 'Choisir une option',
   },
   cart: {
+    qtyReduced: "Nous avons réduit la quantité de {from} à {to} — c’est tout ce qu’il reste en stock.",
+    stockChanged: "Le stock a changé, nous avons donc ajusté la quantité dans votre panier.",
     unavailable: 'Plus disponible',
     calculatedAtCheckout: 'Calculé à la commande',
     title: 'Panier',

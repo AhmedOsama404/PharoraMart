@@ -92,6 +92,8 @@ export const it: TranslationDict = {
     selectVariant: 'Seleziona opzione',
   },
   cart: {
+    qtyReduced: "Abbiamo ridotto la quantità da {from} a {to} — è tutto ciò che abbiamo in magazzino.",
+    stockChanged: "Le scorte sono cambiate, quindi abbiamo adeguato la quantità nel carrello.",
     unavailable: 'Non più disponibile',
     calculatedAtCheckout: 'Calcolato alla cassa',
     title: 'Carrello',

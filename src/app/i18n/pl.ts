@@ -92,6 +92,8 @@ export const pl: TranslationDict = {
     selectVariant: 'Wybierz opcję',
   },
   cart: {
+    qtyReduced: "Zmniejszyliśmy ilość z {from} na {to} — tyle mamy na stanie.",
+    stockChanged: "Stan magazynu się zmienił, dlatego poprawiliśmy ilość w koszyku.",
     unavailable: 'Niedostępny',
     calculatedAtCheckout: 'Obliczane przy kasie',
     title: 'Koszyk',

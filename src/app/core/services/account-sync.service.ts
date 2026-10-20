@@ -21,6 +21,13 @@ export class AccountSyncService {
   private suppressPush = signal(false);
   private pushTimer: ReturnType<typeof setTimeout> | undefined;
   private lastPulledUserId: string | null = null;
+  /**
+   * True once the guest cart has been combined with the account cart.
+   * The combination happens EXACTLY ONCE per session: repeating it would
+   * add the server cart to the local cart on every pull and the quantity
+   * would grow without bound (35 -> 70 -> 140 ...).
+   */
+  private handoverDone = false;
   private serverFavoriteIds = new Set<string>();
 
   constructor(
@@ -34,8 +41,16 @@ export class AccountSyncService {
       const user = this.auth.user();
       if (environment.useMockApi) return;
       if (!user) {
-        this.lastPulledUserId = null;
-        this.serverFavoriteIds.clear();
+        // A sign-out empties the local cart: it was a mirror of the account
+        // cart and it must never leak into the next account. On a first
+        // visit (no user yet) the guest cart is left alone.
+        if (this.lastPulledUserId) {
+          this.lastPulledUserId = null;
+          this.handoverDone = false;
+          this.cart.clear();
+          this.serverFavoriteIds.clear();
+        }
+
         return;
       }
       if (this.lastPulledUserId === user.id) return;
@@ -59,9 +74,19 @@ export class AccountSyncService {
       cart: this.api.get<ServerCart>('cart').pipe(catchError(() => of({ lines: [] } as ServerCart))),
       favorites: this.api.get<{ productIds: string[] }>('favorites').pipe(catchError(() => of({ productIds: [] }))),
     }).subscribe(({ cart, favorites }) => {
-      // Merge the latest local state when the responses arrive. This preserves
-      // guest edits made while the two account reads were in flight.
-      this.cart.mergeAll(cart.lines ?? []);
+      if (this.handoverDone) {
+        // The account cart is the source of truth from now on: adopt it.
+        // Adding it to the local cart again would double the quantities on
+        // every pull.
+        this.cart.replaceAll(cart.lines ?? []);
+      } else {
+        // The FIRST pull of the session combines the guest cart with the
+        // account cart - once. The combined cart is pushed up by the push
+        // effect, and the server clamps every line to the live stock.
+        this.cart.mergeAll(cart.lines ?? []);
+        this.handoverDone = true;
+      }
+
       const serverIds = (favorites.productIds ?? []).filter((id): id is string => typeof id === 'string');
       this.serverFavoriteIds = new Set(serverIds);
       this.favorites.replaceAll([...new Set([...serverIds, ...this.favorites.ids()])]);

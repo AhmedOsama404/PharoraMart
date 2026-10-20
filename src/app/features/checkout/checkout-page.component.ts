@@ -456,6 +456,23 @@ export class CheckoutPageComponent implements OnInit {
       this.submitError.set(this.i18n.t('checkout.emptyCart'));
       return;
     }
+
+    // An item that is no longer available must block the order: the backend
+    // would refuse the whole order, and placing it without the item would
+    // quietly drop something the customer asked for.
+    if (this.unavailableLines().length) {
+      this.placing.set(false);
+      this.submitError.set(this.i18n.t('checkout.orderProductUnavailable'));
+      return;
+    }
+
+    // Belt and braces: a line may never hold more than the live stock.
+    const overStock = this.view.lines().filter((l) => !l.unavailable && l.product && l.qty > l.stock);
+    if (overStock.length) {
+      this.placing.set(false);
+      this.submitError.set(this.i18n.t('checkout.orderOutOfStock'));
+      return;
+    }
     const v = this.form.getRawValue();
     const quoteOk = await this.quoteOnce(v.hotelId);
     if (!quoteOk || this.quotedFee() == null) {

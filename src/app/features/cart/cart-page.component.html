@@ -41,6 +41,10 @@
                   }
                 </div>
                 <div class="l-actions">
+                  @if (l.qtyAdjusted) {
+                    <p-message severity="warn" size="small"
+                      [text]="i18n.t('cart.qtyReduced', { from: l.previousQty, to: l.qty })" />
+                  }
                   <app-qty-selector [qty]="l.qty" [min]="1" [max]="l.product.stock || 1"
                     (qtyChange)="setQty(l.key, $event, l.product.stock)" />
                   <strong class="l-total">{{ l.lineTotal | money }}</strong>

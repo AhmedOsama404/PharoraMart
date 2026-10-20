@@ -92,6 +92,8 @@ export const de: TranslationDict = {
     selectVariant: 'Variante wählen',
   },
   cart: {
+    qtyReduced: "Wir haben die Menge von {from} auf {to} reduziert — mehr ist nicht auf Lager.",
+    stockChanged: "Der Lagerbestand hat sich geändert, daher haben wir die Menge im Warenkorb angepasst.",
     unavailable: 'Derzeit nicht verfügbar',
     calculatedAtCheckout: 'Wird an der Kasse berechnet',
     title: 'Warenkorb',
