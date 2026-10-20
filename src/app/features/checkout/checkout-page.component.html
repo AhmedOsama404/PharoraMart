@@ -34,24 +34,34 @@
             <small class="hint">{{ i18n.t('checkout.contactMethodHint') }}</small>
             @if (err('contactMethod'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
-          <div class="field">
-            <label for="language">{{ i18n.t('checkout.contactLanguage') }}</label>
-            <p-select id="language" formControlName="language" [options]="languageOptions()" optionLabel="label"
-              optionValue="value" [placeholder]="i18n.t('checkout.contactLanguage')" [fluid]="true"
-              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
-            <small class="hint">{{ i18n.t('checkout.contactLanguageHint') }}</small>
-            @if (err('language'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
-          </div>
         </div>
-        <div class="grid2">
-          <div class="field">
+
+        <div class="field">
+          <label for="language">{{ i18n.t('checkout.contactLanguage') }}</label>
+          <p-select id="language" formControlName="language" [options]="languageOptions()" optionLabel="label"
+            optionValue="value" [placeholder]="i18n.t('checkout.contactLanguage')" [fluid]="true"
+            appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
+          <small class="hint">{{ i18n.t('checkout.contactLanguageHint') }}</small>
+          @if (err('language'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+        </div>
+
+        <div class="cm-notify">
+          <div class="cm-notify__choice">
             <p-checkbox formControlName="whatsappOptIn" [binary]="true" inputId="whatsappOptIn" name="whatsappOptIn" />
-            <label for="whatsappOptIn">{{ i18n.t('checkout.whatsappOptIn') }}</label>
-            <small class="hint">{{ i18n.t('checkout.whatsappOptInHint') }}</small>
-            <p class="hint">{{ i18n.t('checkout.contactUpdatesNote') }}</p>
+            <div class="cm-notify__text">
+              <label for="whatsappOptIn">{{ i18n.t('checkout.whatsappOptIn') }}</label>
+              <small class="hint">{{ i18n.t('checkout.whatsappOptInHint') }}</small>
+            </div>
           </div>
-          <div class="field">
-            <p class="hint">{{ i18n.t('checkout.emailUpdatesHint') }}</p>
+          <div class="cm-notify__notes">
+            <p class="cm-notify__note">
+              <i class="pi pi-envelope" aria-hidden="true"></i>
+              <span>{{ i18n.t('checkout.emailUpdatesHint') }}</span>
+            </p>
+            <p class="cm-notify__note">
+              <i class="pi pi-shield" aria-hidden="true"></i>
+              <span>{{ i18n.t('checkout.contactUpdatesNote') }}</span>
+            </p>
           </div>
         </div>
       </p-card>
