@@ -3,13 +3,18 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
 import { ApiErrorService } from '../services/api-error.service';
+import { I18nService } from '../services/i18n.service';
 import { SILENT_ERROR_TOAST } from './problem-details';
 
 /**
- * Centralized HTTP concerns: attach the Bearer token, and turn any failure
- * into ONE localized toast. The message comes from the backend's stable
- * `code` (or the status), never from raw server prose, so every one of the
- * eight languages reads correctly.
+ * Centralized HTTP concerns: attach the Bearer token, negotiate the response
+ * language, and turn any failure into ONE localized toast. The message comes
+ * from the backend's stable `code` (or the status), never from raw server
+ * prose, so every one of the eight languages reads correctly.
+ *
+ * Every request carries `Accept-Language` with the user's selected locale, so
+ * backend-localized content (e.g. error titles in `ErrorCatalog`) is returned
+ * in that language instead of falling back to `en`.
  *
  * Callers that render their own inline message (checkout coupon, sign-in)
  * pass `{ silent: true }` to `ApiClientService` — the request then carries
@@ -23,7 +28,11 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   } catch {
     token = null;
   }
-  const authReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+  const i18n = inject(I18nService);
+  const setHeaders: Record<string, string> = { 'Accept-Language': i18n.currentLang() };
+  const authReq = token
+    ? req.clone({ setHeaders: { ...setHeaders, Authorization: `Bearer ${token}` } })
+    : req.clone({ setHeaders });
 
   const notify = inject(NotificationService);
   const apiError = inject(ApiErrorService);
