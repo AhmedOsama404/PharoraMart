@@ -9,10 +9,10 @@
       <i class="pi pi-bars"></i>
     </button>
     <a routerLink="/" class="logo" [attr.aria-label]="brandName() || null">
-      @if (brandLogoUrl(); as logoUrl) { <img [src]="logoUrl" [alt]="brandName()" (error)="onLogoError()" /> } @else { <app-brand-logo /> }
+      @if (brandLogoUrl(); as logoUrl) { <img appSafeImg="logo" [src]="logoUrl" [alt]="brandName()" /> } @else { <app-brand-logo /> }
       <span class="logo-text">{{ brandName() }}</span>
     </a>
-    <nav class="links" aria-label="primary">
+    <nav class="links" [attr.aria-label]="i18n.t('aria.primary')">
       @if (storefront.headerItemVisible('home')) { <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ storefront.headerItemText('home', i18n.currentLang(), i18n.t('nav.home')) }}</a> }
       @if (storefront.headerItemVisible('catalog')) { <a routerLink="/products" routerLinkActive="active">{{ storefront.headerItemText('catalog', i18n.currentLang(), i18n.t('nav.catalog')) }}</a> }
       @if (storefront.headerItemVisible('orders')) { <a routerLink="/orders" routerLinkActive="active">{{ storefront.headerItemText('orders', i18n.currentLang(), i18n.t('nav.orders')) }}</a> }
@@ -38,7 +38,7 @@
         <div class="suggest" role="listbox">
           @for (p of suggestions(); track p.id) {
             <a [routerLink]="['/products', p.id]" (click)="closeSuggestions()" role="option">
-              <img [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" (error)="imgFallback($event, p.id)" />
+              <img appSafeImg="product" [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" />
               <span>{{ p.names | localized: p.name }}</span>
             </a>
           }

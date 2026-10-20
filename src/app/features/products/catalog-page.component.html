@@ -1,4 +1,4 @@
-<nav class="crumbs" aria-label="breadcrumb">
+<nav class="crumbs" [attr.aria-label]="i18n.t('aria.breadcrumb')">
   <a routerLink="/" class="crumb-home">{{ i18n.t('product.breadcrumbsHome') }}</a>
   <span aria-hidden="true">/</span><span aria-current="page">{{ i18n.t('catalog.title') }}</span>
 </nav>
@@ -32,7 +32,7 @@
 }
 
 <div class="layout">
-  <aside class="filters" aria-label="filters">
+  <aside class="filters" [attr.aria-label]="i18n.t('aria.filters')">
     <ng-container *ngTemplateOutlet="filterBody" />
   </aside>
   <section class="results" aria-live="polite" [attr.aria-busy]="state() === 'loading' || priceInputPending()">
@@ -44,7 +44,7 @@
       }
     </p>
     @if (state() === 'loading' || priceInputPending()) {
-      <div class="grid skeleton-grid" aria-label="Loading products">
+      <div class="grid skeleton-grid" [attr.aria-label]="i18n.t('aria.loadingProducts')">
         @for (i of [1,2,3,4,5,6]; track i) {
           <article class="product-skeleton" aria-hidden="true">
             <p-skeleton class="skeleton-media" height="auto" borderRadius="0" />

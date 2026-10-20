@@ -1,6 +1,12 @@
 import type { TranslationDict } from './en';
 
 export const fr: TranslationDict = {
+  aria: {
+    breadcrumb: "Fil d’Ariane",
+    filters: "Filtres",
+    loadingProducts: "Chargement des produits",
+    primary: "Navigation principale",
+  },
   app: { name: 'Pharora', tagline: 'Tout ce que vous aimez, livré rapidement.' },
   nav: {
     home: 'Accueil',

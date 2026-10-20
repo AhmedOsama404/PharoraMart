@@ -1,6 +1,12 @@
 import type { TranslationDict } from './en';
 
 export const ar: TranslationDict = {
+  aria: {
+    breadcrumb: "مسار التنقل",
+    filters: "الفلاتر",
+    loadingProducts: "جارٍ تحميل المنتجات",
+    primary: "التنقل الرئيسي",
+  },
   app: { name: 'Pharora', tagline: 'كل ما تحب، بتوصيل سريع.' },
   nav: {
     home: 'الرئيسية',

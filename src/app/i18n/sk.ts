@@ -1,6 +1,12 @@
 import type { TranslationDict } from './en';
 
 export const sk: TranslationDict = {
+  aria: {
+    breadcrumb: "Drobková navigácia",
+    filters: "Filtre",
+    loadingProducts: "Načítavanie produktov",
+    primary: "Hlavná navigácia",
+  },
   app: { name: 'Pharora', tagline: 'Všetko, čo máte radi, s rýchlym doručením.' },
   nav: {
     home: 'Domov',

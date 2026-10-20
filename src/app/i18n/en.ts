@@ -3,6 +3,12 @@ export interface TranslationDict {
 }
 
 export const en: TranslationDict = {
+  aria: {
+    breadcrumb: "Breadcrumb",
+    filters: "Filters",
+    loadingProducts: "Loading products",
+    primary: "Primary navigation",
+  },
   app: { name: 'Pharora', tagline: 'Everything you love, delivered fast.' },
   nav: {
     home: 'Home',
