@@ -66,7 +66,8 @@ export class ConnectivityService implements OnDestroy {
 
   /** Force a probe now (tab focus, window online, Retry). */
   probe(): void {
-    if (this.destroyed) return;
+    // Hermetic unit tests enable mock mode: never touch the network.
+    if (this.destroyed || environment.useMockApi) return;
     const root = serverRoot(environment.apiBaseUrl);
     if (!root) return;
     this.clearProbe();
@@ -105,7 +106,7 @@ export class ConnectivityService implements OnDestroy {
   }
 
   private bindBrowserEvents(): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || environment.useMockApi) return;
     const online = () => {
       this.browserOnline.set(true);
       this.probe();

@@ -123,8 +123,17 @@ export function normalizeError(err: unknown, fallbackUrl?: string): ApiFailure {
         ? (body as { detail: string }).detail.slice(0, 500)
         : undefined;
 
-    // Angular reports an unparsable 2xx body as ok=false with status 200.
-    if (status >= 200 && status < 300 && err.ok === false) {
+    // Angular wraps an unparsable 2xx JSON body as
+    // `{ error: SyntaxError, text: '<html>…' }` while keeping status 200.
+    const parseLike =
+      status >= 200 &&
+      status < 300 &&
+      (typeof body === 'string' ||
+        (body !== null &&
+          typeof body === 'object' &&
+          (body as { error?: unknown }).error instanceof SyntaxError));
+
+    if (parseLike) {
       return new ApiFailure({
         status,
         kind: 'parse',

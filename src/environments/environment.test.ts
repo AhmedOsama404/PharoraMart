@@ -8,6 +8,8 @@ export const environment = {
   // running backend. Commit 1c31940 flipped this to `false` (a live-mode
   // change for the hero-product fix) which left 37 hermetic specs hanging.
   useMockApi: true,
+  requestTimeoutMs: 10000,
+  getRetryAttempts: 2,
   appName: 'Pharora',
   defaultLang: 'en' as const,
   defaultCurrency: 'USD' as const,

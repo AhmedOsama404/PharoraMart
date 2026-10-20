@@ -16,6 +16,21 @@
   <link rel="preconnect" href="https://images.unsplash.com">
 </head>
 <body>
+  <script>
+    // Pre-boot locale attributes: read the saved language before Angular
+    // boots so an Arabic user's very first paint is already RTL — no
+    // post-boot direction flip. Mirrors i18n.config LANG_DIRS.
+    (function () {
+      try {
+        var dirs = { en: 'ltr', ar: 'rtl', cs: 'ltr', it: 'ltr', pl: 'ltr', fr: 'ltr', sk: 'ltr', de: 'ltr' };
+        var saved = localStorage.getItem('novamart.lang');
+        if (saved && Object.prototype.hasOwnProperty.call(dirs, saved)) {
+          document.documentElement.lang = saved;
+          document.documentElement.dir = dirs[saved];
+        }
+      } catch (e) { /* best effort */ }
+    })();
+  </script>
   <app-root></app-root>
 </body>
 </html>
