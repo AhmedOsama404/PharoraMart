@@ -53,7 +53,7 @@ function parseFile(file, wantLocale) {
 
 for (const f of files) {
   const locale = path.basename(f, '.ts');
-  if (locale === 'resilience') continue; // merged dict layer validated via its own 8 keys below
+  if (locale.startsWith('resilience')) continue; // merged dict layers validated separately below
   const parsed = parseFile(path.join(DICT_DIR, f), locale);
   if (parsed) dicts[locale] = parsed;
 }

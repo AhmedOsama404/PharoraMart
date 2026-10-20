@@ -166,6 +166,14 @@ export class CheckoutPageComponent implements OnInit {
     if (u) {
       this.form.patchValue({ fullName: u.name, email: u.email, phone: u.phone ?? '' });
     }
+    // When the backend comes back, unblock the money flow without a reload.
+    this.connectivity.recovered$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.view.failed()) this.view.refresh();
+        const hotelId = this.selectedHotel();
+        if (hotelId) this.refreshQuote(hotelId);
+      });
   }
 
   ngOnInit(): void {
@@ -360,7 +368,7 @@ export class CheckoutPageComponent implements OnInit {
 
   protected blockedReason = computed(() => {
     if (this.connectivity.status() === 'offline') return this.i18n.t('resilience.offlineBody');
-    if (this.view.failed()) return this.i18n.t('resilience.checkoutBlocked');
+    if (this.view.failed()) return this.i18n.t('resilience.cart.checkoutBlocked');
     if (this.quoteFailed()) return this.i18n.t('errors.deliveryFeeUnavailable');
     return '';
   });
@@ -402,7 +410,7 @@ export class CheckoutPageComponent implements OnInit {
     const fresh = await this.view.ensureFresh();
     if (!fresh) {
       this.placing.set(false);
-      this.submitError.set(this.i18n.t('resilience.checkoutBlocked'));
+      this.submitError.set(this.i18n.t('resilience.cart.checkoutBlocked'));
       return;
     }
     if (!this.lines().length) {
