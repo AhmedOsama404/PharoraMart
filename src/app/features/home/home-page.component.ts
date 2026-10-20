@@ -135,7 +135,7 @@ export class HomePageComponent implements OnInit {
     this.products.featured().subscribe((items) => {
       const featuredSettings = this.storefront.sectionSettings('featured');
       if (featuredSettings?.selectionMode === 'manual' && featuredSettings.productIds) {
-        this.resolveProducts(featuredSettings.productIds, (selected) => this.featured.set(selected.slice(0, featuredSettings.maxItems ?? 8)));
+        this.resolveProducts(featuredSettings.productIds.slice(0, featuredSettings.maxItems ?? 8), (selected) => this.featured.set(selected.slice(0, featuredSettings.maxItems ?? 8)));
       } else {
         this.featured.set(items.slice(0, featuredSettings?.maxItems ?? 8));
       }
@@ -165,7 +165,7 @@ export class HomePageComponent implements OnInit {
   private applyProductSection(type: 'newArrivals' | 'popular', automatic: Product[], set: (items: Product[]) => void): void {
     const settings = this.storefront.sectionSettings(type);
     if (settings?.selectionMode === 'manual' && settings.productIds) {
-      this.resolveProducts(settings.productIds, (items) => set(items.slice(0, settings.maxItems ?? 8)));
+      this.resolveProducts(settings.productIds.slice(0, settings.maxItems ?? 8), (items) => set(items.slice(0, settings.maxItems ?? 8)));
       return;
     }
     set(automatic.slice(0, settings?.maxItems ?? 8));
