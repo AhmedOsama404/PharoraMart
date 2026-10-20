@@ -3,7 +3,6 @@ import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
-import { Carousel } from 'primeng/carousel';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
 import { I18nService } from '../../core/services/i18n.service';
@@ -27,7 +26,7 @@ import { catchError, forkJoin, of, retry, throwError, timer } from 'rxjs';
   selector: 'app-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Button, Carousel, Skeleton, Tag, ProductCardComponent, SectionHeaderComponent, ResolvedMoneyPipe, LocalizedPipe,
+  imports: [RouterLink, Button, Skeleton, Tag, ProductCardComponent, SectionHeaderComponent, ResolvedMoneyPipe, LocalizedPipe,
   ],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss',
@@ -124,12 +123,6 @@ export class HomePageComponent implements OnInit {
   protected heroTiles = signal<Product[]>([]);
   protected heroSlotMode = signal(false);
   protected heroSlotProducts = signal<(Product | null)[]>([null, null, null, null]);
-
-  protected carouselOpts = [
-    { breakpoint: '1024px', numVisible: 3, numScroll: 2 },
-    { breakpoint: '768px', numVisible: 2, numScroll: 1 },
-    { breakpoint: '560px', numVisible: 1, numScroll: 1 },
-  ];
 
   ngOnInit(): void {
     // Independent storefront sections load in parallel; each renders as it arrives.

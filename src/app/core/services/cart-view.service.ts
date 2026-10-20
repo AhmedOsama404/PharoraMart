@@ -3,6 +3,7 @@ import { CartStore } from './cart.store';
 import { ProductService } from './product.service';
 import { effectivePrice, type Product } from '../../models/product.model';
 import { PriceResolverService } from './price-resolver.service';
+import { CurrencyService } from './currency.service';
 
 export interface EnrichedCartLine {
   key: string;
@@ -44,7 +45,11 @@ export class CartViewService {
     const byId = new Map(this.catalog().map((p) => [p.id, p]));
     return this.cart.lines().map((l) => {
       const product = byId.get(l.productId) ?? null;
-      const resolved = product ? this.prices.resolve(effectivePrice(product), product.currency ?? '') : null;
+      // Older API records and local mock products omit currency; their amount
+      // is already expressed in the visitor's selected currency.
+      const resolved = product
+        ? this.prices.resolve(effectivePrice(product), product.currency ?? this.currency.code())
+        : null;
       if (!product || !resolved) {
         return { ...l, product, unit: 0, lineTotal: 0, unavailable: true };
       }
@@ -62,6 +67,7 @@ export class CartViewService {
     private cart: CartStore,
     private products: ProductService,
     private prices: PriceResolverService,
+    private currency: CurrencyService,
   ) {
     this.refresh();
   }

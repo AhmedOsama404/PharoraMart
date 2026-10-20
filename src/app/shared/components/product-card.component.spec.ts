@@ -38,7 +38,8 @@ describe('ProductCardComponent', () => {
     let favs = 0;
     comp.add.subscribe(() => adds++);
     comp.favToggle.subscribe(() => favs++);
-    fixture.debugElement.query(By.css('.body p-button')).triggerEventHandler('onClick', new MouseEvent('click'));
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector('.cart-action-row > p-button button');
+    button.click();
     expect(adds).toBe(1);
     expect(favs).toBe(0);
   });

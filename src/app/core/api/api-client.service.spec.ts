@@ -86,14 +86,15 @@ describe('ApiClientService in-flight GET dedup', () => {
   });
 
   it('coalesces two subscribers of the same query-param GET', async () => {
-    const pair = forkJoin([
+    const pair$ = forkJoin([
       api.get<number[]>('products', { page: 1, pageSize: 12 }),
       api.get<number[]>('products', { page: 1, pageSize: 12 }),
     ]);
+    const pair = firstValueFrom(pair$);
     const reqs = http.match((r) => r.url.endsWith('/products'));
     expect(reqs.length).toBe(1);
     reqs[0].flush([1, 2, 3]);
-    expect(await firstValueFrom(pair)).toEqual([
+    expect(await pair).toEqual([
       [1, 2, 3],
       [1, 2, 3],
     ]);

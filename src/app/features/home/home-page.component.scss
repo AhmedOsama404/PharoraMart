@@ -23,10 +23,11 @@
 .promo .promo-cta .p-button { min-height: 2.9rem; padding-inline: 1.15rem; border: 1px solid #e8c86a; border-radius: 0.75rem; background: #d8b85f; color: #183021; font-weight: 750; box-shadow: 0 0.45rem 1.1rem rgb(0 0 0 / 12%); transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
 .promo .promo-cta .p-button:hover { transform: translateY(-1px); border-color: #f1db94; background: #e7c96e; box-shadow: 0 0.65rem 1.35rem rgb(0 0 0 / 18%); }
 .promo .promo-cta .p-button:focus-visible { outline: 3px solid #f3de9d; outline-offset: 3px; }
-.car-item { height: 100%; padding: 0.45rem; }
+.arrivals-carousel { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(12.5rem, calc((100% - 3.45rem) / 4)); gap: 1.15rem; overflow-x: auto; padding: 0.45rem; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.car-item { min-width: 0; height: 100%; padding: 0.2rem; scroll-snap-align: start; }
 @media (prefers-reduced-motion: reduce) { .cat-card, .cat-card img, .promo img, .promo .p-button { transition: none; } }
 @media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .promo { grid-template-columns: 1fr; gap: 1.35rem; } .promo > a { height: clamp(12rem, 52vw, 18rem); } }
+@media (max-width: 760px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .arrivals-carousel { grid-auto-columns: minmax(70%, 1fr); } .promo { grid-template-columns: 1fr; gap: 1.35rem; } .promo > a { height: clamp(12rem, 52vw, 18rem); } }
 @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
 
 /* RTL: next moves content leftward, so it belongs on the left of the carousel;
@@ -36,3 +37,6 @@
 :host-context([dir='rtl']) ::ng-deep .p-carousel-prev-button .p-icon,
 :host-context([dir='rtl']) ::ng-deep .p-carousel-next-button .p-icon { transform: scaleX(-1); }
 :host-context([dir='rtl']) ::ng-deep .promo-cta .pi-arrow-up-right { transform: scaleX(-1); }
+.defer-placeholder {
+  min-height: 22rem;
+}

@@ -154,7 +154,7 @@ export class ProductDetailPageComponent {
         this.selectedVariants = {};
         this.variantOptionCache.clear();
       });
-    }, { allowSignalWrites: true });
+    });
 
     // Side effects that belong to a successful load only.
     effect(() => {

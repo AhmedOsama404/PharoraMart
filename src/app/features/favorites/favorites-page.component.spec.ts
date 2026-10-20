@@ -52,7 +52,7 @@ describe('FavoritesPageComponent (single-mutation entry points)', () => {
     fixture().detectChanges();
     // Drive through the card's output binding (native p-button clicks are
     // covered by real-browser probes; Karma cannot deliver them reliably).
-    fixture().debugElement.query(By.css('app-product-card')).triggerEventHandler('add', P);
+    fixture().debugElement.query(By.css('app-product-card')).triggerEventHandler('add', { product: P, quantity: 1 });
     fixture().detectChanges();
     expect(cart.lines().length).toBe(1);
     expect(cart.lines()[0].qty).toBe(1);
@@ -63,8 +63,8 @@ describe('FavoritesPageComponent (single-mutation entry points)', () => {
     await harness.navigateByUrl('/favorites', FavoritesPageComponent);
     fixture().detectChanges();
     const card = fixture().debugElement.query(By.css('app-product-card'));
-    card.triggerEventHandler('add', P);
-    card.triggerEventHandler('add', P);
+    card.triggerEventHandler('add', { product: P, quantity: 1 });
+    card.triggerEventHandler('add', { product: P, quantity: 1 });
     fixture().detectChanges();
     expect(cart.lines().length).toBe(1);
     expect(cart.lines()[0].qty).toBe(2);
