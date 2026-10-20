@@ -25,6 +25,24 @@
             <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" />
             @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
+          <div class="field">
+            <label for="language">{{ i18n.t('checkout.contactLanguage') }}</label>
+            <p-select id="language" formControlName="language" [options]="languageOptions()" optionLabel="label"
+              optionValue="value" [placeholder]="i18n.t('checkout.contactLanguage')" [fluid]="true"
+              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
+            <small class="hint">{{ i18n.t('checkout.contactLanguageHint') }}</small>
+            @if (err('language'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <p-checkbox formControlName="whatsappOptIn" [binary]="true" inputId="whatsappOptIn" name="whatsappOptIn" />
+            <label for="whatsappOptIn">{{ i18n.t('checkout.whatsappOptIn') }}</label>
+            <small class="hint">{{ i18n.t('checkout.whatsappOptInHint') }}</small>
+          </div>
+          <div class="field">
+            <p class="hint">{{ i18n.t('checkout.emailUpdatesHint') }}</p>
+          </div>
         </div>
       </p-card>
       <p-card>

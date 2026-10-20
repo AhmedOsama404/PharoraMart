@@ -36,6 +36,10 @@ export interface CreateOrderRequest {
   /** Optional coupon code; the backend validates and prices it. */
   couponCode?: string;
   exchangeRateDate?: string;
+  /** The language the customer wants to be contacted in (frozen at order time). */
+  language?: string;
+  /** The customer opted in to WhatsApp updates at checkout. */
+  whatsappOptIn?: boolean;
 }
 
 export interface Order extends CreateOrderRequest {

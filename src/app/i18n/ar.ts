@@ -159,6 +159,11 @@ export const ar: TranslationDict = {
     continueAsGuest: 'المتابعة كضيف',
   },
   checkout: {
+    contactLanguage: "لغة التواصل",
+    contactLanguageHint: "سنكتب إليك بهذه اللغة بخصوص طلبك.",
+    whatsappOptIn: "أرسلوا لي تحديثات الطلب عبر واتساب",
+    whatsappOptInHint: "غير مفعّل افتراضيًا. نستخدم رقمك لهذا الطلب فقط، ويمكنك إيقافه في أي وقت.",
+    emailUpdatesHint: "تحديثات الطلب عبر البريد الإلكتروني جزء من طلبك، لذلك نرسلها دائمًا.",
     hotel: 'الفندق',
     room: 'رقم الغرفة (اختياري)',
     selectHotel: 'اختر فندقك',

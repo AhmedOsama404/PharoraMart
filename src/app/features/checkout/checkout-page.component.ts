@@ -1,4 +1,5 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
+import { SUPPORTED_LANGS } from '../../core/config/i18n.config';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
+import { Checkbox } from 'primeng/checkbox';
 import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
@@ -41,7 +43,7 @@ import type { SiteCheckoutContent } from '../../models/site-content.model';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafeImageDirective, 
-    ReactiveFormsModule, Button, Card, Divider, InputText, Message,
+    ReactiveFormsModule, Button, Card, Checkbox, Divider, InputText, Message,
     Select, Textarea, Skeleton, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],
   templateUrl: './checkout-page.component.html',
@@ -80,6 +82,11 @@ export class CheckoutPageComponent implements OnInit {
     hotelId: ['', [Validators.required]],
     room: [''],
     notes: [''],
+    // The language the customer wants to be contacted in. It is required,
+    // and it is frozen on the order: the messages always use it.
+    language: ['', [Validators.required]],
+    // The WhatsApp opt-in is OFF by default: the customer has to choose it.
+    whatsappOptIn: [false],
   });
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
@@ -168,7 +175,15 @@ export class CheckoutPageComponent implements OnInit {
       });
   }
 
+  /** The languages the customer can choose, with the label of each. */
+  protected languageOptions = computed(() =>
+    SUPPORTED_LANGS.map((code) => ({ label: this.i18n.t(`language.${code}`), value: code })),
+  );
+
   ngOnInit(): void {
+    // The customer's current language is the default: they only have to
+    // change it when they want another one.
+    this.form.controls.language.setValue(this.i18n.currentLang());
     // Entered from the cart's bottom action: start at the form, not mid-page.
     this.scroll.scrollToTop();
   }
@@ -436,6 +451,8 @@ export class CheckoutPageComponent implements OnInit {
         notes: v.notes || undefined,
         contactMethod: environment.contactMode,
       },
+      language: v.language,
+      whatsappOptIn: v.whatsappOptIn === true,
       items: this.lines().map((l) => ({
         productId: l.productId,
         productName: l.name,

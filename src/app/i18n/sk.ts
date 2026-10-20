@@ -159,6 +159,11 @@ export const sk: TranslationDict = {
     continueAsGuest: 'Pokračovať ako hosť',
   },
   checkout: {
+    contactLanguage: "Jazyk komunikácie",
+    contactLanguageHint: "Píšeme vám v tomto jazyku o vašej objednávke.",
+    whatsappOptIn: "Posielať mi aktualizácie objednávky cez WhatsApp",
+    whatsappOptInHint: "Predvolene vypnuté. Vaše číslo použijeme len pre túto objednávku a kedykoľvek to môžete zastaviť.",
+    emailUpdatesHint: "Aktualizácie objednávky e-mailom sú súčasťou vašej objednávky, preto ich posielame vždy.",
     hotel: 'Hotel',
     room: 'Číslo izby (nepovinné)',
     selectHotel: 'Vyberte svoj hotel',

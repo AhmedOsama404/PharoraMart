@@ -159,6 +159,11 @@ export const pl: TranslationDict = {
     continueAsGuest: 'Kontynuuj jako gość',
   },
   checkout: {
+    contactLanguage: "Język kontaktu",
+    contactLanguageHint: "Będziemy do Ciebie pisać w tym języku o Twoim zamówieniu.",
+    whatsappOptIn: "Wysyłaj mi aktualizacje zamówienia przez WhatsApp",
+    whatsappOptInHint: "Domyślnie wyłączone. Używamy Twojego numeru tylko dla tego zamówienia i możesz to w każdej chwili zatrzymać.",
+    emailUpdatesHint: "Aktualizacje zamówienia e-mailem są częścią zamówienia, więc wysyłamy je zawsze.",
     hotel: 'Hotel',
     room: 'Numer pokoju (opcjonalnie)',
     selectHotel: 'Wybierz hotel',
