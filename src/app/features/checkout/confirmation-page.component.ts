@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Button } from 'primeng/button';
@@ -21,7 +22,7 @@ import type { SiteOrderConfirmationContent } from '../../models/site-content.mod
   selector: 'app-confirmation-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Button, Card, Divider, Message, Skeleton, EmptyStateComponent, MoneyPipe],
+  imports: [SafeImageDirective, Button, Card, Divider, Message, Skeleton, EmptyStateComponent, MoneyPipe],
   templateUrl: './confirmation-page.component.html',
   styleUrl: './confirmation-page.component.scss',
 })

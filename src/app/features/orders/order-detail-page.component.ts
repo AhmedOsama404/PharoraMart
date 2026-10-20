@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
@@ -19,7 +20,7 @@ import { handleImgError } from '../../shared/utils/image-fallback.utils';
   selector: 'app-order-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Button, Card, Divider, Skeleton, Tag, EmptyStateComponent, MoneyPipe],
+  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Skeleton, Tag, EmptyStateComponent, MoneyPipe],
   templateUrl: './order-detail-page.component.html',
   styleUrl: './order-detail-page.component.scss',
 })

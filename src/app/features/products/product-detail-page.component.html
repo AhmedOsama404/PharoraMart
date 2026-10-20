@@ -12,14 +12,14 @@
     <div class="gallery">
       <div class="img-frame main-frame">
         <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-        <img class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name" (error)="fbImg($event, 'novamart-detail')" />
+        <img appSafeImg="product" class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name" />
       </div>
       <div class="thumbs" role="tablist" aria-label="product images">
         @for (src of images(); track src; let i = $index) {
           <button [class.active]="i === activeImg()" (click)="activeImg.set(i)" [attr.aria-label]="'image ' + (i + 1)">
             <span class="img-frame thumb-frame">
               <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-              <img [src]="src" [alt]="product()!.names | localized: product()!.name" loading="lazy" (error)="fbImg($event, 'novamart-thumb-' + i)" />
+              <img appSafeImg="product" [src]="src" [alt]="product()!.names | localized: product()!.name" loading="lazy" />
             </span>
           </button>
         }

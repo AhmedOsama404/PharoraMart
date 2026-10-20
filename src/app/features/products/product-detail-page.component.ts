@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -55,7 +56,7 @@ const LOADING_STATE: ProductDetailState = { status: 'loading', product: null, re
   selector: 'app-product-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [SafeImageDirective, 
     RouterLink, FormsModule, Breadcrumb, Button, Select, Skeleton,
     Tabs, TabList, Tab, TabPanels, TabPanel, Tag,
     ProductCardComponent, QtySelectorComponent, SectionHeaderComponent, EmptyStateComponent, ResolvedMoneyPipe,

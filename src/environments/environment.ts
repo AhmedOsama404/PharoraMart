@@ -16,4 +16,7 @@ export const environment = {
   // are quoted via DeliveryService; free shipping above the threshold below.
   freeShippingThreshold: 75,
   pageSize: 12,
+  // Resilience: hard per-attempt timeout (ms) and retry budget for idempotent GETs.
+  requestTimeoutMs: 10000,
+  getRetryAttempts: 2,
 };

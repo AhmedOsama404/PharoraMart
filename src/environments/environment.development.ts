@@ -4,6 +4,8 @@ export const environment = {
   // run-api.ps1 starts the API on http://localhost:5086.
   apiBaseUrl: 'http://localhost:5086/api/v1',
   useMockApi: false,
+  requestTimeoutMs: 10000,
+  getRetryAttempts: 2,
   // Public business identity (all frontend-bundled values are public by
   // definition — never put secrets here). The future dashboard owns the real
   // values; these defaults keep the storefront coherent until then.

@@ -56,29 +56,29 @@
           @if (heroSlotMode()) {
             @if (heroSlotProducts()[0]; as hero) {
               <a [routerLink]="['/products', hero.id]" class="hero-card">
-                <img [src]="hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.names | localized: hero.name" fetchpriority="high" (error)="fbImg($event)" />
+                <img appSafeImg="product" [src]="hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.names | localized: hero.name" fetchpriority="high" />
                 <span class="hero-info"><span class="hero-name">{{ hero.names | localized: hero.name }}</span><span class="hero-price">{{ hero.salePrice ?? hero.price | resolvedMoney: hero.currency }}</span></span>
               </a>
             } @else {
-              <div class="hero-card"><img src="/hero-product-fallback.svg" alt="" fetchpriority="high" /></div>
+              <div class="hero-card"><img appSafeImg="product" src="/hero-product-fallback.svg" alt="" fetchpriority="high" /></div>
             }
             <div class="hero-tiles">
               @for (product of heroSlotProducts().slice(1); track $index) {
                 @if (product; as selectedProduct) {
-                  <a [routerLink]="['/products', selectedProduct.id]"><img [src]="selectedProduct.images[0] || '/hero-product-fallback.svg'" [alt]="selectedProduct.names | localized: selectedProduct.name" loading="lazy" (error)="fbImg($event)" /></a>
+                  <a [routerLink]="['/products', selectedProduct.id]"><img appSafeImg="product" [src]="selectedProduct.images[0] || '/hero-product-fallback.svg'" [alt]="selectedProduct.names | localized: selectedProduct.name" loading="lazy" /></a>
                 }
               }
             </div>
           } @else {
             @if (heroProduct()) {
               <a [routerLink]="['/products', heroProduct()!.id]" class="hero-card">
-                <img [src]="storefront.sectionSettings('hero')?.imageUrl || heroProduct()!.images[0]" [alt]="heroProduct()!.names | localized: heroProduct()!.name" fetchpriority="high" (error)="fbImg($event)" />
+                <img appSafeImg="product" [src]="storefront.sectionSettings('hero')?.imageUrl || heroProduct()!.images[0]" [alt]="heroProduct()!.names | localized: heroProduct()!.name" fetchpriority="high" />
                 <span class="hero-info"><span class="hero-name">{{ heroProduct()!.name }}</span><span class="hero-price">{{ heroProduct()!.salePrice ?? heroProduct()!.price | resolvedMoney: heroProduct()!.currency }}</span></span>
               </a>
             }
             <div class="hero-tiles">
               @for (p of heroTiles(); track p.id) {
-                <a [routerLink]="['/products', p.id]"><img [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" (error)="fbImg($event)" /></a>
+                <a [routerLink]="['/products', p.id]"><img appSafeImg="product" [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" /></a>
               }
             </div>
           }
@@ -95,7 +95,7 @@
           <div class="cat-grid">
             @for (c of categories(); track c.id) {
               <a class="cat-card" [routerLink]="['/products']" [queryParams]="{ category: c.id }">
-                <img [src]="c.image" [alt]="categoryName(c)" loading="lazy" (error)="fbImg($event)" />
+                <img appSafeImg="category" [src]="c.image" [alt]="categoryName(c)" loading="lazy" />
                 <span class="cat-label"><strong>{{ categoryName(c) }}</strong><small>{{ categoryDescription(c) }}</small></span>
               </a>
             }
@@ -135,7 +135,7 @@
             }
           </div>
           @if (saleProduct()) {
-            <a [routerLink]="['/products', saleProduct()!.id]"><img [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.names | localized: saleProduct()!.name" loading="lazy" (error)="fbImg($event)" /></a>
+            <a [routerLink]="['/products', saleProduct()!.id]"><img appSafeImg="product" [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.names | localized: saleProduct()!.name" loading="lazy" /></a>
           }
         </section>
       }
@@ -151,7 +151,7 @@
             }
           </div>
           @if (b.imageUrl) {
-            <img [src]="b.imageUrl" [alt]="blockTitle(b)" loading="lazy" (error)="fbImg($event)" />
+            <img appSafeImg="banner" [src]="b.imageUrl" [alt]="blockTitle(b)" loading="lazy" />
           }
         </section>
       }

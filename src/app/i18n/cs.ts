@@ -240,7 +240,7 @@ export const cs: TranslationDict = {
     removedFromCart: 'Odebráno z košíku',
     addedToFav: 'Přidáno do oblíbených',
     removedFromFav: 'Odebráno z oblíbených',
-    loadFailed: 'Něco se pokazilo. Zkuste to znovu.',
+    loadFailed: 'Něco se pokazilo. Zkuste to prosím znovu.',
     saved: 'Uloženo',
   },
   common: {

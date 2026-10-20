@@ -3,7 +3,7 @@
     @if (footer(); as f) {
     <div class="brand">
       <div class="logo">
-        @if (logoUrl(); as logo) { <img class="footer-logo" [src]="logo" [alt]="brandName()" (error)="onLogoError()" /> } @else { <app-brand-logo /> }
+        @if (logoUrl(); as logo) { <img appSafeImg="logo" class="footer-logo" [src]="logo" [alt]="brandName()" /> } @else { <app-brand-logo /> }
         <span>{{ brandName() }}</span>
       </div>
       @if (tagline()) { <p>{{ tagline() }}</p> }

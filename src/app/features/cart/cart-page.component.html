@@ -31,7 +31,7 @@
         } @else {
           <p-card>
             <div class="line">
-              <a [routerLink]="['/products', l.product.id]"><img [src]="l.product.images[0]" [alt]="l.product.name" loading="lazy" (error)="imgFallback($event, l.product.id)" /></a>
+              <a [routerLink]="['/products', l.product.id]"><img appSafeImg="product" [src]="l.product.images[0]" [alt]="l.product.name" loading="lazy" /></a>
               <div class="l-info">
                 <a [routerLink]="['/products', l.product.id]" class="l-name">{{ l.product.name }}</a>
                 @if (l.variantLabel) { <small class="variant">{{ l.variantLabel }}</small> }

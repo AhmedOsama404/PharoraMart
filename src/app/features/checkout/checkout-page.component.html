@@ -73,7 +73,7 @@
       <ul class="items">
         @for (l of lines(); track l.key) {
           <li>
-            <img [src]="l.image" [alt]="l.name" loading="lazy" (error)="imgFallback($event, l.productId)" />
+            <img appSafeImg="product" [src]="l.image" [alt]="l.name" loading="lazy" />
             <span class="n">{{ l.name }} <small>× {{ l.qty }}</small></span>
             <strong>{{ l.total | money }}</strong>
           </li>

@@ -37,10 +37,33 @@ export const LANG_DIRS: Record<SupportedLang, 'ltr' | 'rtl'> = {
   de: 'ltr',
 };
 
-const DICTS: Record<SupportedLang, TranslationDict> = { en, ar, cs, it, pl, fr, sk, de };
+import { RESILIENCE_DICTS } from '../../i18n/resilience';
+
+/** Deep-merge resilience copy into every locale once at module load. */
+function mergeDict(base: TranslationDict, extra: TranslationDict): TranslationDict {
+  const out: TranslationDict = { ...base };
+  for (const [key, value] of Object.entries(extra)) {
+    const current = out[key];
+    if (value && typeof value === 'object' && current && typeof current === 'object') {
+      out[key] = mergeDict(current as TranslationDict, value as TranslationDict);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+const BASE_DICTS: Record<SupportedLang, TranslationDict> = { en, ar, cs, it, pl, fr, sk, de };
+
+const DICTS: Record<SupportedLang, TranslationDict> = Object.fromEntries(
+  (Object.keys(BASE_DICTS) as SupportedLang[]).map((lang) => [
+    lang,
+    mergeDict(BASE_DICTS[lang], RESILIENCE_DICTS[lang] ?? RESILIENCE_DICTS.en),
+  ]),
+) as Record<SupportedLang, TranslationDict>;
 
 export function getDict(lang: SupportedLang): TranslationDict {
-  return DICTS[lang] ?? en;
+  return DICTS[lang] ?? DICTS.en;
 }
 
 export function lookupKey(dict: unknown, key: string): string {

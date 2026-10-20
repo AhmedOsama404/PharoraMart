@@ -139,7 +139,7 @@ export const ar: TranslationDict = {
     showPassword: 'إظهار كلمة المرور',
     hidePassword: 'إخفاء كلمة المرور',
     loginButton: 'تسجيل الدخول',
-    registerButton: 'إنشاء الحساب',
+    registerButton: 'إنشاء حساب',
     forgotButton: 'إرسال رابط الاستعادة',
     forgotSent: 'إذا كان هذا البريد موجودًا، سيتم إرسال التعليمات. (تجريبي فقط.)',
     noAccount: 'ليس لديك حساب؟',
@@ -240,7 +240,7 @@ export const ar: TranslationDict = {
     removedFromCart: 'تمت الإزالة من السلة',
     addedToFav: 'تمت الإضافة إلى المفضلة',
     removedFromFav: 'تمت الإزالة من المفضلة',
-    loadFailed: 'حدث خطأ. حاول مرة أخرى.',
+    loadFailed: 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
     saved: 'تم الحفظ',
   },
   common: {

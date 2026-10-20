@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../shared/resilience/safe-image.directive';
 import { LocalizedPipe } from '../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { LocalizedText } from '../models/product.model';
@@ -28,7 +29,7 @@ import { SiteContentService } from '../core/services/site-content.service';
   selector: 'app-header',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [SafeImageDirective, 
     RouterLink, RouterLinkActive, FormsModule, Badge, Drawer,
     IconField, InputIcon, InputText, Menu, Select, BrandLogoComponent,
     LocalizedPipe,

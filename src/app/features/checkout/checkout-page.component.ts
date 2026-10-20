@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -37,7 +38,7 @@ import type { SiteCheckoutContent } from '../../models/site-content.model';
   selector: 'app-checkout-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [SafeImageDirective, 
     ReactiveFormsModule, Button, Card, Divider, InputText, Message,
     Select, Textarea, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],

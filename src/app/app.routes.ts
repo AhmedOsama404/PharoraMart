@@ -3,6 +3,10 @@ import { MainLayoutComponent } from './layout/main-layout.component';
 
 export const routes: Routes = [
   {
+    path: '__gallery',
+    loadChildren: () => import('./features/dev-gallery/gallery.routes').then((m) => m.GALLERY_ROUTES),
+  },
+  {
     path: '',
     component: MainLayoutComponent,
     children: [

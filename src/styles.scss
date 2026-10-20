@@ -3,6 +3,9 @@
 /* PrimeIcons */
 @import 'primeicons/primeicons.css';
 
+/* Resilience kit (skeletons, states, connection banner, safe images) */
+@import './app/shared/resilience/resilience.scss';
+
 /* ============ Pharora design tokens (warm ivory, botanical green, soft sand, restrained gold) ============ */
 :root {
   --primary: #2e7d52;

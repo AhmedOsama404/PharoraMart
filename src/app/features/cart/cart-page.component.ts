@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
@@ -22,7 +23,7 @@ import { handleImgError } from '../../shared/utils/image-fallback.utils';
   selector: 'app-cart-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Button, Card, Divider, Message, Skeleton, QtySelectorComponent, EmptyStateComponent, MoneyPipe],
+  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Message, Skeleton, QtySelectorComponent, EmptyStateComponent, MoneyPipe],
   templateUrl: './cart-page.component.html',
   styleUrl: './cart-page.component.scss',
 })

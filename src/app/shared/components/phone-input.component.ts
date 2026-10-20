@@ -1,3 +1,4 @@
+import { SafeImageDirective } from '../resilience/safe-image.directive';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -35,7 +36,7 @@ import { countryFlagPath as getCountryFlagPath, DEFAULT_PHONE_COUNTRY, phoneCoun
   selector: 'app-phone-input',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, Select, InputText],
+  imports: [SafeImageDirective, FormsModule, Select, InputText],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

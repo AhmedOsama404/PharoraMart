@@ -13,7 +13,7 @@
     <p-divider />
     <ul class="items">
       @for (i of order()!.items; track i.productId + (i.variantLabel ?? '')) {
-        <li><img [src]="i.image" [alt]="i.productName" loading="lazy" (error)="imgFallback($event, i.productId)" />
+        <li><img appSafeImg="product" [src]="i.image" [alt]="i.productName" loading="lazy" />
           <span>{{ i.productName }} <small>× {{ i.qty }}</small></span>
           <strong>{{ i.unitPrice * i.qty | money: order()!.currency }}</strong></li>
       }
