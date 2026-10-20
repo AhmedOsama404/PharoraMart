@@ -25,11 +25,6 @@
             <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" />
             @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
-          <div class="field">
-            <label>{{ i18n.t('checkout.contactMethod') }}</label>
-            <p-select [options]="contactOptions()" formControlName="contactMethod" optionLabel="label" optionValue="value" [fluid]="true"
-              appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
-          </div>
         </div>
       </p-card>
       <p-card>

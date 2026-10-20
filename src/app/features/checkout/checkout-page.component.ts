@@ -80,7 +80,6 @@ export class CheckoutPageComponent implements OnInit {
     hotelId: ['', [Validators.required]],
     room: [''],
     notes: [''],
-    contactMethod: ['phone' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
   });
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
@@ -100,13 +99,6 @@ export class CheckoutPageComponent implements OnInit {
   private quoteSequence = 0;
   private couponValidationSequence = 0;
   private lastCouponValidationKey = '';
-
-  // Memoized so p-select keeps a referentially stable options array.
-  protected contactOptions = computed(() => [
-    { label: this.i18n.t('checkout.contactPhone'), value: 'phone' },
-    { label: this.i18n.t('checkout.contactWhatsapp'), value: 'whatsapp' },
-    { label: this.i18n.t('checkout.contactEmail'), value: 'email' },
-  ]);
 
   // Hotel dropdown options for the selected city, with the sample fee shown
   // upfront. Memoized for stable p-select references.
@@ -442,7 +434,7 @@ export class CheckoutPageComponent implements OnInit {
         hotelName: hotel?.name ?? v.hotelId,
         room: v.room || undefined,
         notes: v.notes || undefined,
-        contactMethod: v.contactMethod,
+        contactMethod: environment.contactMode,
       },
       items: this.lines().map((l) => ({
         productId: l.productId,
