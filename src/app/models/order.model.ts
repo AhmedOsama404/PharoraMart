@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'outfordelivery' | 'delivered' | 'cancelled';
 
 export interface CheckoutFormValue {
   fullName: string;
@@ -12,7 +12,8 @@ export interface CheckoutFormValue {
   hotelName: string;
   room?: string;
   notes?: string;
-  contactMethod: 'phone' | 'whatsapp' | 'email';
+  /** Determined by environment.contactMode ('whatsapp' | 'email' | 'both'). */
+  contactMethod?: 'phone' | 'whatsapp' | 'email' | 'both';
 }
 
 export interface OrderItemInput {

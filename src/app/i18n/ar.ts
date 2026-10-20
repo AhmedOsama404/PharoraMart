@@ -232,6 +232,7 @@ export const ar: TranslationDict = {
     statusPending: 'قيد الانتظار',
     statusConfirmed: 'مؤكد',
     statusShipped: 'تم الشحن',
+    statusOutfordelivery: 'خرج للتوصيل',
     statusDelivered: 'تم التوصيل',
     statusCancelled: 'ملغي',
     detailTitle: 'تفاصيل الطلب',

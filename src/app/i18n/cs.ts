@@ -232,6 +232,7 @@ export const cs: TranslationDict = {
     statusPending: 'Čeká na vyřízení',
     statusConfirmed: 'Potvrzena',
     statusShipped: 'Odeslána',
+    statusOutfordelivery: 'Expedováno',
     statusDelivered: 'Doručena',
     statusCancelled: 'Zrušena',
     detailTitle: 'Detail objednávky',

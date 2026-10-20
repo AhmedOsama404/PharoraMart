@@ -234,6 +234,7 @@ export const en: TranslationDict = {
     statusPending: 'Pending',
     statusConfirmed: 'Confirmed',
     statusShipped: 'Shipped',
+    statusOutfordelivery: 'Out for delivery',
     statusDelivered: 'Delivered',
     statusCancelled: 'Cancelled',
     detailTitle: 'Order details',

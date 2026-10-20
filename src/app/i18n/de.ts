@@ -232,6 +232,7 @@ export const de: TranslationDict = {
     statusPending: 'Ausstehend',
     statusConfirmed: 'Bestätigt',
     statusShipped: 'Versandt',
+    statusOutfordelivery: 'In Zustellung',
     statusDelivered: 'Geliefert',
     statusCancelled: 'Storniert',
     detailTitle: 'Bestelldetails',
