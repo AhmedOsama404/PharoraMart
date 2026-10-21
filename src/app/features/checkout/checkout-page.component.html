@@ -34,9 +34,6 @@
             <label for="email">{{ i18n.t('checkout.email') }}</label>
             <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true"
               [readonly]="emailFromAccount()" placeholder="{{ i18n.t('checkout.emailPlaceholder') }}" />
-            @if (emailFromAccount()) {
-              <small class="hint">{{ i18n.t('checkout.emailFromAccount') }}</small>
-            }
             @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
         </div>
@@ -50,16 +47,10 @@
           @if (err('language'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
         </div>
 
-        <div class="cm-notify">
-          <p class="cm-notify__note">
-            <i class="pi pi-envelope" aria-hidden="true"></i>
-            <span>{{ i18n.t('checkout.emailOnlyNotice') }}</span>
-          </p>
-          <p class="cm-notify__note">
-            <i class="pi pi-shield" aria-hidden="true"></i>
-            <span>{{ i18n.t('checkout.contactUpdatesNote') }}</span>
-          </p>
-        </div>
+        <p class="cm-notice">
+          <i class="pi pi-envelope" aria-hidden="true"></i>
+          <span>{{ i18n.t('checkout.emailOnlyNotice') }}</span>
+        </p>
       </p-card>
 
       <!-- Address Card -->
@@ -114,7 +105,6 @@
         </header>
 
         <label class="cod premium-cod">
-          <span class="cod-check"><i class="pi pi-check-circle"></i></span>
           <span class="cod-icon"><i class="pi pi-money-bill"></i></span>
           <div class="cod-text">
             <strong>{{ copy('paymentMethodTitle', 'checkout.codTitle') }}</strong>

@@ -108,7 +108,6 @@ h1 {
 .premium-cod:hover {
   border-color: color-mix(in srgb, var(--primary) 50%, var(--surface-border));
 }
-.cod-check { color: var(--primary); font-size: 1.25rem; }
 .cod-icon {
   width: 2.8rem; height: 2.8rem; flex: 0 0 auto;
   border: 1px solid rgb(47 132 89 / 12%);
@@ -153,25 +152,22 @@ h1 {
 
 :host ::ng-deep .summary .p-card-body { padding: 1.1rem; }
 
-/* The note that the contact method decides (no second box). */
-.cm-notify {
+/* One warm line about the order status and the email. */
+.cm-notice {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.1rem;
-  margin-top: 0.85rem;
-  padding: 0.7rem 0.85rem;
-  background: color-mix(in srgb, var(--p-blue-50, #eef4fb) 70%, white);
-  border: 1px solid var(--p-blue-200, #cfe0f2);
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--surface-border);
   border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--surface-ground) 55%, white);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
 
-  &__note {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.76rem;
-    color: var(--text-secondary);
-
-    i { color: var(--primary); font-size: 0.8rem; }
+  i {
+    color: var(--primary);
+    font-size: 0.9rem;
   }
 }
 
