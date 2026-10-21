@@ -43,7 +43,7 @@
       </div>
     </div>
     <div class="cart-action-row">
-      <app-qty-selector [qty]="quantity()" [min]="0" [max]="product.stock > 0 ? product.stock : 1"
+      <app-qty-selector [qty]="quantity()" [min]="0" [max]="maxQty()"
         [ariaLabel]="i18n.t('product.qty')" (qtyChange)="quantity.set($event)" />
       <p-button
         [label]="i18n.t('product.addToCart')"

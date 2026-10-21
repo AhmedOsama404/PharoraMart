@@ -24,6 +24,7 @@ import { ConnectivityService } from '../../core/resilience/connectivity.service'
 import { availabilityOf, discountPercent, effectivePrice, type Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
+import { MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
@@ -113,6 +114,24 @@ export class ProductDetailPageComponent implements OnDestroy {
   // the previous product's image index, quantity or variant picks never leak.
   protected activeImg = signal(0);
   protected qty = signal(1);
+
+  /** The most units that can be chosen: the stock, never more than the cap. */
+  protected maxQty(): number {
+    const stock = this.product()?.stock ?? 0;
+    return Math.max(1, Math.min(stock || 1, MAX_QTY_PER_LINE));
+  }
+
+  /** The most units of one product an order may hold. */
+  protected readonly perItemCap = MAX_QTY_PER_LINE;
+
+  /**
+   * True when the limit the customer hit is the per-item cap (and not the
+   * live stock) - the message has to say which one it is.
+   */
+  protected atPerItemCap(): boolean {
+    const stock = this.product()?.stock ?? 0;
+    return stock > MAX_QTY_PER_LINE && this.qty() >= MAX_QTY_PER_LINE;
+  }
   protected selectedVariants: Record<string, string> = {};
   protected isFav = computed(() => {
     const p = this.product();
@@ -283,7 +302,15 @@ export class ProductDetailPageComponent implements OnDestroy {
     const { key, label } = this.variantSelection();
     // Guests sign in first; the exact qty + variant choice completes on return.
     if (!this.gate.requireAuth('addToCart', this.router.url, { kind: 'add-to-cart', productId: p.id, qty: this.qty(), variantKey: key, variantLabel: label })) return;
-    this.cart.add(p.id, this.qty(), key, label, p.stock);
+    const wanted = this.qty();
+    const finalQty = this.cart.add(p.id, wanted, key, label, p.stock);
+    if (finalQty < wanted) {
+      // The shop has less than the customer asked for: say so instead of
+      // pretending the whole quantity went in.
+      this.notify.info('cart.qtyReduced', { from: wanted, to: finalQty });
+      return;
+    }
+
     this.notify.success('notifications.addedToCart');
   }
 

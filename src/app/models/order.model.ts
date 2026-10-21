@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'outfordelivery' | 'delivered' | 'cancelled';
 
 export interface CheckoutFormValue {
   fullName: string;
@@ -12,7 +12,8 @@ export interface CheckoutFormValue {
   hotelName: string;
   room?: string;
   notes?: string;
-  contactMethod: 'phone' | 'whatsapp' | 'email';
+  /** Determined by environment.contactMode ('whatsapp' | 'email' | 'both'). */
+  contactMethod?: 'phone' | 'whatsapp' | 'email' | 'both';
 }
 
 export interface OrderItemInput {
@@ -35,6 +36,10 @@ export interface CreateOrderRequest {
   /** Optional coupon code; the backend validates and prices it. */
   couponCode?: string;
   exchangeRateDate?: string;
+  /** The language the customer wants to be contacted in (frozen at order time). */
+  language?: string;
+  /** The customer opted in to WhatsApp updates at checkout. */
+  whatsappOptIn?: boolean;
 }
 
 export interface Order extends CreateOrderRequest {

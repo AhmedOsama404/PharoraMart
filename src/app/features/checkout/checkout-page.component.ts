@@ -1,4 +1,5 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
+import { SUPPORTED_LANGS } from '../../core/config/i18n.config';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
+import { Checkbox } from 'primeng/checkbox';
 import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
@@ -41,7 +43,7 @@ import type { SiteCheckoutContent } from '../../models/site-content.model';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafeImageDirective, 
-    ReactiveFormsModule, Button, Card, Divider, InputText, Message,
+    ReactiveFormsModule, Button, Card, Checkbox, Divider, InputText, Message,
     Select, Textarea, Skeleton, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],
   templateUrl: './checkout-page.component.html',
@@ -75,12 +77,18 @@ export class CheckoutPageComponent implements OnInit {
   protected form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required, Validators.minLength(3)]],
     phone: ['', [Validators.required, phoneValidator]],
-    email: ['', [Validators.email]],
+    email: ['', [Validators.required, Validators.email]],
     city: ['', [Validators.required]],
     hotelId: ['', [Validators.required]],
     room: [''],
     notes: [''],
-    contactMethod: ['phone' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
+    // The language the customer wants to be contacted in. It is required,
+    // and it is frozen on the order: the messages always use it.
+    language: ['', [Validators.required]],
+    // How the customer wants to be contacted about this order. WhatsApp is
+    // suspended for now, so the order status goes by email; the moment
+    // WhatsApp is back, the choice comes back with it.
+    contactMethod: ['email' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
   });
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
@@ -100,13 +108,6 @@ export class CheckoutPageComponent implements OnInit {
   private quoteSequence = 0;
   private couponValidationSequence = 0;
   private lastCouponValidationKey = '';
-
-  // Memoized so p-select keeps a referentially stable options array.
-  protected contactOptions = computed(() => [
-    { label: this.i18n.t('checkout.contactPhone'), value: 'phone' },
-    { label: this.i18n.t('checkout.contactWhatsapp'), value: 'whatsapp' },
-    { label: this.i18n.t('checkout.contactEmail'), value: 'email' },
-  ]);
 
   // Hotel dropdown options for the selected city, with the sample fee shown
   // upfront. Memoized for stable p-select references.
@@ -176,7 +177,24 @@ export class CheckoutPageComponent implements OnInit {
       });
   }
 
+  /**
+   * True when the email comes from the customer's account: it is filled in
+   * for them, so they do not have to type it again.
+   */
+  protected readonly emailFromAccount = computed(() => {
+    const email = this.auth.user()?.email ?? '';
+    return email.trim().length > 0;
+  });
+
+  /** The languages the customer can choose, with the label of each. */
+  protected languageOptions = computed(() =>
+    SUPPORTED_LANGS.map((code) => ({ label: this.i18n.t(`language.${code}`), value: code })),
+  );
+
   ngOnInit(): void {
+    // The customer's current language is the default: they only have to
+    // change it when they want another one.
+    this.form.controls.language.setValue(this.i18n.currentLang());
     // Entered from the cart's bottom action: start at the form, not mid-page.
     this.scroll.scrollToTop();
   }
@@ -420,6 +438,23 @@ export class CheckoutPageComponent implements OnInit {
       this.submitError.set(this.i18n.t('checkout.emptyCart'));
       return;
     }
+
+    // An item that is no longer available must block the order: the backend
+    // would refuse the whole order, and placing it without the item would
+    // quietly drop something the customer asked for.
+    if (this.unavailableLines().length) {
+      this.placing.set(false);
+      this.submitError.set(this.i18n.t('checkout.orderProductUnavailable'));
+      return;
+    }
+
+    // Belt and braces: a line may never hold more than the live stock.
+    const overStock = this.view.lines().filter((l) => !l.unavailable && l.product && l.qty > l.stock);
+    if (overStock.length) {
+      this.placing.set(false);
+      this.submitError.set(this.i18n.t('checkout.orderOutOfStock'));
+      return;
+    }
     const v = this.form.getRawValue();
     const quoteOk = await this.quoteOnce(v.hotelId);
     if (!quoteOk || this.quotedFee() == null) {
@@ -444,6 +479,10 @@ export class CheckoutPageComponent implements OnInit {
         notes: v.notes || undefined,
         contactMethod: v.contactMethod,
       },
+      language: v.language,
+      // The contact method IS the opt-in: WhatsApp updates only when the
+      // customer chose WhatsApp. There is no second control.
+      whatsappOptIn: v.contactMethod === 'whatsapp',
       items: this.lines().map((l) => ({
         productId: l.productId,
         productName: l.name,

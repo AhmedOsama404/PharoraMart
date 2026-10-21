@@ -86,7 +86,13 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
   afterEach(() => { environment.useMockApi = originalUseMockApi; });
 
   function fillContact(): void {
-    x(comp).form.patchValue({ fullName: 'Hotel Guest', phone: '+201001234567', city: 'Marsa Alam' });
+    // The email is the way the order status is sent, so it is required.
+    x(comp).form.patchValue({
+      fullName: 'Hotel Guest',
+      phone: '+201001234567',
+      city: 'Marsa Alam',
+      email: 'guest@example.com',
+    });
   }
 
   it('shows the quoted hotel fee in the totals', async () => {

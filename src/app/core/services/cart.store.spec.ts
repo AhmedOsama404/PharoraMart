@@ -57,10 +57,13 @@ describe('CartStore', () => {
   it('merges guest and server cart lines, summing matching product variants', () => {
     store.add('p1', 2, 'M', 'Size M');
     store.add('guest-only', 1);
-    store.mergeAll([
+    const merged = store.mergedWith([
       { productId: 'p1', variantKey: 'M', variantLabel: 'Size M', qty: 3 },
       { productId: 'server-only', qty: 4 },
     ]);
+    store.replaceAll(
+      merged.map((l) => ({ productId: l.productId, variantKey: l.variantKey, variantLabel: l.variantLabel, qty: l.qty })),
+    );
 
     expect(store.lines().map(({ productId, qty }) => [productId, qty])).toEqual([
       ['p1', 5],
