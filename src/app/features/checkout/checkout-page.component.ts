@@ -7,7 +7,6 @@ import { firstValueFrom } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
-import { Checkbox } from 'primeng/checkbox';
 import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
@@ -42,8 +41,8 @@ import type { SiteCheckoutContent } from '../../models/site-content.model';
   selector: 'app-checkout-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, 
-    ReactiveFormsModule, Button, Card, Checkbox, Divider, InputText, Message,
+  imports: [SafeImageDirective,
+    ReactiveFormsModule, Button, Card, Divider, InputText, Message,
     Select, Textarea, Skeleton, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],
   templateUrl: './checkout-page.component.html',
