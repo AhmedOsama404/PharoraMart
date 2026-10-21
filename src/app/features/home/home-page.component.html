@@ -26,7 +26,10 @@
         } @else {
         <div class="hero-copy">
           @if (heroBadge()) {
-            <p-tag [value]="heroBadge()" [icon]="badgeIcon()" severity="info" />
+            <p class="hero-badge">
+              <span class="hero-badge__icon" aria-hidden="true"><i [class]="badgeIcon()"></i></span>
+              <span class="hero-badge__text">{{ heroBadge() }}</span>
+            </p>
           }
           @if (heroHeadline()) {
             <h1>{{ heroHeadline() }}</h1>

@@ -6,7 +6,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Skeleton } from 'primeng/skeleton';
-import { Tag } from 'primeng/tag';
 import { I18nService } from '../../core/services/i18n.service';
 import { ProductService } from '../../core/services/product.service';
 import { CartStore } from '../../core/services/cart.store';
@@ -34,7 +33,7 @@ type HomeDataSection = 'categories' | 'featured' | 'newArrivals' | 'popular' | '
   selector: 'app-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, RouterLink, Button, Skeleton, Tag, ProductCardComponent, SectionHeaderComponent, ResolvedMoneyPipe, LocalizedPipe, DataBoundaryComponent,
+  imports: [SafeImageDirective, RouterLink, Button, Skeleton, ProductCardComponent, SectionHeaderComponent, ResolvedMoneyPipe, LocalizedPipe, DataBoundaryComponent,
   ],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss',
