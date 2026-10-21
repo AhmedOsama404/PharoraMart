@@ -7,12 +7,22 @@
 } @else {
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="layout">
     <div class="col">
-      <p-card>
-        <h2>{{ copy('contactTitle', 'checkout.contactTitle') }}</h2>
+      <!-- Contact Card -->
+      <p-card class="premium-card">
+        <header class="card-header">
+          <div class="card-header__icon">
+            <i class="pi pi-user-edit" aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2>{{ copy('contactTitle', 'checkout.contactTitle') }}</h2>
+            <p class="card-header__subtitle">{{ i18n.t('checkout.contactSubtitle') }}</p>
+          </div>
+        </header>
+
         <div class="grid2">
           <div class="field">
             <label for="fullName">{{ i18n.t('checkout.fullName') }}</label>
-            <input pInputText id="fullName" formControlName="fullName" autocomplete="name" [fluid]="true" />
+            <input pInputText id="fullName" formControlName="fullName" autocomplete="name" [fluid]="true" placeholder="{{ i18n.t('checkout.fullNamePlaceholder') }}" />
             @if (err('fullName'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">
@@ -22,7 +32,7 @@
           </div>
           <div class="field">
             <label for="email">{{ i18n.t('checkout.email') }}</label>
-            <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" />
+            <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" placeholder="{{ i18n.t('checkout.emailPlaceholder') }}" />
             @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">
@@ -65,8 +75,19 @@
           </div>
         </div>
       </p-card>
-      <p-card>
-        <h2>{{ copy('addressTitle', 'checkout.addressTitle') }}</h2>
+
+      <!-- Address Card -->
+      <p-card class="premium-card">
+        <header class="card-header">
+          <div class="card-header__icon">
+            <i class="pi pi-map-marker" aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2>{{ copy('addressTitle', 'checkout.addressTitle') }}</h2>
+            <p class="card-header__subtitle">{{ i18n.t('checkout.addressSubtitle') }}</p>
+          </div>
+        </header>
+
         <div class="grid2">
           <div class="field">
             <label for="city">{{ i18n.t('checkout.city') }}</label>
@@ -85,25 +106,50 @@
           </div>
           <div class="field">
             <label for="room">{{ i18n.t('checkout.room') }}</label>
-            <input pInputText id="room" formControlName="room" autocomplete="off" [fluid]="true" />
+            <input pInputText id="room" formControlName="room" autocomplete="off" [fluid]="true" placeholder="{{ i18n.t('checkout.roomPlaceholder') }}" />
           </div>
           <div class="field">
             <label for="notes">{{ i18n.t('checkout.notes') }}</label>
-            <textarea pTextarea id="notes" formControlName="notes" rows="2" [fluid]="true"></textarea>
+            <textarea pTextarea id="notes" formControlName="notes" rows="2" [fluid]="true" placeholder="{{ i18n.t('checkout.notesPlaceholder') }}"></textarea>
           </div>
         </div>
       </p-card>
-      <p-card>
-        <h2>{{ copy('paymentTitle', 'checkout.paymentTitle') }}</h2>
-        <label class="cod">
+
+      <!-- Payment Card -->
+      <p-card class="premium-card">
+        <header class="card-header">
+          <div class="card-header__icon">
+            <i class="pi pi-credit-card" aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2>{{ copy('paymentTitle', 'checkout.paymentTitle') }}</h2>
+            <p class="card-header__subtitle">{{ i18n.t('checkout.paymentSubtitle') }}</p>
+          </div>
+        </header>
+
+        <label class="cod premium-cod">
           <span class="cod-check"><i class="pi pi-check-circle"></i></span>
           <span class="cod-icon"><i class="pi pi-money-bill"></i></span>
-          <span><strong>{{ copy('paymentMethodTitle', 'checkout.codTitle') }}</strong><small>{{ copy('paymentMethodBody', 'checkout.codSubtitle') }}</small></span>
+          <div class="cod-text">
+            <strong>{{ copy('paymentMethodTitle', 'checkout.codTitle') }}</strong>
+            <small>{{ copy('paymentMethodBody', 'checkout.codSubtitle') }}</small>
+          </div>
         </label>
       </p-card>
     </div>
-    <p-card class="summary">
-      <h2>{{ copy('reviewTitle', 'checkout.reviewTitle') }}</h2>
+
+    <!-- Summary Sidebar -->
+    <p-card class="summary premium-card">
+      <header class="card-header">
+        <div class="card-header__icon">
+          <i class="pi pi-receipt" aria-hidden="true"></i>
+        </div>
+        <div>
+          <h2>{{ copy('reviewTitle', 'checkout.reviewTitle') }}</h2>
+          <p class="card-header__subtitle">{{ i18n.t('checkout.reviewSubtitle') }}</p>
+        </div>
+      </header>
+
       @if (!view.ready()) {
         <div class="items" aria-busy="true">
           @for (i of [1, 2]; track i) { <p-skeleton height="3.4rem" borderRadius="0.8rem" /> }
@@ -125,31 +171,44 @@
           }
         </ul>
       }
-      <div class="t-row"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ subtotal() | money }}</strong></div>
-      @if (siteContent.checkout()?.showCouponEntry !== false) {
-        <div class="coupon-row">
-          <input pInputText [formControl]="couponControl" [placeholder]="i18n.t('checkout.couponCode')" [attr.aria-label]="i18n.t('checkout.couponCode')" />
-          <p-button [label]="couponApplied() ? i18n.t('checkout.couponApplied') : i18n.t('checkout.applyCoupon')" severity="secondary"
-            [loading]="couponBusy()" [disabled]="couponBusy()" (onClick)="applyCoupon()" />
+
+      <div class="totals">
+        <div class="t-row"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ subtotal() | money }}</strong></div>
+
+        @if (siteContent.checkout()?.showCouponEntry !== false) {
+          <div class="coupon-row">
+            <input pInputText [formControl]="couponControl" [placeholder]="i18n.t('checkout.couponCode')" [attr.aria-label]="i18n.t('checkout.couponCode')" />
+            <p-button [label]="couponApplied() ? i18n.t('checkout.couponApplied') : i18n.t('checkout.applyCoupon')" severity="secondary"
+              [loading]="couponBusy()" [disabled]="couponBusy()" (onClick)="applyCoupon()" />
+          </div>
+        }
+        @if (couponError()) { <p-message severity="error" [text]="couponError()" /> }
+        @if (couponDiscount() > 0) {
+          <div class="t-row"><span>{{ i18n.t('checkout.discount') }} ({{ couponApplied() }})</span><strong>−{{ couponDiscount() | money }}</strong></div>
+        }
+        <div class="t-row"><span>{{ i18n.t('checkout.delivery') }}</span>
+          <strong>
+            @if (quotedFee() == null) { {{ i18n.t('cart.calculatedAtCheckout') }} }
+            @else if (deliveryFee() === 0) { {{ i18n.t('cart.free') }} }
+            @else { {{ deliveryFee() | money }} }
+          </strong>
         </div>
-      }
-      @if (couponError()) { <p-message severity="error" [text]="couponError()" /> }
-      @if (couponDiscount() > 0) {
-        <div class="t-row"><span>{{ i18n.t('checkout.discount') }} ({{ couponApplied() }})</span><strong>−{{ couponDiscount() | money }}</strong></div>
-      }
-      <div class="t-row"><span>{{ i18n.t('checkout.delivery') }}</span>
-        <strong>
-          @if (quotedFee() == null) { {{ i18n.t('cart.calculatedAtCheckout') }} }
-          @else if (deliveryFee() === 0) { {{ i18n.t('cart.free') }} }
-          @else { {{ deliveryFee() | money }} }
-        </strong>
+        <p-divider />
+        <div class="t-row grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ total() | money }}</strong></div>
       </div>
-      <p-divider />
-      <div class="t-row grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ total() | money }}</strong></div>
+
       @if (submitError()) { <p-message severity="error" [text]="submitError()" /> }
-      <p-button type="submit" [label]="placing() ? i18n.t('checkout.placing') : copy('placeOrderLabel', 'checkout.placeOrder')"
-        icon="pi pi-check" [loading]="placing()" [disabled]="placing() || couponBusy() || checkoutBlocked()" [fluid]="true" />
-      <p-button [label]="copy('backToCartLabel', 'checkout.backToCart')" severity="secondary" [text]="true" [fluid]="true" (onClick)="go('/cart')" />
+
+      <div class="summary-actions">
+        <p-button type="submit" [label]="placing() ? i18n.t('checkout.placing') : copy('placeOrderLabel', 'checkout.placeOrder')"
+          icon="pi pi-check" [loading]="placing()" [disabled]="placing() || couponBusy() || checkoutBlocked()" [fluid]="true" />
+        <p-button [label]="copy('backToCartLabel', 'checkout.backToCart')" severity="secondary" [text]="true" [fluid]="true" (onClick)="go('/cart')" />
+      </div>
+
+      <p class="secure-note">
+        <i class="pi pi-lock" aria-hidden="true"></i>
+        {{ i18n.t('checkout.secureNote') }}
+      </p>
     </p-card>
   </form>
 }
