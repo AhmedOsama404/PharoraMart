@@ -77,7 +77,7 @@ export class CheckoutPageComponent implements OnInit {
   protected form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required, Validators.minLength(3)]],
     phone: ['', [Validators.required, phoneValidator]],
-    email: ['', [Validators.email]],
+    email: ['', [Validators.required, Validators.email]],
     city: ['', [Validators.required]],
     hotelId: ['', [Validators.required]],
     room: [''],
@@ -85,21 +85,11 @@ export class CheckoutPageComponent implements OnInit {
     // The language the customer wants to be contacted in. It is required,
     // and it is frozen on the order: the messages always use it.
     language: ['', [Validators.required]],
-    // How the customer wants to be contacted about this order.
-    contactMethod: ['whatsapp' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
-    // The WhatsApp opt-in is OFF by default: the customer has to choose it.
-    whatsappOptIn: [false],
+    // How the customer wants to be contacted about this order. WhatsApp is
+    // suspended for now, so the order status goes by email; the moment
+    // WhatsApp is back, the choice comes back with it.
+    contactMethod: ['email' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
   });
-
-  // No WhatsApp consent means no WhatsApp contact method: the two
-  // controls can never contradict each other.
-  private readonly whatsappConsentSync = this.form.controls.whatsappOptIn.valueChanges
-    .pipe(takeUntilDestroyed())
-    .subscribe((checked) => {
-      if (!checked && this.form.controls.contactMethod.value === 'whatsapp') {
-        this.form.controls.contactMethod.setValue('email');
-      }
-    });
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
   protected cities = signal<string[]>([]);
@@ -187,22 +177,14 @@ export class CheckoutPageComponent implements OnInit {
       });
   }
 
-  /** The ways the customer can be contacted: WhatsApp or email. */
-  protected contactOptions = computed(() => [
-    { label: this.i18n.t('checkout.contactWhatsapp'), value: 'whatsapp' },
-    { label: this.i18n.t('checkout.contactEmail'), value: 'email' },
-  ]);
-
   /**
-   * Choosing WhatsApp IS the opt-in, so the box is ticked with it. Turning
-   * the box off moves the contact method back to email, so the two can never
-   * contradict each other.
+   * True when the email comes from the customer's account: it is filled in
+   * for them, so they do not have to type it again.
    */
-  protected onContactMethodChange(value: string): void {
-    if (value === 'whatsapp') {
-      this.form.controls.whatsappOptIn.setValue(true);
-    }
-  }
+  protected readonly emailFromAccount = computed(() => {
+    const email = this.auth.user()?.email ?? '';
+    return email.trim().length > 0;
+  });
 
   /** The languages the customer can choose, with the label of each. */
   protected languageOptions = computed(() =>
@@ -498,7 +480,9 @@ export class CheckoutPageComponent implements OnInit {
         contactMethod: v.contactMethod,
       },
       language: v.language,
-      whatsappOptIn: v.whatsappOptIn === true,
+      // The contact method IS the opt-in: WhatsApp updates only when the
+      // customer chose WhatsApp. There is no second control.
+      whatsappOptIn: v.contactMethod === 'whatsapp',
       items: this.lines().map((l) => ({
         productId: l.productId,
         productName: l.name,

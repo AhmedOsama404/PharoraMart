@@ -1,8 +1,22 @@
-h1 { margin: 0; font-size: clamp(2rem, 3.2vw, 2.65rem); line-height: 1.2; letter-spacing: -0.04em; }
-.sub { color: var(--text-secondary); margin: 0.55rem 0 2rem; font-size: 1.02rem; }
+/* The page title: one line, with the subtitle right under it. */
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 2.7vw, 2.2rem);
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+.sub {
+  color: var(--text-secondary);
+  margin: 0.3rem 0 1.4rem;
+  font-size: 0.95rem;
+  max-width: 46rem;
+}
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(21rem, 24rem); gap: clamp(1.25rem, 2.5vw, 2rem); align-items: start; }
-.col { display: grid; gap: 1.2rem; }
+.col { display: grid; gap: 1rem; }
+
+/* The cards carry the spacing, so the content sits close to its title. */
+:host ::ng-deep .premium-card .p-card-body { padding: 1.1rem 1.2rem 1.2rem; }
 
 /* Premium card styling */
 .premium-card {
@@ -19,45 +33,47 @@ h1 { margin: 0; font-size: clamp(2rem, 3.2vw, 2.65rem); line-height: 1.2; letter
 
 .card-header {
   display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.7rem;
   border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 72%, white);
 
   .card-header__icon {
     flex: 0 0 auto;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(135deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 70%, #fff));
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.7rem;
+    background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, #fff));
     display: grid;
     place-items: center;
     color: #fff;
-    font-size: 1.1rem;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-color) 30%, transparent);
+    font-size: 1rem;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 30%, transparent);
   }
 
   h2 {
-    margin: 0 0 0.2rem;
+    margin: 0;
     padding: 0;
     border: none;
-    font-size: 1.1rem;
+    font-size: 1.02rem;
     font-weight: 700;
-    line-height: 1.35;
+    line-height: 1.3;
     color: var(--text-primary);
   }
 
   .card-header__subtitle {
-    margin: 0;
-    font-size: 0.8rem;
+    margin: 0.1rem 0 0;
+    font-size: 0.78rem;
     color: var(--text-secondary);
-    opacity: 0.8;
   }
 }
 
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem 1rem; }
 .field { min-width: 0; }
+/* A field that stands on its own under a two-column grid needs the space
+   the grid would have given it. */
+.field--spaced { margin-top: 1.1rem; }
 .field > label {
   display: block;
   margin-bottom: 0.4rem;
@@ -72,7 +88,7 @@ h1 { margin: 0; font-size: clamp(2rem, 3.2vw, 2.65rem); line-height: 1.2; letter
 .field input:hover, .field textarea:hover { border-color: color-mix(in srgb, var(--primary) 42%, var(--surface-border)); }
 .field input:focus, .field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
 .field.full { grid-column: 1 / -1; }
-.err { display: block; margin-top: 0.35rem; color: var(--p-red-500, #c00); font-size: 0.75rem; }
+.err { display: block; margin-top: 0.35rem; color: var(--danger); font-size: 0.75rem; }
 .hint { display: block; margin-top: 0.3rem; font-size: 0.75rem; color: var(--text-secondary); }
 
 /* Premium COD styling */
@@ -137,44 +153,25 @@ h1 { margin: 0; font-size: clamp(2rem, 3.2vw, 2.65rem); line-height: 1.2; letter
 
 :host ::ng-deep .summary .p-card-body { padding: 1.1rem; }
 
-/* Notification/consent section */
+/* The note that the contact method decides (no second box). */
 .cm-notify {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, var(--p-blue-50, #eff6ff), #fff);
-  border: 1px solid var(--p-blue-200, #bfdbfe);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  margin-top: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  background: color-mix(in srgb, var(--p-blue-50, #eef4fb) 70%, white);
+  border: 1px solid var(--p-blue-200, #cfe0f2);
   border-radius: 0.85rem;
-
-  &__choice {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  &__text {
-    flex: 1;
-    min-width: 0;
-    label { font-weight: 500; color: var(--text-primary); cursor: pointer; }
-    .hint { margin-top: 0.2rem; font-size: 0.7rem; color: var(--text-secondary); }
-  }
-
-  &__notes {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--p-blue-200, #bfdbfe);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
 
   &__note {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.75rem;
+    font-size: 0.76rem;
     color: var(--text-secondary);
 
-    i { color: var(--primary-color); font-size: 0.8rem; }
+    i { color: var(--primary); font-size: 0.8rem; }
   }
 }
 
@@ -184,11 +181,11 @@ h1 { margin: 0; font-size: clamp(2rem, 3.2vw, 2.65rem); line-height: 1.2; letter
   font-size: 0.85rem;
 }
 :host ::ng-deep .premium-select-panel .p-select-item.p-highlight {
-  background: var(--primary-color);
+  background: var(--primary);
   color: #fff;
 }
 :host ::ng-deep .premium-select-panel .p-select-item:not(.p-highlight):hover {
-  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 /* Responsive */
