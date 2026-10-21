@@ -234,6 +234,7 @@ export const en: TranslationDict = {
     whatsappHint: 'Opens WhatsApp with your order details pre-filled. No message is sent automatically.',
     emailButton: 'Contact via email',
     emailHint: 'Opens your email app. No email is sent automatically.',
+    emailStatusNotice: "We will send the order status to your email.",
     continueShopping: 'Continue shopping',
     viewOrders: 'View my orders',
     mockNotice: 'Demo mode: this order is stored locally only. No real payment or delivery is triggered.',

@@ -232,6 +232,7 @@ export const cs: TranslationDict = {
     whatsappHint: 'Otevře WhatsApp s předvyplněnými údaji objednávky. Zpráva se neodešle automaticky.',
     emailButton: 'Kontaktovat e-mailem',
     emailHint: 'Otevře vaši e-mailovou aplikaci. E-mail se neodešle automaticky.',
+    emailStatusNotice: "Stav objednávky vám pošleme e-mailem.",
     continueShopping: 'Pokračovat v nákupu',
     viewOrders: 'Zobrazit objednávky',
     mockNotice: 'Ukázkový režim: objednávka je uložena pouze lokálně. Neprobíhá reálná platba ani doručení.',

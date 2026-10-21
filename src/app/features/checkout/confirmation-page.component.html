@@ -52,6 +52,12 @@
             <p-button [label]="copy('emailButtonLabel', 'confirmation.emailButton')" icon="pi-envelope" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="mail()" />
             <small class="hint">{{ copy('emailHint', 'confirmation.emailHint') }}</small>
           }
+          @if (show('showEmailButton')) {
+            <p class="order-status-note">
+              <i class="pi pi-envelope" aria-hidden="true"></i>
+              <span>{{ i18n.t('confirmation.emailStatusNotice') }}</span>
+            </p>
+          }
           <div class="row">
             <p-button [label]="copy('continueShoppingLabel', 'confirmation.continueShopping')" [text]="true" (onClick)="go('/products')" />
             <p-button [label]="copy('viewOrdersLabel', 'confirmation.viewOrders')" severity="secondary" [outlined]="true" (onClick)="go('/orders')" />
