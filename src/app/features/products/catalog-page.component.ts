@@ -36,6 +36,14 @@ interface SortOption {
   value: SortKey;
 }
 
+/**
+ * The catalogue's price ceiling, rounded up to a whole 10. It is never below
+ * the catalogue's most expensive product, so every product stays filterable.
+ */
+function ceilingFor(maxPrice: number): number {
+  return Math.max(10, Math.ceil(maxPrice / 10) * 10);
+}
+
 @Component({
   selector: 'app-catalog-page',
   standalone: true,
@@ -65,8 +73,11 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
    * (GET /products/price-range); the bundled demo catalogue is only the
    * fallback for mock mode or an API without that endpoint. A product priced
    * above the fallback must still be filterable, so the live value wins.
+   *
+   * The ceiling is rounded up to a whole 10 so the slider has friendly
+   * steps; the top of the range always means "no upper bound".
    */
-  protected maxPrice = signal(Math.ceil(MAX_CATALOG_PRICE / 50) * 50);
+  protected maxPrice = signal(ceilingFor(MAX_CATALOG_PRICE));
   protected priceConversionAvailable = computed(() =>
     this.prices.convert(1, this.currency.code(), 'USD') != null,
   );
@@ -297,7 +308,7 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (range) => {
           if (range && range.maxPrice > 0) {
-            this.maxPrice.set(Math.ceil(range.maxPrice / 50) * 50);
+            this.maxPrice.set(ceilingFor(range.maxPrice));
           }
         },
         // Keep the fallback ceiling: an older API (or an outage) must not

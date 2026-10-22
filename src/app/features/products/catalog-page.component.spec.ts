@@ -165,10 +165,10 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
     backend.expectOne((r) => r.url.endsWith('/products')).flush(EMPTY_PAGE);
     await settle();
 
-    // The ceiling follows the API (rounded up to the next 50), NOT the price
+    // The ceiling follows the API (rounded up to a whole 10), NOT the price
     // of the demo catalogue that ships with the frontend.
     const limit = (page() as unknown as { displayPriceLimit(): number }).displayPriceLimit();
-    expect(limit).toBe(500);
+    expect(limit).toBe(480);
 
     // A bound below the ceiling is applied as typed.
     (page() as unknown as { onPriceInput(b: 'max', v: number): void }).onPriceInput('max', 200);
