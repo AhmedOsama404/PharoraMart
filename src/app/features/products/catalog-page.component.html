@@ -79,7 +79,7 @@
           <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
         }
       </div>
-      <p-paginator [rows]="pageSize" [totalRecords]="total()" [first]="(page() - 1) * pageSize"
+      <p-paginator [rows]="pageSize()" [totalRecords]="total()" [first]="(page() - 1) * pageSize()"
         [rowsPerPageOptions]="[8, 12, 24]" (onPageChange)="onPage($event)" />
     }
   </section>

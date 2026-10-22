@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -14,6 +14,7 @@ import { Paginator, type PaginatorState } from 'primeng/paginator';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { Slider } from 'primeng/slider';
+import { EMPTY, Subject, catchError, switchMap, tap } from 'rxjs';
 import { MAX_CATALOG_PRICE } from '../../data-access/mock-data';
 import { I18nService } from '../../core/services/i18n.service';
 import { CurrencyService } from '../../core/services/currency.service';
@@ -70,7 +71,7 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
     this.prices.convert(this.maxPrice, 'USD', this.filterCurrency()) ?? this.maxPrice,
   );
   protected displayPriceStep = computed(() => Math.max(1, Math.round(this.displayPriceLimit() / 100)));
-  protected pageSize = environment.pageSize;
+  protected pageSize = signal(environment.pageSize);
   protected drawer = signal(false);
   protected minPriceInput = signal<number | string>(0);
   protected maxPriceInput = signal<number | string>('');
@@ -104,8 +105,15 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   protected categories = signal<Category[]>([]);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private priceInputTimer: ReturnType<typeof setTimeout> | null = null;
-  private syncingFromUrl = false;
   private connectivity = inject(ConnectivityService);
+  private readonly destroyRef = inject(DestroyRef);
+  /**
+   * The single request channel for the product list. Every load — the first
+   * page, a filter change, a page change, an explicit Retry — goes through
+   * here, so there is exactly ONE pipeline and therefore exactly one request
+   * per applied query.
+   */
+  private readonly listQuery$ = new Subject<CatalogQuery>();
   /** One automatic refetch per outage; a second failure waits for the user. */
   private autoRetried = false;
 
@@ -123,13 +131,39 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
       this.trackSlowHint(this.state() === 'loading' || pending);
     });
     this.connectivity.recovered$
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (this.state() === 'error' && !this.autoRetried) {
           this.autoRetried = true;
           this.reload();
         }
       });
+
+    // One loader for the whole listing. `switchMap` cancels the request that
+    // is still in flight when a newer query arrives, so a slow answer for an
+    // older filter can never overwrite the answer for the current one.
+    this.listQuery$
+      .pipe(
+        switchMap((query) => {
+          this.state.set('loading');
+          return this.products.list(query).pipe(
+            tap((res) => {
+              this.items.set(res.items);
+              this.total.set(res.total);
+              this.autoRetried = false;
+              this.state.set('ok');
+            }),
+            // The failure is rendered by the page (retry / offline banner);
+            // it must not escape as an unhandled error.
+            catchError(() => {
+              this.state.set('error');
+              return EMPTY;
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   /**
@@ -143,10 +177,16 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
     const previous = this.lastPriceCurrency;
     this.lastPriceCurrency = code;
     let rebound = false;
-    if (previous !== null && previous !== code && this.filterCurrency() !== 'USD') {
-      this.draft.minPrice.set(this.pivotPrice(this.draft.minPrice(), previous, this.filterCurrency()));
+    // The bounds live in the visitor's currency, so they must be re-expressed
+    // whenever THAT currency changes — including a switch INTO USD, which the
+    // old guard skipped and which silently changed the meaning of the bound.
+    // Without a usable rate both sides are USD, so there is nothing to pivot.
+    const previousFilter = previous === null ? 'USD' : this.filterCurrencyFor(previous);
+    const nextFilter = this.filterCurrencyFor(code);
+    if (previous !== null && previous !== code && previousFilter !== nextFilter) {
+      this.draft.minPrice.set(this.pivotPrice(this.draft.minPrice(), previousFilter, nextFilter));
       this.draft.maxPrice.set(
-        this.draft.maxPrice() === null ? null : this.pivotPrice(this.draft.maxPrice()!, previous, this.filterCurrency()),
+        this.draft.maxPrice() === null ? null : this.pivotPrice(this.draft.maxPrice()!, previousFilter, nextFilter),
       );
       rebound = true;
     }
@@ -155,6 +195,15 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
       this.maxPriceInput.set(this.draft.maxPrice() ?? this.displayPriceLimit());
     }
     if (rebound) this.refresh();
+  }
+
+  /**
+   * The currency the price bounds are expressed in for a given visitor
+   * currency: that currency when a rate is available, otherwise USD (the
+   * server's contract currency).
+   */
+  private filterCurrencyFor(code: string): string {
+    return this.prices.convert(1, code, 'USD') != null ? code : 'USD';
   }
 
   /** Re-expresses a bound in another currency via the USD pivot. */
@@ -236,40 +285,53 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
     // Filter categories come from the data source, independent of products.
     // A failed category request must not become an unhandled error and must
     // not block the product list: fall back to "All categories".
-    this.products.categories().subscribe({
-      next: (cats) => this.categories.set(cats),
-      error: () => this.categories.set([]),
-    });
+    this.products
+      .categories()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (cats) => this.categories.set(cats),
+        error: () => this.categories.set([]),
+      });
     // The URL is the source of truth: every query-param change rebuilds the
     // draft and reloads, which keeps back/forward and bookmarks consistent.
     // First entry lands at the top (like every fresh page); later emissions
     // are in-page filter/pagination work, where the viewport must stay put.
     let firstEntry = true;
-    this.route.queryParamMap.subscribe((params) => {
-      this.syncingFromUrl = true;
-      this.draft.q.set(params.get('q') ?? '');
-      this.draft.category.set(params.get('category') ?? '');
-      // Price params are numbers in the CURRENTLY SELECTED currency, matching
-      // what the controls show. An absent `max` means "no upper bound".
-      this.draft.minPrice.set(Math.max(0, Number(params.get('min') ?? 0) || 0));
-      const maxParam = params.get('max');
-      const maxNumber = maxParam == null || maxParam === '' ? Number.NaN : Number(maxParam);
-      this.draft.maxPrice.set(Number.isFinite(maxNumber) ? maxNumber : null);
-      if (!this.priceInputPending()) {
-        this.minPriceInput.set(this.draft.minPrice());
-        this.maxPriceInput.set(this.draft.maxPrice() ?? this.displayPriceLimit());
-      }
-      this.draft.availability.set((params.get('avail') as 'all' | Availability) ?? 'all');
-      this.draft.sale.set(params.get('sale') === '1');
-      this.draft.sort.set((params.get('sort') as SortKey) ?? 'recommended');
-      this.page.set(Number(params.get('page') ?? 1) || 1);
-      this.syncingFromUrl = false;
-      this.reload();
-      if (firstEntry) {
-        firstEntry = false;
-        this.scroll.scrollToTop();
-      }
-    });
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        this.applyQueryParams(params);
+        this.listQuery$.next(this.currentQuery());
+        if (firstEntry) {
+          firstEntry = false;
+          this.scroll.scrollToTop();
+        }
+      });
+  }
+
+  /** Rebuilds the draft filter state from the URL. */
+  private applyQueryParams(params: ParamMap): void {
+    this.draft.q.set(params.get('q') ?? '');
+    this.draft.category.set(params.get('category') ?? '');
+    // Price params are numbers in the CURRENTLY SELECTED currency, matching
+    // what the controls show. An absent `max` means "no upper bound".
+    this.draft.minPrice.set(Math.max(0, Number(params.get('min') ?? 0) || 0));
+    const maxParam = params.get('max');
+    const maxNumber = maxParam == null || maxParam === '' ? Number.NaN : Number(maxParam);
+    this.draft.maxPrice.set(Number.isFinite(maxNumber) ? maxNumber : null);
+    if (!this.priceInputPending()) {
+      this.minPriceInput.set(this.draft.minPrice());
+      this.maxPriceInput.set(this.draft.maxPrice() ?? this.displayPriceLimit());
+    }
+    this.draft.availability.set((params.get('avail') as 'all' | Availability) ?? 'all');
+    this.draft.sale.set(params.get('sale') === '1');
+    this.draft.sort.set((params.get('sort') as SortKey) ?? 'recommended');
+    this.page.set(Number(params.get('page') ?? 1) || 1);
+    // The page size is part of the listing too, so a shared/bookmarked URL
+    // shows the same number of products per page.
+    const sizeParam = params.get('size');
+    const size = sizeParam == null || sizeParam === '' ? environment.pageSize : Number(sizeParam);
+    if (Number.isFinite(size) && size > 0) this.pageSize.set(size);
   }
 
   private currentQuery(): CatalogQuery {
@@ -292,12 +354,11 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
       onSaleOnly: this.draft.sale() || undefined,
       sort: this.draft.sort(),
       page: this.page(),
-      pageSize: this.pageSize,
+      pageSize: this.pageSize(),
     };
   }
 
   private pushUrl(): void {
-    if (this.syncingFromUrl) return;
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
@@ -310,30 +371,31 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
         sale: this.draft.sale() ? 1 : null,
         sort: this.draft.sort() !== 'recommended' ? this.draft.sort() : null,
         page: this.page() > 1 ? this.page() : null,
+        size: this.pageSize() !== environment.pageSize ? this.pageSize() : null,
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
   }
 
+  /**
+   * Loads the list for the query that is currently applied. The request is
+   * routed through the single loader, so it replaces any request that is still
+   * in flight instead of racing it.
+   */
   protected reload(): void {
-    this.state.set('loading');
-    this.products.list(this.currentQuery()).subscribe({
-      next: (res) => {
-        this.items.set(res.items);
-        this.total.set(res.total);
-        this.autoRetried = false;
-        this.state.set('ok');
-      },
-      error: () => this.state.set('error'),
-    });
+    this.listQuery$.next(this.currentQuery());
   }
 
+  /**
+   * A filter changed. The URL is the single source of truth, so the change is
+   * published there and the resulting query-param emission performs the load.
+   * Reloading here as well would run the whole pipeline twice for one change.
+   */
   private refresh(): void {
     // Any filter change restarts at page 1 — deeper pages may not exist anymore.
     this.page.set(1);
     this.pushUrl();
-    this.reload();
   }
 
   protected onSearchType(): void {
@@ -399,14 +461,18 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
 
     const limit = this.displayPriceLimit();
     const nextMin = Math.max(0, Math.min(limit, minDisplay));
-    const nextMax = maxDisplay === null ? null : Math.max(nextMin, Math.min(limit, maxDisplay));
+    // Reaching the catalog ceiling means "no upper bound" again — the same
+    // rule the slider follows — so a typed value at (or above) the ceiling
+    // clears the bound instead of pinning it to the ceiling.
+    const cappedMax = maxDisplay === null ? null : Math.max(nextMin, Math.min(limit, maxDisplay));
+    const nextMax = cappedMax !== null && cappedMax >= limit ? null : cappedMax;
     const changed = nextMin !== this.draft.minPrice() || nextMax !== this.draft.maxPrice();
     this.draft.minPrice.set(nextMin);
     this.draft.maxPrice.set(nextMax);
     // Echo the normalized values so the form never lies about what is applied
     // (e.g. a value beyond the catalog ceiling snaps back to the ceiling).
     this.minPriceInput.set(nextMin);
-    this.maxPriceInput.set(nextMax ?? '');
+    this.maxPriceInput.set(nextMax ?? limit);
     this.priceInputPending.set(false);
     if (changed) this.refresh();
   }
@@ -422,10 +488,11 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   }
 
   protected onPage(ev: PaginatorState): void {
-    if (ev.rows) this.pageSize = ev.rows;
+    if (ev.rows) this.pageSize.set(ev.rows);
     this.page.set((ev.page ?? 0) + 1);
+    // The page change is published to the URL; the resulting query-param
+    // emission performs the load (one request per applied query).
     this.pushUrl();
-    this.reload();
     // The result list genuinely moved: smooth-scroll back to it.
     this.scroll.scrollToTop('smooth');
   }

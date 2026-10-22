@@ -22,7 +22,8 @@
     <div class="gallery">
       <div class="img-frame main-frame">
         <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-        <img appSafeImg="product" class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name" />
+        <img appSafeImg="product" class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name"
+          loading="eager" fetchpriority="high" decoding="async" />
       </div>
       <div class="thumbs" role="tablist" aria-label="product images">
         @for (src of images(); track src; let i = $index) {

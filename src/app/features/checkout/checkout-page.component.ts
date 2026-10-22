@@ -1,6 +1,6 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { SUPPORTED_LANGS } from '../../core/config/i18n.config';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -66,6 +66,7 @@ export class CheckoutPageComponent implements OnInit {
   private router = inject(Router);
   private scroll = inject(ScrollService);
   private connectivity = inject(ConnectivityService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected placing = signal(false);
   protected submitError = signal('');
@@ -130,14 +131,21 @@ export class CheckoutPageComponent implements OnInit {
   constructor() {
     // The directory is required to choose a hotel/city; if it cannot load the
     // form stays open (no crash) and submit is blocked by validation/quote.
-    this.delivery.hotels().subscribe({
-      next: (list) => this.hotels.set(list),
-      error: () => this.hotels.set([]),
-    });
-    this.delivery.cities().subscribe({
-      next: (list) => this.cities.set(list),
-      error: () => this.cities.set([]),
-    });
+    // Both calls read the same cached directory, so this is ONE request.
+    this.delivery
+      .hotels()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => this.hotels.set(list),
+        error: () => this.hotels.set([]),
+      });
+    this.delivery
+      .cities()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => this.cities.set(list),
+        error: () => this.cities.set([]),
+      });
     effect(() => {
       const code = this.currency.code();
       const subtotal = this.subtotal();
@@ -168,7 +176,7 @@ export class CheckoutPageComponent implements OnInit {
     }
     // When the backend comes back, unblock the money flow without a reload.
     this.connectivity.recovered$
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (this.view.failed()) this.view.refresh();
         const hotelId = this.selectedHotel();
@@ -306,6 +314,7 @@ export class CheckoutPageComponent implements OnInit {
         undefined,
         { silent: true },
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           if (sequence !== this.couponValidationSequence) return;
@@ -498,38 +507,41 @@ export class CheckoutPageComponent implements OnInit {
       couponCode: this.couponApplied() || undefined,
       exchangeRateDate: this.rates.snapshot()?.date ?? this.quoteRateDate() ?? undefined,
     };
-    this.orders.create(req, key, this.auth.user()?.id).subscribe({
-      next: (order) => {
-        this.placing.set(false);
-        this.submittedKey = null;
-        this.cart.clear();
-        this.notify.success('checkout.orderSuccess');
-        this.router.navigate(['/checkout/confirmation', order.id]);
-      },
-      error: (err: unknown) => {
-        this.placing.set(false);
-        const resolved = this.apiError.resolve(err);
-        this.submitError.set(this.i18n.t(resolved.key, resolved.params));
-        // A coupon rejection is actionable and terminal: drop it so the next
-        // attempt can succeed, leaving the exact reason on screen.
-        if (resolved.code?.startsWith('coupon_')) {
-          this.couponApplied.set('');
-          this.couponDiscount.set(0);
+    this.orders
+      .create(req, key, this.auth.user()?.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (order) => {
+          this.placing.set(false);
           this.submittedKey = null;
-        }
-        // Stock/price moved under the visitor (or the FX quote expired):
-        // re-pull the live catalog so the quantities and prices on screen are
-        // current, and end this attempt (fresh idempotency key on retry).
-        if (
-          resolved.code === 'order_out_of_stock' ||
-          resolved.code === 'order_product_unavailable' ||
-          resolved.code === 'order_rates_changed'
-        ) {
-          this.view.refresh();
-          this.submittedKey = null;
-        }
-      },
-    });
+          this.cart.clear();
+          this.notify.success('checkout.orderSuccess');
+          this.router.navigate(['/checkout/confirmation', order.id]);
+        },
+        error: (err: unknown) => {
+          this.placing.set(false);
+          const resolved = this.apiError.resolve(err);
+          this.submitError.set(this.i18n.t(resolved.key, resolved.params));
+          // A coupon rejection is actionable and terminal: drop it so the next
+          // attempt can succeed, leaving the exact reason on screen.
+          if (resolved.code?.startsWith('coupon_')) {
+            this.couponApplied.set('');
+            this.couponDiscount.set(0);
+            this.submittedKey = null;
+          }
+          // Stock/price moved under the visitor (or the FX quote expired):
+          // re-pull the live catalog so the quantities and prices on screen are
+          // current, and end this attempt (fresh idempotency key on retry).
+          if (
+            resolved.code === 'order_out_of_stock' ||
+            resolved.code === 'order_product_unavailable' ||
+            resolved.code === 'order_rates_changed'
+          ) {
+            this.view.refresh();
+            this.submittedKey = null;
+          }
+        },
+      });
   }
 }
 

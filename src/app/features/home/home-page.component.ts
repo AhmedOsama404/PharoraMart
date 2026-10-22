@@ -183,46 +183,52 @@ export class HomePageComponent implements OnInit {
 
   protected loadCategories(): void {
     this.setSection('categories', 'loading');
-    this.products.categories().subscribe({
-      next: (items) => {
-        const settings = this.storefront.sectionSettings('categories');
-        const selected = settings?.categoryIds;
-        const list = selected
-          ? selected
-              .map((id) => items.find((item) => item.id === id))
-              .filter((item): item is Category => !!item)
-          : items.slice(0, settings?.maxItems ?? items.length);
-        this.categories.set(list);
-        this.setSection('categories', list.length ? 'success' : 'empty');
-      },
-      error: (err: unknown) => this.setSection('categories', this.failureState(), err),
-    });
+    this.products
+      .categories()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          const settings = this.storefront.sectionSettings('categories');
+          const selected = settings?.categoryIds;
+          const list = selected
+            ? selected
+                .map((id) => items.find((item) => item.id === id))
+                .filter((item): item is Category => !!item)
+            : items.slice(0, settings?.maxItems ?? items.length);
+          this.categories.set(list);
+          this.setSection('categories', list.length ? 'success' : 'empty');
+        },
+        error: (err: unknown) => this.setSection('categories', this.failureState(), err),
+      });
   }
 
   protected loadFeatured(): void {
     this.setSection('featured', 'loading');
-    this.products.featured().subscribe({
-      next: (items) => {
-        const settings = this.storefront.sectionSettings('featured');
-        if (settings?.selectionMode === 'manual' && settings.productIds) {
-          this.resolveProducts(
-            settings.productIds.slice(0, settings.maxItems ?? 8),
-            (selected) => {
-              const list = selected.slice(0, settings.maxItems ?? 8);
-              this.featured.set(list);
-              this.setSection('featured', list.length ? 'success' : 'empty');
-            },
-            (err) => this.setSection('featured', this.failureState(), err),
-          );
-        } else {
-          const list = items.slice(0, settings?.maxItems ?? 8);
-          this.featured.set(list);
-          this.setSection('featured', list.length ? 'success' : 'empty');
-        }
-        this.loadPromo(items);
-      },
-      error: (err: unknown) => this.setSection('featured', this.failureState(), err),
-    });
+    this.products
+      .featured()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          const settings = this.storefront.sectionSettings('featured');
+          if (settings?.selectionMode === 'manual' && settings.productIds) {
+            this.resolveProducts(
+              settings.productIds.slice(0, settings.maxItems ?? 8),
+              (selected) => {
+                const list = selected.slice(0, settings.maxItems ?? 8);
+                this.featured.set(list);
+                this.setSection('featured', list.length ? 'success' : 'empty');
+              },
+              (err) => this.setSection('featured', this.failureState(), err),
+            );
+          } else {
+            const list = items.slice(0, settings?.maxItems ?? 8);
+            this.featured.set(list);
+            this.setSection('featured', list.length ? 'success' : 'empty');
+          }
+          this.loadPromo(items);
+        },
+        error: (err: unknown) => this.setSection('featured', this.failureState(), err),
+      });
   }
 
   protected loadNewArrivals(): void {
@@ -235,13 +241,16 @@ export class HomePageComponent implements OnInit {
 
   protected loadContent(): void {
     this.setSection('content', 'loading');
-    this.content.published().subscribe({
-      next: (blocks) => {
-        this.contentBlocks.set(blocks);
-        this.setSection('content', 'success');
-      },
-      error: (err: unknown) => this.setSection('content', 'error', err),
-    });
+    this.content
+      .published()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blocks) => {
+          this.contentBlocks.set(blocks);
+          this.setSection('content', 'success');
+        },
+        error: (err: unknown) => this.setSection('content', 'error', err),
+      });
   }
 
   private loadRecentlyViewed(): void {
@@ -251,20 +260,23 @@ export class HomePageComponent implements OnInit {
       this.recentlyViewed.set([]);
       return;
     }
-    this.products.getByIdsMany(ids).subscribe({
-      next: (items) => {
-        const byId = new Map(items.map((p) => [p.id, p]));
-        this.recentlyViewed.set(
-          ids.map((id) => byId.get(id)).filter((p): p is Product => !!p).slice(0, 4),
-        );
-      },
-      // Recently viewed is personal, optional content: hide it rather than
-      // failing the page, and retry after the next reconnect.
-      error: () => {
-        this.recentlyViewed.set([]);
-        this.failedRecentlyViewed = true;
-      },
-    });
+    this.products
+      .getByIdsMany(ids)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          const byId = new Map(items.map((p) => [p.id, p]));
+          this.recentlyViewed.set(
+            ids.map((id) => byId.get(id)).filter((p): p is Product => !!p).slice(0, 4),
+          );
+        },
+        // Recently viewed is personal, optional content: hide it rather than
+        // failing the page, and retry after the next reconnect.
+        error: () => {
+          this.recentlyViewed.set([]);
+          this.failedRecentlyViewed = true;
+        },
+      });
   }
 
   private failedRecentlyViewed = false;
@@ -275,27 +287,29 @@ export class HomePageComponent implements OnInit {
     set: (items: Product[]) => void,
   ): void {
     this.setSection(key, 'loading');
-    request$.subscribe({
-      next: (items) => {
-        const settings = this.storefront.sectionSettings(key);
-        if (settings?.selectionMode === 'manual' && settings.productIds) {
-          this.resolveProducts(
-            settings.productIds.slice(0, settings.maxItems ?? 8),
-            (selected) => {
-              const list = selected.slice(0, settings.maxItems ?? 8);
-              set(list);
-              this.setSection(key, list.length ? 'success' : 'empty');
-            },
-            (err) => this.setSection(key, this.failureState(), err),
-          );
-          return;
-        }
-        const list = items.slice(0, settings?.maxItems ?? 8);
-        set(list);
-        this.setSection(key, list.length ? 'success' : 'empty');
-      },
-      error: (err: unknown) => this.setSection(key, this.failureState(), err),
-    });
+    request$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          const settings = this.storefront.sectionSettings(key);
+          if (settings?.selectionMode === 'manual' && settings.productIds) {
+            this.resolveProducts(
+              settings.productIds.slice(0, settings.maxItems ?? 8),
+              (selected) => {
+                const list = selected.slice(0, settings.maxItems ?? 8);
+                set(list);
+                this.setSection(key, list.length ? 'success' : 'empty');
+              },
+              (err) => this.setSection(key, this.failureState(), err),
+            );
+            return;
+          }
+          const list = items.slice(0, settings?.maxItems ?? 8);
+          set(list);
+          this.setSection(key, list.length ? 'success' : 'empty');
+        },
+        error: (err: unknown) => this.setSection(key, this.failureState(), err),
+      });
   }
 
   private loadPromo(items: Product[]): void {
@@ -303,7 +317,7 @@ export class HomePageComponent implements OnInit {
     if (settings?.productId) {
       this.products
         .getById(settings.productId)
-        .pipe(catchError(() => of(null)))
+        .pipe(catchError(() => of(null)), takeUntilDestroyed(this.destroyRef))
         .subscribe((product) => this.saleProduct.set(product));
       return;
     }
@@ -319,10 +333,13 @@ export class HomePageComponent implements OnInit {
       next([]);
       return;
     }
-    this.products.getByIdsMany(ids).subscribe({
-      next,
-      error: (err: unknown) => (onError ? onError(err) : next([])),
-    });
+    this.products
+      .getByIdsMany(ids)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next,
+        error: (err: unknown) => (onError ? onError(err) : next([])),
+      });
   }
 
   private failed(key: HomeDataSection): boolean {

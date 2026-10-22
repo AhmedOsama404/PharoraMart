@@ -1,6 +1,7 @@
 import { SafeImageDirective } from '../shared/resilience/safe-image.directive';
 import { LocalizedPipe } from '../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { LocalizedText } from '../models/product.model';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -89,7 +90,8 @@ export class HeaderComponent {
   ]);
 
   constructor() {
-    // Debounced live suggestions; switchMap drops stale keystrokes.
+    // Debounced live suggestions; switchMap drops stale keystrokes and the
+    // whole chain is torn down with the header.
     this.search$
       .pipe(
         debounceTime(250),
@@ -99,6 +101,7 @@ export class HeaderComponent {
             ? this.products.suggestions(term).pipe(catchError(() => of([])))
             : of([]),
         ),
+        takeUntilDestroyed(),
       )
       .subscribe((items) => {
         this.suggestions.set(items);

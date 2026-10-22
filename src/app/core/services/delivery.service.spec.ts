@@ -7,6 +7,9 @@ describe('DeliveryService (mock directory)', () => {
   let svc: DeliveryService;
 
   beforeEach(() => {
+    // Hermetic: a currency persisted by another suite would make the mock
+    // quote need live exchange rates it cannot reach.
+    localStorage.removeItem('novamart.currency');
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });

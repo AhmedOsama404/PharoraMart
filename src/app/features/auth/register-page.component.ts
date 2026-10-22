@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal, type OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -33,6 +34,7 @@ export class RegisterPageComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private scroll = inject(ScrollService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected busy = signal(false);
   protected serverError = signal('');
@@ -77,19 +79,22 @@ export class RegisterPageComponent implements OnInit {
     this.busy.set(true);
     this.serverError.set('');
     const v = this.form.getRawValue();
-    this.auth.register({ name: v.name, email: v.email, password: v.password, phone: v.phone || undefined }).subscribe({
-      next: (res) => {
-        this.busy.set(false);
-        this.notify.success('auth.registerSuccess', { name: res.user.name });
-        this.completeSignUp();
-      },
-      error: (err: unknown) => {
-        this.busy.set(false);
-        // 409 (auth_email_taken) becomes "this email is already registered";
-        // any other cause resolves to its own localized sentence.
-        this.serverError.set(this.apiError.message(err));
-      },
-    });
+    this.auth
+      .register({ name: v.name, email: v.email, password: v.password, phone: v.phone || undefined })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.busy.set(false);
+          this.notify.success('auth.registerSuccess', { name: res.user.name });
+          this.completeSignUp();
+        },
+        error: (err: unknown) => {
+          this.busy.set(false);
+          // 409 (auth_email_taken) becomes "this email is already registered";
+          // any other cause resolves to its own localized sentence.
+          this.serverError.set(this.apiError.message(err));
+        },
+      });
   }
 
   // Same return-and-complete contract as login (see LoginPageComponent).

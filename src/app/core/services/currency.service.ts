@@ -51,6 +51,10 @@ export class CurrencyService {
   // change-detection cycle (impure pipe over product grids), so one formatter
   // is built per locale+currency and reused for the app lifetime.
   private formatterCache = new Map<string, Intl.NumberFormat>();
+  private dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+  /** Fast membership/decimal lookup instead of scanning the option array. */
+  private readonly codes = computed(() => new Set(this.options().map((c) => c.code)));
+  private readonly decimals = computed(() => new Map(this.options().map((c) => [c.code, c.decimalPlaces])));
 
   private formatter(locale: string, code: string): Intl.NumberFormat {
     const key = `${locale}|${code}`;
@@ -59,9 +63,21 @@ export class CurrencyService {
       f = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: code,
-        maximumFractionDigits: this.options().find((currency) => currency.code === code)?.decimalPlaces ?? 2,
+        maximumFractionDigits: this.decimals().get(code) ?? 2,
       });
       this.formatterCache.set(key, f);
+    }
+    return f;
+  }
+
+  private dateFormatter(locale: string): Intl.DateTimeFormat {
+    let f = this.dateFormatterCache.get(locale);
+    if (!f) {
+      f = new Intl.DateTimeFormat(locale, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+      this.dateFormatterCache.set(locale, f);
     }
     return f;
   }
@@ -71,7 +87,7 @@ export class CurrencyService {
     const locale = LANG_LOCALES[lang];
     const normalizedCode = currencyCode?.toUpperCase();
     const code = normalizedCode
-      ? this.options().some((currency) => currency.code === normalizedCode) ? normalizedCode : null
+      ? this.codes().has(normalizedCode) ? normalizedCode : null
       : this.current().code;
     if (!code) return `${amount.toFixed(2)} ${normalizedCode}`;
     try {
@@ -86,10 +102,7 @@ export class CurrencyService {
     // Read the version signal so template calls re-format on language switch.
     this.i18n.version();
     try {
-      return new Intl.DateTimeFormat(LANG_LOCALES[lang], {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(new Date(iso));
+      return this.dateFormatter(LANG_LOCALES[lang]).format(new Date(iso));
     } catch {
       return iso;
     }

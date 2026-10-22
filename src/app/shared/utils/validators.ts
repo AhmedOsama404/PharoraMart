@@ -1,8 +1,5 @@
-import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-
-export const emailValidator = Validators.email;
-export const requiredValidator = Validators.required;
 
 /**
  * Validates a mobile number. Values coming from the country-code phone input

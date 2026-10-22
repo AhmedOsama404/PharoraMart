@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, delay, map, of, tap, throwError } from 'rxjs';
+import { Observable, catchError, delay, map, of, shareReplay, tap, throwError } from 'rxjs';
 import type { DeliveryQuote, Hotel } from '../../models/hotel.model';
 import { environment } from '../../../environments/environment';
 import { ApiClientService } from '../api/api-client.service';
@@ -38,16 +38,32 @@ const HOTELS: Hotel[] = [
 export class DeliveryService {
   /** Live-mode directory cache (populated by hotels(); mock mode uses HOTELS). */
   private liveHotels: Hotel[] | null = null;
+  /** The one live directory request of this session (see hotels()). */
+  private hotelsRequest$: Observable<Hotel[]> | null = null;
 
   constructor(private api: ApiClientService, private prices: PriceResolverService) {}
 
   /** Active hotels in dashboard order. */
   hotels(): Observable<Hotel[]> {
     if (!environment.useMockApi) {
-      return this.api.get<BackendHotel[]>('hotels').pipe(
-        map((items) => items.map(toHotel)),
-        tap((items) => (this.liveHotels = items)),
-      );
+      // The checkout page needs the directory and the city list, which is
+      // derived from the same directory: one request serves both.
+      if (!this.hotelsRequest$) {
+        let request$!: Observable<Hotel[]>;
+        request$ = this.api.get<BackendHotel[]>('hotels').pipe(
+          map((items) => items.map(toHotel)),
+          tap((items) => (this.liveHotels = items)),
+          // A failed load must not be remembered: the next caller may retry.
+          catchError((err: unknown) => {
+            if (this.hotelsRequest$ === request$) this.hotelsRequest$ = null;
+            return throwError(() => err);
+          }),
+          // `refCount: false` keeps the directory for the whole session.
+          shareReplay({ bufferSize: 1, refCount: false }),
+        );
+        this.hotelsRequest$ = request$;
+      }
+      return this.hotelsRequest$;
     }
     return of(
       [...HOTELS].filter((h) => h.isActive).sort((a, b) => a.sortOrder - b.sortOrder),

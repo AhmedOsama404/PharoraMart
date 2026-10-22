@@ -144,8 +144,14 @@ export class ProductDetailPageComponent implements OnDestroy {
   protected crumbs = computed<MenuItem[]>(() => [
     { label: this.i18n.t('product.breadcrumbsHome'), routerLink: '/', routerLinkActiveOptions: CRUMB_MATCH_EXACT },
     { label: this.i18n.t('product.breadcrumbsCatalog'), routerLink: '/products', routerLinkActiveOptions: CRUMB_MATCH_PREFIX },
-    { label: this.product()?.name ?? '' },
+    { label: this.localizedName() },
   ]);
+
+  /** The product name in the visitor's language (English fallback). */
+  protected localizedName = computed(() => {
+    const p = this.product();
+    return p ? pickLocaleText(p.names, this.i18n.currentLang()) || p.name : '';
+  });
 
   protected images = computed(() => this.product()?.images ?? []);
   protected effective = computed(() => (this.product() ? effectivePrice(this.product()!) : 0));
@@ -186,11 +192,15 @@ export class ProductDetailPageComponent implements OnDestroy {
     // Side effects that belong to a successful load only.
     effect(() => {
       const state = this.page();
+      // The document title follows the visitor's language, like every other
+      // title: the product name is the localized one, not the raw English.
+      const lang = this.i18n.currentLang();
       if (state.status === 'ready' && state.product) {
         this.autoRetried = false;
         const product = state.product;
         untracked(() => {
-          document.title = `${product.name} — Pharora`;
+          const name = pickLocaleText(product.names, lang) || product.name;
+          document.title = `${name} — Pharora`;
           this.recent.push(product.id);
         });
       }

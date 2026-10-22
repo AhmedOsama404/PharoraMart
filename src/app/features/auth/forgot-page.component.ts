@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal, type OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -23,6 +24,7 @@ export class ForgotPageComponent implements OnInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private scroll = inject(ScrollService);
+  private readonly destroyRef = inject(DestroyRef);
   protected busy = signal(false);
   protected sent = signal(false);
   protected form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
@@ -43,12 +45,15 @@ export class ForgotPageComponent implements OnInit {
     }
     this.busy.set(true);
     // Demo only: resolves without sending any email (see the template notice).
-    this.auth.requestPasswordReset(this.form.getRawValue().email).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this.sent.set(true);
-      },
-      error: () => this.busy.set(false),
-    });
+    this.auth
+      .requestPasswordReset(this.form.getRawValue().email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.busy.set(false);
+          this.sent.set(true);
+        },
+        error: () => this.busy.set(false),
+      });
   }
 }

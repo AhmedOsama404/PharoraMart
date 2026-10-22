@@ -1,6 +1,7 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Divider } from 'primeng/divider';
@@ -34,6 +35,7 @@ export class OrderDetailPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private connectivity = inject(ConnectivityService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected state = signal<'loading' | 'ok' | 'error' | 'not_found'>('loading');
   protected order = signal<Order | null>(null);
@@ -62,19 +64,22 @@ export class OrderDetailPageComponent implements OnInit {
     this.state.set('loading');
     this.error.set(null);
     const id = this.route.snapshot.paramMap.get('id') ?? '';
-    this.orders.getById(id).subscribe({
-      next: (o) => {
-        this.order.set(o);
-        this.state.set('ok');
-      },
-      error: (err: unknown) => {
-        const notFound =
-          (isApiFailure(err) && err.kind === 'not_found') ||
-          (err instanceof Error && err.message.includes('not-found'));
-        this.error.set(err);
-        this.state.set(notFound ? 'not_found' : 'error');
-      },
-    });
+    this.orders
+      .getById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (o) => {
+          this.order.set(o);
+          this.state.set('ok');
+        },
+        error: (err: unknown) => {
+          const notFound =
+            (isApiFailure(err) && err.kind === 'not_found') ||
+            (err instanceof Error && err.message.includes('not-found'));
+          this.error.set(err);
+          this.state.set(notFound ? 'not_found' : 'error');
+        },
+      });
   }
 
   protected dateOf(iso: string): string {

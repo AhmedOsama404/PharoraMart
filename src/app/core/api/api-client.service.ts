@@ -1,8 +1,9 @@
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, retry, shareReplay, tap, throwError, timeout, timer } from 'rxjs';
+import { Injectable, inject, untracked } from '@angular/core';
+import { Observable, catchError, finalize, map, retry, shareReplay, tap, throwError, timeout, timer } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ConnectivityService } from '../resilience/connectivity.service';
+import { I18nService } from '../services/i18n.service';
 import { ApiFailure, isApiFailure, newRequestId, normalizeError } from '../resilience/api-failure';
 import { SILENT_ERROR_TOAST } from './problem-details';
 
@@ -78,6 +79,7 @@ class CircuitBreaker {
 export class ApiClientService {
   private readonly http = inject(HttpClient);
   private readonly connectivity = inject(ConnectivityService);
+  private readonly i18n = inject(I18nService);
   private readonly breaker = new CircuitBreaker();
   private readonly baseUrl = environment.apiBaseUrl.replace(/\/$/, '');
 
@@ -115,18 +117,34 @@ export class ApiClientService {
     const query = httpParams.toString();
     // `silent` is part of the key: a silent caller must not inherit (or leak)
     // the shared error-toast context of a loud caller on the same URL.
-    const key = `${url}${query ? `?${query}` : ''}${optionsIn?.silent ? '|silent' : ''}`;
+    // The language is part of the key too: responses are localized, so two
+    // callers in different languages must never share one response body.
+    // The read is untracked: a request must not become a dependency of the
+    // computed/effect that happens to start it.
+    const language = untracked(() => this.i18n.currentLang());
+    const key = `${url}${query ? `?${query}` : ''}${optionsIn?.silent ? '|silent' : ''}|${language}`;
 
     const pending = this.inFlight.get(key);
     if (pending) return pending as Observable<T>;
 
-    const request$ = this.execute<T>(
+    let request$!: Observable<T>;
+    request$ = this.execute<T>(
       url,
       () => this.http.get<T>(url, { params: httpParams, ...options(optionsIn?.silent) }),
       optionsIn,
     ).pipe(
-      tap({ next: () => this.inFlight.delete(key), error: () => this.inFlight.delete(key) }),
-      shareReplay({ bufferSize: 1, refCount: false }),
+      // `finalize` (not `tap`) so the entry is released when the request
+      // completes, fails — or is CANCELLED because its last subscriber left.
+      // The identity check keeps a late teardown from deleting a newer entry
+      // that happens to use the same key.
+      finalize(() => {
+        if (this.inFlight.get(key) === request$) this.inFlight.delete(key);
+      }),
+      // `refCount: true` ties the request to its subscribers: when the last
+      // one leaves, the browser aborts the XHR. An abandoned request (the
+      // visitor left the page) then costs nothing and can never trip the
+      // circuit breaker on its way out.
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
     this.inFlight.set(key, request$);
     return request$;

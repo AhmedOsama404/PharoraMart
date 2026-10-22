@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { I18nService } from '../../core/services/i18n.service';
@@ -28,6 +28,7 @@ export class FavoritesPageComponent {
   private notify = inject(NotificationService);
   private router = inject(Router);
   private connectivity = inject(ConnectivityService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private catalog = signal<Product[]>([]);
   protected state = signal<'loading' | 'ok' | 'error'>('loading');
@@ -44,12 +45,12 @@ export class FavoritesPageComponent {
   private autoRetried = false;
 
   constructor() {
-    effect(() => {
+    effect((onCleanup) => {
       const ids = this.favorites.ids();
-      this.load(ids);
+      this.load(ids, onCleanup);
     });
     this.connectivity.recovered$
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (this.state() === 'error' && !this.autoRetried) {
           this.autoRetried = true;
@@ -64,7 +65,7 @@ export class FavoritesPageComponent {
     this.load(this.favorites.ids());
   }
 
-  private load(ids: readonly string[]): void {
+  private load(ids: readonly string[], onCleanup?: (fn: () => void) => void): void {
     this.state.set('loading');
     this.error.set(null);
     if (!ids.length) {
@@ -72,18 +73,25 @@ export class FavoritesPageComponent {
       this.state.set('ok');
       return;
     }
-    this.products.getByIdsMany(ids).subscribe({
-      next: (items) => {
-        this.catalog.set(items);
-        this.autoRetried = false;
-        this.state.set('ok');
-      },
-      error: (err: unknown) => {
-        this.catalog.set([]);
-        this.error.set(err);
-        this.state.set('error');
-      },
-    });
+    const subscription = this.products
+      .getByIdsMany(ids)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          this.catalog.set(items);
+          this.autoRetried = false;
+          this.state.set('ok');
+        },
+        error: (err: unknown) => {
+          this.catalog.set([]);
+          this.error.set(err);
+          this.state.set('error');
+        },
+      });
+    // The lookup belongs to the effect run that started it: when the
+    // selection changes, the request is cancelled instead of racing the new
+    // one (and it is dropped when the page is left).
+    onCleanup?.(() => subscription.unsubscribe());
   }
 
   // Saved ids resolved against the catalog (a favorite whose product vanished

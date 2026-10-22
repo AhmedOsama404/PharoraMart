@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal, type OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -32,6 +33,7 @@ export class LoginPageComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private scroll = inject(ScrollService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected busy = signal(false);
   protected serverError = signal('');
@@ -73,20 +75,23 @@ export class LoginPageComponent implements OnInit {
     this.busy.set(true);
     this.serverError.set('');
     const v = this.form.getRawValue();
-    this.auth.login({ email: v.email, password: v.password }).subscribe({
-      next: (res) => {
-        this.busy.set(false);
-        this.notify.success('auth.loginSuccess', { name: res.user.name });
-        this.completeSignIn();
-      },
-      error: (err: unknown) => {
-        this.busy.set(false);
-        // One localized sentence from the backend's business code
-        // (auth_invalid_credentials / too many attempts / offline) — shown
-        // inline, so no extra toast is fired.
-        this.serverError.set(this.apiError.message(err));
-      },
-    });
+    this.auth
+      .login({ email: v.email, password: v.password })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.busy.set(false);
+          this.notify.success('auth.loginSuccess', { name: res.user.name });
+          this.completeSignIn();
+        },
+        error: (err: unknown) => {
+          this.busy.set(false);
+          // One localized sentence from the backend's business code
+          // (auth_invalid_credentials / too many attempts / offline) — shown
+          // inline, so no extra toast is fired.
+          this.serverError.set(this.apiError.message(err));
+        },
+      });
   }
 
   // Return to the stored destination (validated internal URL, never external)

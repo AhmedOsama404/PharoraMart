@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController, TestRequest } from '@angular/common/http/testing';
@@ -6,6 +7,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { MessageService } from 'primeng/api';
 import { CatalogPageComponent } from './catalog-page.component';
 import { CurrencyService } from '../../core/services/currency.service';
+import { environment } from '../../../environments/environment';
 
 /** Reference snapshot shape the storefront validates against (EUR base). */
 const RATES = {
@@ -25,11 +27,16 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
   let harness: RouterTestingHarness;
   let fixture: ComponentFixture<CatalogPageComponent>;
   let backend: HttpTestingController;
-  let currency: CurrencyService;
   let router: Router;
+  let originalUseMockApi: boolean;
 
   beforeEach(async () => {
     localStorage.clear();
+    // This suite asserts the LIVE contract (the visitor's price bound travels
+    // to the server converted to USD), so it must not run in mock mode — the
+    // same opt-in the other live-mode suites use.
+    originalUseMockApi = environment.useMockApi;
+    environment.useMockApi = false;
     TestBed.configureTestingModule({
       providers: [
         MessageService,
@@ -39,19 +46,20 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
       ],
     });
     backend = TestBed.inject(HttpTestingController);
-    currency = TestBed.inject(CurrencyService);
     router = TestBed.inject(Router);
     harness = await RouterTestingHarness.create();
   });
 
-  afterEach(() => backend.verify());
+  afterEach(() => {
+    environment.useMockApi = originalUseMockApi;
+    // The suite stores a currency; it must not leak into the next spec file
+    // (a persisted currency changes what other suites resolve).
+    localStorage.removeItem('novamart.currency');
+    backend.verify();
+  });
 
   function flushRates(): void {
-    try {
-      backend.expectOne((r) => r.url.endsWith('/exchange-rates')).flush(RATES);
-    } catch {
-      // Rates may already be cached from a previous test; that's fine.
-    }
+    backend.expectOne((r) => r.url.endsWith('/exchange-rates')).flush(RATES);
   }
 
   /** Consumes the pending catalogue request and returns its maxPrice bound (null = unbounded). */
@@ -96,8 +104,17 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
       (el as HTMLElement).textContent?.trim() ?? '',
     );
 
+  // The harness fixture is the ROOT component (the one with the router
+  // outlet), so the page under test is reached through its own debug element.
+  const page = (): CatalogPageComponent =>
+    harness.fixture.debugElement.query(By.directive(CatalogPageComponent)).componentInstance as CatalogPageComponent;
+
+  // The currency service reads the persisted currency when it is FIRST
+  // created, so it must not be instantiated before the test stores one.
+  const currencyService = (): CurrencyService => TestBed.inject(CurrencyService);
+
   const appliedQuery = (): Query =>
-    (fixture.componentInstance as unknown as { currentQuery(): Query }).currentQuery();
+    (page() as unknown as { currentQuery(): Query }).currentQuery();
 
   it('interprets typed numbers in the selected currency end to end', async () => {
     localStorage.setItem('novamart.currency', 'EGP');
@@ -114,7 +131,7 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
     expect(maxChip ?? '').toContain('200');
 
     // Typing 2 means 2 EGP — the applied USD bound drops accordingly.
-    (fixture.componentInstance as unknown as { onPriceInput(b: 'max', v: number): void }).onPriceInput('max', 2);
+    (page() as unknown as { onPriceInput(b: 'max', v: number): void }).onPriceInput('max', 2);
     await settle();
 
     const bound = consumeProductMaxPrice();
@@ -128,7 +145,7 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
     localStorage.setItem('novamart.currency', 'EGP');
     await openCatalog('?max=200');
 
-    (fixture.componentInstance as unknown as { removeChip(key: string): void }).removeChip('max');
+    (page() as unknown as { removeChip(key: string): void }).removeChip('max');
     await settle();
 
     expect(consumeProductMaxPrice()).toBeNull();
@@ -139,13 +156,14 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
 
   it('treats a beyond-ceiling value as no upper bound', async () => {
     localStorage.setItem('novamart.currency', 'EGP');
-    await openCatalog();
+    await openCatalog('?max=200');
 
-    (fixture.componentInstance as unknown as { onPriceInput(b: 'max', v: number): void }).onPriceInput('max', 999999);
+    // Nothing left to filter at the catalog ceiling: the bound disappears, so
+    // the server is asked for the whole catalogue again, and the echoed field
+    // shows the ceiling instead of the typed number.
+    (page() as unknown as { onPriceInput(b: 'max', v: number): void }).onPriceInput('max', 999999);
     await settle();
 
-    // Nothing left to filter at the catalog ceiling: the bound disappears and
-    // the echoed field shows the ceiling instead of the typed number.
     expect(consumeProductMaxPrice()).toBeNull();
     expect(chipTexts().some((t) => t.startsWith('≤'))).toBeFalse();
     expect(appliedQuery().maxPrice).toBeUndefined();
@@ -157,12 +175,14 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
 
     const before = appliedQuery().maxPrice ?? 0;
 
-    currency.setCurrency('USD');
+    currencyService().setCurrency('USD');
     await settle();
 
     // Same "≤ 200 EGP-worth" meaning, re-expressed in the new currency.
     const after = appliedQuery().maxPrice ?? 0;
     expect(after).toBeCloseTo(before, 2);
     expect(chipTexts().find((t) => t.startsWith('≤'))).toContain('3.7');
+    // The re-expressed bound is applied, so the list is loaded with it.
+    expect(consumeProductMaxPrice()).toBeCloseTo(before, 2);
   });
 });

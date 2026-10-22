@@ -9,7 +9,7 @@
       <i class="pi pi-bars"></i>
     </button>
     <a routerLink="/" class="logo" [attr.aria-label]="brandName() || null">
-      @if (brandLogoUrl(); as logoUrl) { <img appSafeImg="logo" [src]="logoUrl" [alt]="brandName()" /> } @else { <app-brand-logo /> }
+      @if (brandLogoUrl(); as logoUrl) { <img appSafeImg="logo" [src]="logoUrl" [alt]="brandName()" loading="eager" fetchpriority="high" decoding="async" /> } @else { <app-brand-logo /> }
       <span class="logo-text">{{ brandName() }}</span>
     </a>
     <nav class="links" [attr.aria-label]="i18n.t('aria.primary')">

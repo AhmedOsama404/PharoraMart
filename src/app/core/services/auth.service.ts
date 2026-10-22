@@ -165,21 +165,6 @@ export class AuthService {
     }
   }
 
-  /** Live-mode profile refresh (GET /auth/me); mock mode returns the session. */
-  me(): Observable<User> {
-    if (!environment.useMockApi) {
-      return this.api.get<User>('auth/me');
-    }
-    const user = this.session()?.user;
-    return user
-      ? of(user)
-      : throwError(() => ({
-          status: 401,
-          code: 'unauthorized',
-          detail: 'No mock session to read.',
-        }));
-  }
-
   /** Demo password reset — never sends email; resolves after a delay. */
   requestPasswordReset(_email: string): Observable<{ ok: true }> {
     return of({ ok: true as const }).pipe(delay(700));

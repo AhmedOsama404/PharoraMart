@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Observable, delay, forkJoin, of, throwError, map, tap } from 'rxjs';
+import { Observable, catchError, delay, forkJoin, of, throwError, map, shareReplay, tap } from 'rxjs';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../../data-access/mock-data';
 import { queryProducts } from '../../data-access/catalog.utils';
 import type { CatalogQuery, Category, Product } from '../../models/product.model';
@@ -27,6 +27,8 @@ export class ProductService {
   private liveCategories = signal<Category[]>([]);
   /** Guards preloadCategories() so a page load issues at most one request. */
   private categoriesLoaded = false;
+  /** The one live taxonomy request of this session (see categories()). */
+  private categoriesRequest$: Observable<Category[]> | null = null;
   /** When true, catalog requests fail — used to demo the error state. */
   forceError = signal(false);
 
@@ -118,13 +120,32 @@ export class ProductService {
    */
   categories(): Observable<Category[]> {
     if (!environment.useMockApi) {
-      return this.api.get<BackendCategory[]>('categories').pipe(
-        map((items) => items.map(toCategory)),
-        tap((items) => {
-          this.liveCategories.set(items);
-          this.categoriesLoaded = true;
-        }),
-      );
+      // The taxonomy is fetched at most once per session: the home page, the
+      // catalog filter and the product breadcrumb all need it, and it only
+      // changes when the dashboard publishes a new one.
+      if (!this.categoriesRequest$) {
+        let request$!: Observable<Category[]>;
+        request$ = this.api.get<BackendCategory[]>('categories').pipe(
+          map((items) => items.map(toCategory)),
+          tap((items) => {
+            this.liveCategories.set(items);
+            this.categoriesLoaded = true;
+          }),
+          // A failed load must not be remembered: the next caller may retry.
+          catchError((err: unknown) => {
+            if (this.categoriesRequest$ === request$) {
+              this.categoriesRequest$ = null;
+              this.categoriesLoaded = false;
+            }
+            return throwError(() => err);
+          }),
+          // `refCount: false` keeps the answer for the whole session, so the
+          // three callers share ONE request instead of one each.
+          shareReplay({ bufferSize: 1, refCount: false }),
+        );
+        this.categoriesRequest$ = request$;
+      }
+      return this.categoriesRequest$;
     }
     const active = this.categoriesStore()
       .filter((c) => c.isActive)

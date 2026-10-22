@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
@@ -29,6 +29,7 @@ export class OrdersPageComponent implements OnInit {
   private orderService = inject(OrderService);
   private router = inject(Router);
   private connectivity = inject(ConnectivityService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected state = signal<'loading' | 'ok' | 'error'>('loading');
   protected orders = signal<Order[]>([]);
@@ -61,17 +62,20 @@ export class OrdersPageComponent implements OnInit {
   protected load(): void {
     this.state.set('loading');
     this.error.set(null);
-    this.orderService.list().subscribe({
-      next: (items) => {
-        this.orders.set(items);
-        this.autoRetried = false;
-        this.state.set('ok');
-      },
-      error: (err: unknown) => {
-        this.error.set(err);
-        this.state.set('error');
-      },
-    });
+    this.orderService
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          this.orders.set(items);
+          this.autoRetried = false;
+          this.state.set('ok');
+        },
+        error: (err: unknown) => {
+          this.error.set(err);
+          this.state.set('error');
+        },
+      });
   }
 
   /** Explicit Retry: reset the breaker and refetch. */
