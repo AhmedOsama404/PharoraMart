@@ -7,6 +7,7 @@ import { I18nService } from '../core/services/i18n.service';
 import { CurrencyService } from '../core/services/currency.service';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
 import { SiteContentService } from '../core/services/site-content.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-footer',
@@ -24,7 +25,11 @@ export class FooterComponent {
 
   // Employee-editable footer copy (empty until loaded / when cleared).
   protected footer = this.siteContent.footer;
-  protected brandName = computed(() => this.siteContent.text(this.siteContent.footer()?.brandName, this.i18n.currentLang()));
+  // The brand name comes from the CMS; the app name is the fallback so the
+  // footer never shows an empty brand.
+  protected brandName = computed(
+    () => this.siteContent.text(this.siteContent.footer()?.brandName, this.i18n.currentLang()) || environment.appName,
+  );
   // Vector mark is the fallback when the edited logo is missing/unreachable.
   protected logoFailed = signal(false);
   protected logoUrl = computed(() =>

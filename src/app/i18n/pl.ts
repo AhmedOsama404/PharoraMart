@@ -9,6 +9,7 @@ export const pl: TranslationDict = {
     carouselControls: "Sterowanie karuzelą produktów",
     previousProducts: "Poprzednie produkty",
     nextProducts: "Następne produkty",
+    skipToContent: 'Przejdź do treści',
   },
   app: { name: 'Pharora', tagline: 'Wszystko, co kochasz, z szybką dostawą.' },
   nav: {
@@ -65,8 +66,8 @@ export const pl: TranslationDict = {
     errorSubtitle: 'Spróbuj ponownie za chwilę.',
     retry: 'Ponów',
     activeFilters: 'Aktywne filtry',
-    minPrice: 'Min',
-    maxPrice: 'Maks',
+    minPriceLabel: 'Cena minimalna',
+    maxPriceLabel: 'Cena maksymalna',
   },
   product: {
     addToCart: 'Dodaj do koszyka',
@@ -90,6 +91,11 @@ export const pl: TranslationDict = {
     breadcrumbsCatalog: 'Sklep',
     maxStock: 'Dostępne tylko {count}',
     selectVariant: 'Wybierz opcję',
+    qtyDecrease: 'Zmniejsz ilość',
+    qtyIncrease: 'Zwiększ ilość',
+    noAttributes: 'Ten produkt nie ma specyfikacji.',
+    imageLabel: 'Zdjęcie {n}',
+    imageGallery: 'Zdjęcia produktu',
   },
   cart: {
     maxPerItem: "Tylko {count} sztuk na produkt, proszę.",
@@ -119,6 +125,7 @@ export const pl: TranslationDict = {
     qtyUpdated: 'Zaktualizowano ilość',
     freeShippingHint: 'Dodaj jeszcze za {amount}, aby mieć darmową dostawę',
     freeShippingDone: 'Masz darmową dostawę',
+    totalBeforeDelivery: 'Razem przed dostawą',
   },
   favorites: {
     title: 'Ulubione',
@@ -160,6 +167,7 @@ export const pl: TranslationDict = {
     memberSince: 'Użytkownik',
     demoNotice: 'Logowanie demo: dane tylko lokalnie, nie są prawdziwe ani bezpieczne.',
     continueAsGuest: 'Kontynuuj jako gość',
+    resetFailed: 'Nie udało się wysłać linku resetowania. Spróbuj ponownie.',
   },
   checkout: {
     contactMethodHint: "Powiedz nam, jak chcesz otrzymywać informacje o tym zamówieniu.",
@@ -211,6 +219,9 @@ export const pl: TranslationDict = {
     roomPlaceholder: "Numer pokoju lub mieszkania",
     paymentSubtitle: "Jak zapłacisz za to zamówienie.",
     secureNote: "Szczegóły zamówienia są szyfrowane i nigdy nie są udostępniane osobom trzecim.",
+    calculatingFee: 'Obliczanie…',
+    directoryFailed: 'Nie udało się wczytać listy hoteli. Spróbuj ponownie.',
+    removeCoupon: 'Usuń kod',
   },
   confirmation: {
     title: 'Dziękujemy! Zamówienie potwierdzone',
@@ -256,6 +267,7 @@ export const pl: TranslationDict = {
     detailTitle: 'Szczegóły zamówienia',
     backToOrders: 'Wróć do zamówień',
     notFound: 'Nie znaleziono zamówienia.',
+    itemCount: '{count} produktów',
   },
   notifications: {
     addedToCart: 'Dodano do koszyka',
@@ -278,6 +290,7 @@ export const pl: TranslationDict = {
     currency: 'Waluta',
     all: 'Wszystkie',
     optional: 'opcjonalnie',
+    viewAll: 'Zobacz wszystko',
   },
   phone: {
     country: 'Kod kraju',
@@ -314,6 +327,7 @@ export const pl: TranslationDict = {
     noResultsSubtitle: 'Nic nie pasuje. Spróbuj innych słów.',
     suggestions: 'Popularne wyszukiwania',
     clear: 'Wyczyść wyszukiwanie',
+    suggestionsLabel: 'Sugestie wyszukiwania',
   },
   notFound: {
     title: 'Nie znaleziono strony',

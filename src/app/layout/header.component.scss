@@ -1,4 +1,6 @@
-.topbar { position: sticky; top: 0; z-index: 50; background: var(--surface-card); border-bottom: 1px solid var(--surface-border); }
+/* The connection banner is sticky too and publishes its height as
+   --rs-banner-h, so the header parks right below it instead of covering it. */
+.topbar { position: sticky; top: var(--rs-banner-h, 0px); z-index: 50; background: var(--surface-card); border-bottom: 1px solid var(--surface-border); }
 .announce { background: var(--primary); color: #fff; text-align: center; font-size: 0.78rem; padding: 0.32rem 1rem; font-weight: 600; }
 .bar { display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 1rem; }
 .logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 850; font-size: 1.25rem; color: var(--text-primary); }
@@ -8,14 +10,14 @@
 .links a.active, .links a:hover { color: var(--primary); }
 .search { flex: 1; position: relative; max-width: 34rem; margin-inline-start: auto; }
 .search input { width: 100%; padding-inline-end: 2rem; }
-.clear-search { position: absolute; inset-inline-end: 0.4rem; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; color: var(--text-secondary); }
+.clear-search { position: absolute; inset-inline-end: 0.4rem; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: var(--text-secondary); }
 .suggest { position: absolute; top: calc(100% + 6px); inset-inline: 0; background: var(--surface-card); border: 1px solid var(--surface-border); border-radius: 0.8rem; box-shadow: var(--shadow-md); overflow: hidden; z-index: 60; }
 .suggest a { display: flex; gap: 0.6rem; align-items: center; padding: 0.5rem 0.7rem; text-decoration: none; color: var(--text-primary); }
 .suggest a:hover { background: var(--surface-ground); }
 .suggest img { width: 2.4rem; height: 2.4rem; object-fit: cover; border-radius: 0.5rem; }
 .no-suggest { display: block; padding: 0.7rem; color: var(--text-secondary); font-size: 0.85rem; }
 .actions { display: flex; align-items: center; gap: 0.5rem; }
-.icon-btn { position: relative; display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 999px; border: 1px solid var(--surface-border); background: var(--surface-card); color: var(--text-primary); cursor: pointer; text-decoration: none; }
+.icon-btn { position: relative; display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 999px; border: 1px solid var(--surface-border); background: var(--surface-card); color: var(--text-primary); cursor: pointer; text-decoration: none; }
 .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
 .icon-btn p-badge { position: absolute; top: -6px; inset-inline-end: -6px; }
 .login-link { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; color: var(--primary); text-decoration: none; padding: 0.5rem 0.8rem; border-radius: 999px; border: 1px solid var(--surface-border); }

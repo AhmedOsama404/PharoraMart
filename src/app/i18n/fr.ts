@@ -9,6 +9,7 @@ export const fr: TranslationDict = {
     carouselControls: "Commandes du carrousel de produits",
     previousProducts: "Produits précédents",
     nextProducts: "Produits suivants",
+    skipToContent: 'Aller au contenu',
   },
   app: { name: 'Pharora', tagline: 'Tout ce que vous aimez, livré rapidement.' },
   nav: {
@@ -65,8 +66,8 @@ export const fr: TranslationDict = {
     errorSubtitle: 'Veuillez réessayer dans un moment.',
     retry: 'Réessayer',
     activeFilters: 'Filtres actifs',
-    minPrice: 'Min',
-    maxPrice: 'Max',
+    minPriceLabel: 'Prix minimum',
+    maxPriceLabel: 'Prix maximum',
   },
   product: {
     addToCart: 'Ajouter au panier',
@@ -90,6 +91,11 @@ export const fr: TranslationDict = {
     breadcrumbsCatalog: 'Boutique',
     maxStock: 'Seulement {count} en stock',
     selectVariant: 'Choisir une option',
+    qtyDecrease: 'Diminuer la quantité',
+    qtyIncrease: 'Augmenter la quantité',
+    noAttributes: 'Aucune caractéristique pour ce produit.',
+    imageLabel: 'Image {n}',
+    imageGallery: 'Images du produit',
   },
   cart: {
     maxPerItem: "Seulement {count} par article, merci.",
@@ -119,6 +125,7 @@ export const fr: TranslationDict = {
     qtyUpdated: 'Quantité mise à jour',
     freeShippingHint: 'Ajoutez pour {amount} pour la livraison offerte',
     freeShippingDone: 'Livraison offerte débloquée',
+    totalBeforeDelivery: 'Total avant livraison',
   },
   favorites: {
     title: 'Favoris',
@@ -160,6 +167,7 @@ export const fr: TranslationDict = {
     memberSince: 'Membre',
     demoNotice: 'Connexion démo : données stockées localement uniquement, ni réelles ni sécurisées.',
     continueAsGuest: 'Continuer en invité',
+    resetFailed: 'Le lien de réinitialisation n’a pas pu être envoyé. Veuillez réessayer.',
   },
   checkout: {
     contactMethodHint: "Dites-nous comment vous souhaitez être informé de cette commande.",
@@ -211,6 +219,9 @@ export const fr: TranslationDict = {
     roomPlaceholder: "Numéro de chambre ou d'appartement",
     paymentSubtitle: "Comment vous paierez cette commande.",
     secureNote: "Les détails de votre commande sont chiffrés et ne sont jamais partagés avec des tiers.",
+    calculatingFee: 'Calcul en cours…',
+    directoryFailed: 'La liste des hôtels n’a pas pu être chargée. Veuillez réessayer.',
+    removeCoupon: 'Retirer le code',
   },
   confirmation: {
     title: 'Merci ! Commande confirmée',
@@ -256,6 +267,7 @@ export const fr: TranslationDict = {
     detailTitle: 'Détail de la commande',
     backToOrders: 'Retour aux commandes',
     notFound: 'Commande introuvable.',
+    itemCount: '{count} articles',
   },
   notifications: {
     addedToCart: 'Ajouté au panier',
@@ -278,6 +290,7 @@ export const fr: TranslationDict = {
     currency: 'Devise',
     all: 'Tout',
     optional: 'facultatif',
+    viewAll: 'Tout voir',
   },
   phone: {
     country: 'Indicatif pays',
@@ -314,6 +327,7 @@ export const fr: TranslationDict = {
     noResultsSubtitle: 'Rien ne correspond. Essayez d’autres mots-clés.',
     suggestions: 'Recherches populaires',
     clear: 'Effacer la recherche',
+    suggestionsLabel: 'Suggestions de recherche',
   },
   notFound: {
     title: 'Page introuvable',

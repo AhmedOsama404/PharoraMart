@@ -9,6 +9,7 @@ export const ar: TranslationDict = {
     carouselControls: "أدوات التنقل بين المنتجات",
     previousProducts: "المنتجات السابقة",
     nextProducts: "المنتجات التالية",
+    skipToContent: 'تخطَّ إلى المحتوى',
   },
   app: { name: 'Pharora', tagline: 'كل ما تحب، بتوصيل سريع.' },
   nav: {
@@ -65,8 +66,8 @@ export const ar: TranslationDict = {
     errorSubtitle: 'حاول مرة أخرى بعد قليل.',
     retry: 'إعادة المحاولة',
     activeFilters: 'المرشحات النشطة',
-    minPrice: 'الأدنى',
-    maxPrice: 'الأعلى',
+    minPriceLabel: 'الحد الأدنى للسعر',
+    maxPriceLabel: 'الحد الأقصى للسعر',
   },
   product: {
     addToCart: 'أضف إلى السلة',
@@ -90,6 +91,11 @@ export const ar: TranslationDict = {
     breadcrumbsCatalog: 'تسوّق',
     maxStock: 'المتاح {count} فقط',
     selectVariant: 'اختر الخيار',
+    qtyDecrease: 'إنقاص الكمية',
+    qtyIncrease: 'زيادة الكمية',
+    noAttributes: 'لا توجد مواصفات لهذا المنتج.',
+    imageLabel: 'صورة {n}',
+    imageGallery: 'صور المنتج',
   },
   cart: {
     maxPerItem: "{count} فقط لكل منتج من فضلك.",
@@ -119,6 +125,7 @@ export const ar: TranslationDict = {
     qtyUpdated: 'تم تحديث الكمية',
     freeShippingHint: 'أضف بقيمة {amount} للحصول على شحن مجاني',
     freeShippingDone: 'حصلت على شحن مجاني',
+    totalBeforeDelivery: 'الإجمالي قبل رسوم التوصيل',
   },
   favorites: {
     title: 'المفضلة',
@@ -160,6 +167,7 @@ export const ar: TranslationDict = {
     memberSince: 'عضو',
     demoNotice: 'مصادقة تجريبية: البيانات محفوظة محليًا فقط وليست حقيقية أو آمنة.',
     continueAsGuest: 'المتابعة كضيف',
+    resetFailed: 'تعذّر إرسال رابط إعادة التعيين. يرجى المحاولة مرة أخرى.',
   },
   checkout: {
     contactMethodHint: "أخبرنا كيف تريد أن نُبلغك بهذا الطلب.",
@@ -211,6 +219,9 @@ export const ar: TranslationDict = {
     roomPlaceholder: "رقم الغرفة أو الشقة",
     paymentSubtitle: "كيف ستدفع لهذا الطلب.",
     secureNote: "تفاصيل طلبك مشفرة ولا تُشارك مع أي طرف ثالث.",
+    calculatingFee: 'جارٍ الحساب…',
+    directoryFailed: 'تعذّر تحميل قائمة الفنادق. يرجى المحاولة مرة أخرى.',
+    removeCoupon: 'إزالة الرمز',
   },
   confirmation: {
     title: 'شكرًا لك! تم تأكيد الطلب',
@@ -256,6 +267,7 @@ export const ar: TranslationDict = {
     detailTitle: 'تفاصيل الطلب',
     backToOrders: 'عودة إلى الطلبات',
     notFound: 'الطلب غير موجود.',
+    itemCount: '{count} عناصر',
   },
   notifications: {
     addedToCart: 'تمت الإضافة إلى السلة',
@@ -278,6 +290,7 @@ export const ar: TranslationDict = {
     currency: 'العملة',
     all: 'الكل',
     optional: 'اختياري',
+    viewAll: 'عرض الكل',
   },
   phone: {
     country: 'رمز الدولة',
@@ -314,6 +327,7 @@ export const ar: TranslationDict = {
     noResultsSubtitle: 'لا شيء يطابق بحثك. جرّب كلمات مختلفة.',
     suggestions: 'عمليات بحث رائجة',
     clear: 'مسح البحث',
+    suggestionsLabel: 'اقتراحات البحث',
   },
   notFound: {
     title: 'الصفحة غير موجودة',

@@ -17,6 +17,7 @@ import { environment } from '../../../environments/environment';
 import { PriceResolverService } from '../../core/services/price-resolver.service';
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { DataBoundaryComponent, type BoundaryState } from '../../shared/resilience/data-boundary.component';
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
@@ -25,7 +26,7 @@ import { ConnectivityService } from '../../core/resilience/connectivity.service'
   selector: 'app-cart-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Message, Skeleton, QtySelectorComponent, EmptyStateComponent, MoneyPipe, DataBoundaryComponent],
+  imports: [SafeImageDirective, RouterLink, Button, Card, Divider, Message, Skeleton, QtySelectorComponent, EmptyStateComponent, MoneyPipe, LocalizedPipe, DataBoundaryComponent],
   templateUrl: './cart-page.component.html',
   styleUrl: './cart-page.component.scss',
 })

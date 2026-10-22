@@ -9,6 +9,7 @@ export const it: TranslationDict = {
     carouselControls: "Controlli del carosello prodotti",
     previousProducts: "Prodotti precedenti",
     nextProducts: "Prodotti successivi",
+    skipToContent: 'Vai al contenuto',
   },
   app: { name: 'Pharora', tagline: 'Tutto ciò che ami, con consegna veloce.' },
   nav: {
@@ -65,8 +66,8 @@ export const it: TranslationDict = {
     errorSubtitle: 'Riprova tra un momento.',
     retry: 'Riprova',
     activeFilters: 'Filtri attivi',
-    minPrice: 'Min',
-    maxPrice: 'Max',
+    minPriceLabel: 'Prezzo minimo',
+    maxPriceLabel: 'Prezzo massimo',
   },
   product: {
     addToCart: 'Aggiungi al carrello',
@@ -90,6 +91,11 @@ export const it: TranslationDict = {
     breadcrumbsCatalog: 'Negozio',
     maxStock: 'Solo {count} disponibili',
     selectVariant: 'Seleziona opzione',
+    qtyDecrease: 'Riduci la quantità',
+    qtyIncrease: 'Aumenta la quantità',
+    noAttributes: 'Nessuna specifica per questo prodotto.',
+    imageLabel: 'Immagine {n}',
+    imageGallery: 'Immagini del prodotto',
   },
   cart: {
     maxPerItem: "Solo {count} per articolo, per favore.",
@@ -119,6 +125,7 @@ export const it: TranslationDict = {
     qtyUpdated: 'Quantità aggiornata',
     freeShippingHint: 'Aggiungi ancora {amount} per la spedizione gratuita',
     freeShippingDone: 'Spedizione gratuita sbloccata',
+    totalBeforeDelivery: 'Totale prima della consegna',
   },
   favorites: {
     title: 'Preferiti',
@@ -160,6 +167,7 @@ export const it: TranslationDict = {
     memberSince: 'Membro',
     demoNotice: 'Accesso demo: i dati sono solo locali, non reali né sicuri.',
     continueAsGuest: 'Continua come ospite',
+    resetFailed: 'Non è stato possibile inviare il link di reimpostazione. Riprova.',
   },
   checkout: {
     contactMethodHint: "Dicci come vuoi ricevere le informazioni su questo ordine.",
@@ -211,6 +219,9 @@ export const it: TranslationDict = {
     roomPlaceholder: "Numero di stanza o appartamento",
     paymentSubtitle: "Come pagherai questo ordine.",
     secureNote: "I dettagli del tuo ordine sono crittografati e non vengono mai condivisi con terzi.",
+    calculatingFee: 'Calcolo in corso…',
+    directoryFailed: 'Non è stato possibile caricare l’elenco degli hotel. Riprova.',
+    removeCoupon: 'Rimuovi codice',
   },
   confirmation: {
     title: 'Grazie! Ordine confermato',
@@ -256,6 +267,7 @@ export const it: TranslationDict = {
     detailTitle: 'Dettagli ordine',
     backToOrders: 'Torna agli ordini',
     notFound: 'Ordine non trovato.',
+    itemCount: '{count} articoli',
   },
   notifications: {
     addedToCart: 'Aggiunto al carrello',
@@ -278,6 +290,7 @@ export const it: TranslationDict = {
     currency: 'Valuta',
     all: 'Tutti',
     optional: 'facoltativo',
+    viewAll: 'Vedi tutto',
   },
   phone: {
     country: 'Prefisso internazionale',
@@ -314,6 +327,7 @@ export const it: TranslationDict = {
     noResultsSubtitle: 'Nessuna corrispondenza. Prova altre parole.',
     suggestions: 'Ricerche popolari',
     clear: 'Cancella ricerca',
+    suggestionsLabel: 'Suggerimenti di ricerca',
   },
   notFound: {
     title: 'Pagina non trovata',

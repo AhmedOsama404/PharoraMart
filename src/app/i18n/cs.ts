@@ -9,6 +9,7 @@ export const cs: TranslationDict = {
     carouselControls: "Ovládání karuselu produktů",
     previousProducts: "Předchozí produkty",
     nextProducts: "Další produkty",
+    skipToContent: 'Přejít na obsah',
   },
   app: { name: 'Pharora', tagline: 'Vše, co máte rádi, s rychlým doručením.' },
   nav: {
@@ -65,8 +66,8 @@ export const cs: TranslationDict = {
     errorSubtitle: 'Zkuste to prosím za chvíli znovu.',
     retry: 'Opakovat',
     activeFilters: 'Aktivní filtry',
-    minPrice: 'Min',
-    maxPrice: 'Max',
+    minPriceLabel: 'Minimální cena',
+    maxPriceLabel: 'Maximální cena',
   },
   product: {
     addToCart: 'Přidat do košíku',
@@ -90,6 +91,11 @@ export const cs: TranslationDict = {
     breadcrumbsCatalog: 'Obchod',
     maxStock: 'K dispozici pouze {count} ks',
     selectVariant: 'Vyberte variantu',
+    qtyDecrease: 'Snížit množství',
+    qtyIncrease: 'Zvýšit množství',
+    noAttributes: 'Tento produkt nemá žádné specifikace.',
+    imageLabel: 'Obrázek {n}',
+    imageGallery: 'Obrázky produktu',
   },
   cart: {
     maxPerItem: "Pouze {count} za položku, prosím.",
@@ -119,6 +125,7 @@ export const cs: TranslationDict = {
     qtyUpdated: 'Množství aktualizováno',
     freeShippingHint: 'Přidejte ještě za {amount} a máte dopravu zdarma',
     freeShippingDone: 'Máte dopravu zdarma',
+    totalBeforeDelivery: 'Celkem před dopravou',
   },
   favorites: {
     title: 'Oblíbené',
@@ -160,6 +167,7 @@ export const cs: TranslationDict = {
     memberSince: 'Členem',
     demoNotice: 'Ukázkové přihlášení: data jsou uložena pouze lokálně, nejsou skutečná ani bezpečná.',
     continueAsGuest: 'Pokračovat jako host',
+    resetFailed: 'Odkaz pro obnovení se nepodařilo odeslat. Zkuste to prosím znovu.',
   },
   checkout: {
     contactMethodHint: "Řekněte nám, jak chcete být informováni o této objednávce.",
@@ -211,6 +219,9 @@ export const cs: TranslationDict = {
     roomPlaceholder: "Číslo pokoje nebo bytu",
     paymentSubtitle: "Jak za tuto objednávku zaplatíte.",
     secureNote: "Údaje o vaší objednávce jsou šifrované a nikdy je nesdílíme s třetími stranami.",
+    calculatingFee: 'Vypočítává se…',
+    directoryFailed: 'Seznam hotelů se nepodařilo načíst. Zkuste to prosím znovu.',
+    removeCoupon: 'Odebrat kód',
   },
   confirmation: {
     title: 'Děkujeme! Objednávka potvrzena',
@@ -256,6 +267,7 @@ export const cs: TranslationDict = {
     detailTitle: 'Detail objednávky',
     backToOrders: 'Zpět na objednávky',
     notFound: 'Objednávka nenalezena.',
+    itemCount: '{count} položek',
   },
   notifications: {
     addedToCart: 'Přidáno do košíku',
@@ -278,6 +290,7 @@ export const cs: TranslationDict = {
     currency: 'Měna',
     all: 'Vše',
     optional: 'nepovinné',
+    viewAll: 'Zobrazit vše',
   },
   phone: {
     country: 'Kód země',
@@ -314,6 +327,7 @@ export const cs: TranslationDict = {
     noResultsSubtitle: 'Hledání nic nenašlo. Zkuste jiná klíčová slova.',
     suggestions: 'Populární hledání',
     clear: 'Vymazat hledání',
+    suggestionsLabel: 'Návrhy hledání',
   },
   notFound: {
     title: 'Stránka nenalezena',

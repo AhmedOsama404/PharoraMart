@@ -1,7 +1,7 @@
 <div class="qty" role="group" [attr.aria-label]="ariaLabel">
   <p-button icon="pi pi-minus" [rounded]="true" [text]="true"
-    [disabled]="qty <= min" (onClick)="dec()" [attr.aria-label]="'−'" />
-  <span class="val" aria-live="polite">{{ qty }}</span>
+    [disabled]="qty <= min" (onClick)="dec()" [ariaLabel]="i18n.t('product.qtyDecrease')" />
+  <span class="val" role="status" aria-live="polite" aria-atomic="true">{{ qty }}</span>
   <p-button icon="pi pi-plus" [rounded]="true" [text]="true"
-    [disabled]="qty >= max" (onClick)="inc()" [attr.aria-label]="'+'" />
+    [disabled]="qty >= max" (onClick)="inc()" [ariaLabel]="i18n.t('product.qtyIncrease')" />
 </div>

@@ -9,6 +9,7 @@ import { FooterComponent } from './footer.component';
 import { ConnectionBannerComponent } from '../shared/resilience/connection-banner.component';
 import { SiteContentService } from '../core/services/site-content.service';
 import { ScrollService } from '../core/services/scroll.service';
+import { I18nService } from '../core/services/i18n.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -19,6 +20,7 @@ import { ScrollService } from '../core/services/scroll.service';
   styleUrl: './main-layout.component.scss',
 })
 export class MainLayoutComponent implements OnInit {
+  protected i18n = inject(I18nService);
   private siteContent = inject(SiteContentService);
   private router = inject(Router);
   private scroll = inject(ScrollService);

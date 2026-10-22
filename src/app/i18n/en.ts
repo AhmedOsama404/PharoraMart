@@ -11,6 +11,7 @@ export const en: TranslationDict = {
     carouselControls: "Product carousel controls",
     previousProducts: "Previous products",
     nextProducts: "Next products",
+    skipToContent: 'Skip to content',
   },
   app: { name: 'Pharora', tagline: 'Everything you love, delivered fast.' },
   nav: {
@@ -67,8 +68,8 @@ export const en: TranslationDict = {
     errorSubtitle: 'Please try again in a moment.',
     retry: 'Retry',
     activeFilters: 'Active filters',
-    minPrice: 'Min',
-    maxPrice: 'Max',
+    minPriceLabel: 'Minimum price',
+    maxPriceLabel: 'Maximum price',
   },
   product: {
     addToCart: 'Add to cart',
@@ -92,6 +93,11 @@ export const en: TranslationDict = {
     breadcrumbsCatalog: 'Shop',
     maxStock: 'Only {count} available',
     selectVariant: 'Select option',
+    qtyDecrease: 'Decrease quantity',
+    qtyIncrease: 'Increase quantity',
+    noAttributes: 'No specifications for this product.',
+    imageLabel: 'Image {n}',
+    imageGallery: 'Product images',
   },
   cart: {
     maxPerItem: "Only {count} per item, please.",
@@ -121,6 +127,7 @@ export const en: TranslationDict = {
     qtyUpdated: 'Quantity updated',
     freeShippingHint: 'Add {amount} more for free shipping',
     freeShippingDone: 'You unlocked free shipping',
+    totalBeforeDelivery: 'Total before delivery',
   },
   favorites: {
     title: 'Favorites',
@@ -162,6 +169,7 @@ export const en: TranslationDict = {
     memberSince: 'Member',
     demoNotice: 'Demo authentication: data is stored locally only and is not secure or real.',
     continueAsGuest: 'Continue as guest',
+    resetFailed: 'We could not send the reset link. Please try again.',
   },
   checkout: {
     contactMethodHint: "Tell us how you want to hear about this order.",
@@ -213,6 +221,9 @@ export const en: TranslationDict = {
     roomPlaceholder: "Room or apartment number",
     paymentSubtitle: "How you will pay for this order.",
     secureNote: "Your order details are encrypted and never shared with third parties.",
+    calculatingFee: 'Calculating…',
+    directoryFailed: 'The hotel list could not be loaded. Please try again.',
+    removeCoupon: 'Remove code',
   },
   confirmation: {
     title: 'Thank you! Order confirmed',
@@ -258,6 +269,7 @@ export const en: TranslationDict = {
     detailTitle: 'Order details',
     backToOrders: 'Back to orders',
     notFound: 'Order not found.',
+    itemCount: '{count} items',
   },
   notifications: {
     addedToCart: 'Added to cart',
@@ -280,6 +292,7 @@ export const en: TranslationDict = {
     currency: 'Currency',
     all: 'All',
     optional: 'optional',
+    viewAll: 'View all',
   },
   phone: {
     country: 'Country code',
@@ -316,6 +329,7 @@ export const en: TranslationDict = {
     noResultsSubtitle: 'Nothing matched your search. Try different keywords.',
     suggestions: 'Popular searches',
     clear: 'Clear search',
+    suggestionsLabel: 'Search suggestions',
   },
   notFound: {
     title: 'Page not found',

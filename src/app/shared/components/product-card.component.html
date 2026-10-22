@@ -1,5 +1,5 @@
-<article class="product-card" [attr.aria-label]="product.names | localized: product.name">
-  <a class="media img-frame" [routerLink]="['/products', product.id]" [attr.aria-label]="product.names | localized: product.name">
+<article class="product-card">
+  <a class="media img-frame" [routerLink]="['/products', product.id]">
     <i class="pi pi-image img-fallback" aria-hidden="true"></i>
     <img appSafeImg="product"
       [src]="product.images[0]"
@@ -14,18 +14,19 @@
         <p-tag severity="info" [value]="i18n.t('product.new')" />
       }
     </span>
-    <button
-      type="button"
-      class="fav-btn"
-      [class.active]="favorites.has(product.id)"
-      (click)="onFav($event)"
-      [attr.aria-label]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
-      [pTooltip]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
-      tooltipPosition="top"
-    >
-      <i class="pi" [class.pi-heart-fill]="favorites.has(product.id)" [class.pi-heart]="!favorites.has(product.id)"></i>
-    </button>
   </a>
+  <button
+    type="button"
+    class="fav-btn"
+    [class.active]="favorites.has(product.id)"
+    (click)="onFav($event)"
+    [attr.aria-label]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+    [attr.aria-pressed]="favorites.has(product.id)"
+    [pTooltip]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+    tooltipPosition="top"
+  >
+    <i class="pi" [class.pi-heart-fill]="favorites.has(product.id)" [class.pi-heart]="!favorites.has(product.id)" aria-hidden="true"></i>
+  </button>
   <div class="body">
     <a class="name" [routerLink]="['/products', product.id]">{{ product.names | localized: product.name }}</a>
     <div class="purchase-meta" [class.sale-price]="product.salePrice != null">
@@ -36,9 +37,9 @@
         @else { {{ i18n.t('product.inStock') }} }
       </div>
       <div class="price-row">
-        <span class="price">{{ effective() | resolvedMoney: product.currency }}</span>
+        <span class="price">{{ effective() | resolvedMoney: priceCurrency() }}</span>
         @if (product.salePrice != null) {
-          <span class="old">{{ product.price | resolvedMoney: product.currency }}</span>
+          <span class="old">{{ product.price | resolvedMoney: priceCurrency() }}</span>
         }
       </div>
     </div>

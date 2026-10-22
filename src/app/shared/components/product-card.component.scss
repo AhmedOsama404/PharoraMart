@@ -1,4 +1,5 @@
 .product-card {
+  position: relative;
   background: var(--surface-card);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-lg);
@@ -16,12 +17,16 @@
 .media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s ease, filter 0.35s ease; }
 .product-card:hover .media img { transform: scale(1.05); filter: saturate(1.06); }
 .badges { position: absolute; inset-inline-start: 0.6rem; top: 0.6rem; display: flex; gap: 0.4rem; }
+/* The favourite button is a sibling of the card link, so it can never be
+   activated twice (link + button) and never nests a control in a link. */
 .fav-btn {
-  position: absolute; inset-inline-end: 0.6rem; top: 0.6rem; width: 2.2rem; height: 2.2rem;
+  position: absolute; inset-inline-end: 0.6rem; top: 0.6rem; z-index: 2; width: 2.2rem; height: 2.2rem;
   display: grid; place-items: center; border: 1px solid var(--surface-border); border-radius: 999px;
   background: color-mix(in srgb, var(--surface-card) 88%, transparent); backdrop-filter: blur(6px);
   color: var(--text-secondary); cursor: pointer; transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
+/* A 44px touch target without growing the visible heart. */
+.fav-btn::after { content: ''; position: absolute; inset: -0.6rem; }
 .fav-btn:hover { transform: scale(1.1); color: #e11d48; border-color: #fecdd3; }
 .fav-btn.active { color: #e11d48; border-color: #fecdd3; }
 .fav-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -30,16 +35,20 @@
   color: var(--text-primary); font-size: 0.98rem; font-weight: 700; line-height: 1.4; text-decoration: none; transition: color 0.2s ease; }
 .name:hover { color: var(--primary); }
 .purchase-meta { display: grid; justify-items: start; gap: 0.38rem; margin-top: 0.05rem; padding-top: 0.52rem; border-top: 1px solid color-mix(in srgb, var(--surface-border) 78%, white); }
-.stock-status { display: inline-flex; align-items: center; gap: 0.38rem; min-height: 1.5rem; max-width: 100%; padding: 0.2rem 0.52rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 9%, white); color: var(--primary); font-size: 0.72rem; font-weight: 650; line-height: 1.2; white-space: nowrap; }
+/* The stock pill is small text: its green needs enough contrast on the tinted
+   background to stay readable (4.5:1 for text under 18px). */
+.stock-status { display: inline-flex; align-items: center; gap: 0.38rem; min-height: 1.5rem; max-width: 100%; padding: 0.2rem 0.52rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 9%, white); color: color-mix(in srgb, var(--primary) 88%, black); font-size: 0.75rem; font-weight: 650; line-height: 1.2; white-space: nowrap; }
 .status-dot { width: 0.42rem; height: 0.42rem; flex: 0 0 auto; border-radius: 50%; background: currentColor; }
-.stock-status.low { background: #fff6e7; color: #a65b13; }
-.stock-status.out { background: color-mix(in srgb, var(--danger) 9%, white); color: var(--danger); }
+.stock-status.low { background: #fff6e7; color: #8a4a0c; }
+.stock-status.out { background: color-mix(in srgb, var(--danger) 9%, white); color: color-mix(in srgb, var(--danger) 88%, black); }
 .price-row { display: flex; align-items: baseline; flex-wrap: wrap; justify-content: flex-start; gap: 0.2rem 0.45rem; min-width: 0; width: 100%; }
 .price { color: var(--text-primary); font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
 .sale-price .price { color: var(--primary); }
 .old { color: var(--text-secondary); font-size: 0.76rem; line-height: 1.3; text-decoration: line-through; white-space: nowrap; }
-:host ::ng-deep .cart-action-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.05rem; }
-:host ::ng-deep .cart-action-row p-button { display: block; flex: 1; min-width: 0; }
+/* The stepper and the button share one row. When the card is too narrow for
+   both, the button wraps onto its own line instead of clipping its label. */
+:host ::ng-deep .cart-action-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.05rem; }
+:host ::ng-deep .cart-action-row p-button { display: block; flex: 1 1 8rem; min-width: 0; }
 :host ::ng-deep .cart-action-row p-button .p-button { min-height: 2.7rem; border-radius: 0.68rem; font-weight: 650; transition: box-shadow 0.2s ease, transform 0.2s ease; }
 :host ::ng-deep .cart-action-row p-button:not(.p-disabled) .p-button:hover { transform: translateY(-1px); box-shadow: 0 5px 14px color-mix(in srgb, var(--primary) 22%, transparent); }
 :host ::ng-deep .cart-action-row app-qty-selector .qty { min-height: 2.7rem; gap: 0; padding: 0.08rem 0.16rem; border-color: color-mix(in srgb, var(--primary) 18%, var(--surface-border)); border-radius: 0.68rem; background: color-mix(in srgb, var(--primary) 4%, white); }

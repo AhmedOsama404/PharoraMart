@@ -13,6 +13,9 @@ h1 { margin: 0; font-size: clamp(1.95rem, 3.2vw, 2.65rem); line-height: 1.2; let
 .filters { position: sticky; top: 7rem; background: linear-gradient(160deg, #fff 0%, #fcfbf6 100%); border: 1px solid color-mix(in srgb, var(--surface-border) 84%, #d7c99f); border-radius: 1.25rem; padding: 1.25rem; display: grid; gap: 1.25rem; box-shadow: var(--shadow-card); }
 .f-group { display: grid; gap: 0.6rem; } .f-group > label { font-weight: 700; font-size: 0.9rem; line-height: 1.45; }
 .f-group.check { grid-template-columns: auto 1fr; align-items: center; }
+/* The checkbox and its text share one implicit label: clicking the text
+   toggles the box, and the box is named by that text. */
+.f-group.check .check-label { display: inline-flex; align-items: center; gap: 0.55rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
 .price-inputs { display: grid; grid-template-columns: minmax(0, 0.85fr) auto minmax(0, 1.15fr); gap: 0.45rem; align-items: center; }
 .price-inputs input { width: 100%; min-width: 0; padding-inline: 0.55rem; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
 .count { display: table; color: var(--text-secondary); font-size: 0.85rem; margin: 0 0 1rem; padding: 0.4rem 0.75rem; border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent); border-radius: 999px; background: linear-gradient(110deg, #edf4ee, #f7f5eb); }

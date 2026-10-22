@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Button } from 'primeng/button';
+import { I18nService } from '../../core/services/i18n.service';
 
 @Component({
   selector: 'app-qty-selector',
@@ -10,6 +11,8 @@ import { Button } from 'primeng/button';
   styleUrl: './qty-selector.component.scss',
 })
 export class QtySelectorComponent {
+  protected i18n = inject(I18nService);
+
   @Input() qty = 1;
   @Input() min = 1;
   // Callers pass the live stock level so the user can never exceed it.

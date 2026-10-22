@@ -33,6 +33,8 @@
           }
           @if (heroHeadline()) {
             <h1>{{ heroHeadline() }}</h1>
+          } @else {
+            <h1>{{ i18n.t('meta.home') }}</h1>
           }
           @if (heroDescription()) {
             <p>{{ heroDescription() }}</p>
@@ -155,8 +157,8 @@
           <div>
             <h2>{{ blockTitle(b) }}</h2>
             <p>{{ blockBody(b) }}</p>
-            @if (b.linkUrl) {
-              <a [href]="b.linkUrl"><p-button [label]="i18n.t('home.learnMore')" severity="contrast" /></a>
+            @if (siteContent.safeUrl(b.linkUrl); as link) {
+              <p-button [label]="i18n.t('home.learnMore')" severity="contrast" (onClick)="goTo(link)" />
             }
           </div>
           @if (b.imageUrl) {

@@ -6,6 +6,7 @@ import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 import { I18nService } from '../../core/services/i18n.service';
+import { CurrencyService } from '../../core/services/currency.service';
 import { FavoritesStore } from '../../core/services/favorites.store';
 import { MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { handleImgError } from '../utils/image-fallback.utils';
@@ -33,10 +34,20 @@ export class ProductCardComponent {
 
   protected i18n = inject(I18nService);
   protected favorites = inject(FavoritesStore);
+  private currency = inject(CurrencyService);
   protected quantity = signal(1);
 
   protected effective(): number {
     return effectivePrice(this.product);
+  }
+
+  /**
+   * The currency the stored price is expressed in. Older records and local
+   * demo products carry no currency — their amount is already the visitor's
+   * selected currency, so the price must never render blank.
+   */
+  protected priceCurrency(): string {
+    return this.product.currency ?? this.currency.code();
   }
 
   /**
@@ -58,8 +69,8 @@ export class ProductCardComponent {
   }
 
   protected onFav(ev: Event): void {
-    // The whole card links to the details page: stop the heart click from navigating.
-    ev.preventDefault();
+    // The favourite button is a sibling of the card link (never inside it), so
+    // a heart click can no longer navigate to the product page.
     ev.stopPropagation();
     this.favToggle.emit(this.product);
   }

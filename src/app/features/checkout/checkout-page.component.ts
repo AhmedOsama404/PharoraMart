@@ -29,6 +29,8 @@ import { PhoneInputComponent } from '../../shared/components/phone-input.compone
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import type { CreateOrderRequest } from '../../models/order.model';
 import type { Hotel } from '../../models/hotel.model';
+import type { Product } from '../../models/product.model';
+import { pickLocaleText } from '../../shared/utils/localized.utils';
 import { environment } from '../../../environments/environment';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
@@ -94,9 +96,13 @@ export class CheckoutPageComponent implements OnInit {
   // Hotel directory (data-driven; the dashboard can extend it freely).
   protected cities = signal<string[]>([]);
   protected hotels = signal<Hotel[]>([]);
+  /** True when the directory could not be loaded (the selects would be empty). */
+  protected directoryFailed = signal(false);
   // Authoritative delivery fee for the chosen hotel. Null = no hotel chosen
   // yet; the quote service (mock today, backend tomorrow) is the only writer.
   protected quotedFee = signal<number | null>(null);
+  /** True while a fee is being fetched: the total is not known yet. */
+  protected quotePending = signal(false);
   protected quoteFailed = signal(false);
   // Coupon state (live mode only): the backend validates and prices the code;
   // the receipted discount below is informational until the order returns.
@@ -136,8 +142,14 @@ export class CheckoutPageComponent implements OnInit {
       .hotels()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (list) => this.hotels.set(list),
-        error: () => this.hotels.set([]),
+        next: (list) => {
+          this.hotels.set(list);
+          this.directoryFailed.set(false);
+        },
+        error: () => {
+          this.hotels.set([]);
+          this.directoryFailed.set(true);
+        },
       });
     this.delivery
       .cities()
@@ -251,21 +263,27 @@ export class CheckoutPageComponent implements OnInit {
     if (!hotelId) {
       this.quotedFee.set(null);
       this.quoteRateDate.set(null);
+      this.quotePending.set(false);
       return Promise.resolve(false);
     }
     this.quotedFee.set(null);
     this.quoteRateDate.set(null);
+    this.quotePending.set(true);
     return firstValueFrom(this.delivery.quoteFor(hotelId, this.subtotal(), this.currency.code()))
       .then((q) => {
         if (seq !== this.quoteSequence) return false;
         this.quotedFee.set(q.fee);
         this.quoteRateDate.set(q.exchangeRateDate ?? null);
+        // The fee and the pending flag flip together: there is no moment in
+        // which the total is known but still shown as "calculating".
+        this.quotePending.set(false);
         return true;
       })
       .catch(() => {
         if (seq === this.quoteSequence) {
           this.quotedFee.set(null);
           this.quoteFailed.set(true);
+          this.quotePending.set(false);
           // The interceptor already shows the localized reason once; the inline
           // state blocks submit until a fee can be trusted again.
         }
@@ -350,6 +368,18 @@ export class CheckoutPageComponent implements OnInit {
       });
   }
 
+  /**
+   * Removes an applied promo code. Without this the code could only be
+   * replaced by another one, and the discount stayed on the total.
+   */
+  protected removeCoupon(): void {
+    this.couponApplied.set('');
+    this.couponDiscount.set(0);
+    this.couponError.set('');
+    this.lastCouponValidationKey = '';
+    this.couponControl.setValue('');
+  }
+
   // Orderable review rows from the shared cart view (same join as the cart
   // page): unavailable lines render separately below and never enter the order.
   protected lines = computed(() =>
@@ -359,7 +389,7 @@ export class CheckoutPageComponent implements OnInit {
         : [{
             key: l.key,
             productId: l.productId,
-            name: l.product.name,
+            name: this.displayName(l.product),
             image: l.product.images[0],
             qty: l.qty,
             total: l.lineTotal,
@@ -368,6 +398,15 @@ export class CheckoutPageComponent implements OnInit {
           }],
     ),
   );
+
+  /**
+   * The product name in the visitor's language. The order stores this name, so
+   * the confirmation and the order history read in the language the customer
+   * shopped in.
+   */
+  private displayName(product: Product): string {
+    return pickLocaleText(product.names, this.i18n.currentLang()) || product.name;
+  }
 
   protected unavailableLines = computed(() => this.view.lines().filter((l) => l.unavailable));
 
@@ -387,9 +426,16 @@ export class CheckoutPageComponent implements OnInit {
   /**
    * Money can never be placed from a stale or half-loaded cart: the button is
    * disabled until fresh prices resolved, and the submit handler re-checks.
+   * A pending delivery quote blocks it too — the total on screen would
+   * otherwise be missing the fee that the order is charged.
    */
   protected checkoutBlocked = computed(
-    () => !this.view.ready() || this.view.failed() || this.quoteFailed() || this.connectivity.status() === 'offline',
+    () =>
+      !this.view.ready() ||
+      this.view.failed() ||
+      this.quoteFailed() ||
+      this.quotePending() ||
+      this.connectivity.status() === 'offline',
   );
 
   protected blockedReason = computed(() => {

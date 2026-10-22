@@ -12,6 +12,8 @@ h1 { margin: 0; font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.2; letter-
 .variant { color: var(--text-secondary); }
 .unit { color: var(--text-secondary); font-size: 0.85rem; }
 .l-actions { display: flex; align-items: center; gap: 0.8rem; }
+/* The remove button is an icon-only control: give it a 44px touch target. */
+.l-actions ::ng-deep .p-button[aria-label] { min-width: 2.75rem; min-height: 2.75rem; }
 .l-total { min-width: 5.5rem; text-align: end; }
 .unavailable-row { opacity: 0.85; }
 .unavailable-icon { width: 3rem; height: 3rem; border-radius: 0.7rem; display: grid; place-items: center;

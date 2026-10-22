@@ -27,6 +27,8 @@ export class ForgotPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   protected busy = signal(false);
   protected sent = signal(false);
+  /** A failed request must say so — a silent failure looks like success. */
+  protected serverError = signal('');
   protected form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
 
   ngOnInit(): void {
@@ -44,6 +46,7 @@ export class ForgotPageComponent implements OnInit {
       return;
     }
     this.busy.set(true);
+    this.serverError.set('');
     // Demo only: resolves without sending any email (see the template notice).
     this.auth
       .requestPasswordReset(this.form.getRawValue().email)
@@ -53,7 +56,10 @@ export class ForgotPageComponent implements OnInit {
           this.busy.set(false);
           this.sent.set(true);
         },
-        error: () => this.busy.set(false),
+        error: () => {
+          this.busy.set(false);
+          this.serverError.set(this.i18n.t('auth.resetFailed'));
+        },
       });
   }
 }

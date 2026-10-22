@@ -25,7 +25,7 @@
     @for (column of footer()?.columns ?? []; track $index) {
       @if (siteContent.text(column.header, i18n.currentLang()); as header) {
         <nav [attr.aria-label]="header">
-          <h4>{{ header }}</h4>
+          <h2 class="footer-heading">{{ header }}</h2>
           @for (link of column.links; track $index) {
             @if (siteContent.text(link.text, i18n.currentLang()); as text) {
               @if (siteContent.safeUrl(link.url); as url) {
@@ -41,9 +41,10 @@
       }
     }
     <div class="prefs">
-      <h4>{{ i18n.t('footer.contact') }}</h4>
+      <h2 class="footer-heading">{{ i18n.t('footer.contact') }}</h2>
       <label>{{ i18n.t('footer.currencyLabel') }}</label>
       <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true"
+        [ariaLabel]="i18n.t('footer.currencyLabel')"
         appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
     </div>
   </div>

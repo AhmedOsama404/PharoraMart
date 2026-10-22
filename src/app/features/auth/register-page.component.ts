@@ -71,6 +71,12 @@ export class RegisterPageComponent implements OnInit {
     return firstErrorKey(this.form.get(name));
   }
 
+  /** True once the visitor touched the confirmation field and it does not match. */
+  protected mismatch(): boolean {
+    const confirm = this.form.get('confirmPassword');
+    return !!this.form.errors?.['passwordMismatch'] && !!confirm && (confirm.touched || confirm.dirty);
+  }
+
   protected submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();

@@ -120,7 +120,9 @@ h1 {
 .cod-text small { display: block; margin-top: 0.15rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.8rem; }
 
 /* Summary sidebar */
-.summary { position: sticky; top: 7rem; background: linear-gradient(160deg, #fff 0%, #f9f8f2 100%); }
+/* A sticky summary that is taller than the viewport can never show its
+   bottom, so it scrolls inside itself instead of hiding the order button. */
+.summary { position: sticky; top: 7rem; max-height: calc(100dvh - 8rem); overflow-y: auto; background: linear-gradient(160deg, #fff 0%, #f9f8f2 100%); }
 .summary .card-header {
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
@@ -142,6 +144,9 @@ h1 {
 
 .coupon-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; align-items: center; margin-block: 0.2rem; }
 .coupon-row input { min-width: 0; border-radius: 0.7rem; }
+/* The applied code stays visible with a way to take it off the order. */
+.coupon-applied { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; color: var(--success); font-size: 0.88rem; font-weight: 650; }
+.coupon-applied > span { display: inline-flex; align-items: center; gap: 0.35rem; }
 
 .grand { margin-top: 0.3rem; padding: 0.75rem 0.9rem; border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--surface-border)); border-radius: 0.85rem; background: linear-gradient(110deg, #eef6ef, #fff 90%); font-size: 1.1rem; color: var(--primary); }
 .grand strong { color: var(--primary); font-size: 1.25rem; font-weight: 800; }

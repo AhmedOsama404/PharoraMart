@@ -9,6 +9,7 @@ export const de: TranslationDict = {
     carouselControls: "Produktkarussell-Steuerung",
     previousProducts: "Vorherige Produkte",
     nextProducts: "Nächste Produkte",
+    skipToContent: 'Zum Inhalt springen',
   },
   app: { name: 'Pharora', tagline: 'Alles, was du liebst – schnell geliefert.' },
   nav: {
@@ -65,8 +66,8 @@ export const de: TranslationDict = {
     errorSubtitle: 'Bitte versuche es gleich noch einmal.',
     retry: 'Wiederholen',
     activeFilters: 'Aktive Filter',
-    minPrice: 'Min',
-    maxPrice: 'Max',
+    minPriceLabel: 'Mindestpreis',
+    maxPriceLabel: 'Höchstpreis',
   },
   product: {
     addToCart: 'In den Warenkorb',
@@ -90,6 +91,11 @@ export const de: TranslationDict = {
     breadcrumbsCatalog: 'Shop',
     maxStock: 'Nur {count} auf Lager',
     selectVariant: 'Variante wählen',
+    qtyDecrease: 'Menge verringern',
+    qtyIncrease: 'Menge erhöhen',
+    noAttributes: 'Für dieses Produkt sind keine Spezifikationen hinterlegt.',
+    imageLabel: 'Bild {n}',
+    imageGallery: 'Produktbilder',
   },
   cart: {
     maxPerItem: "Bitte nur {count} pro Artikel.",
@@ -119,6 +125,7 @@ export const de: TranslationDict = {
     qtyUpdated: 'Menge aktualisiert',
     freeShippingHint: 'Noch für {amount} hinzufügen für Gratisversand',
     freeShippingDone: 'Gratisversand freigeschaltet',
+    totalBeforeDelivery: 'Gesamt vor Versand',
   },
   favorites: {
     title: 'Favoriten',
@@ -160,6 +167,7 @@ export const de: TranslationDict = {
     memberSince: 'Mitglied',
     demoNotice: 'Demo-Anmeldung: Daten werden nur lokal gespeichert und sind weder echt noch sicher.',
     continueAsGuest: 'Als Gast fortfahren',
+    resetFailed: 'Der Link zum Zurücksetzen konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   },
   checkout: {
     contactMethodHint: "Sagen Sie uns, wie Sie über diese Bestellung informiert werden möchten.",
@@ -211,6 +219,9 @@ export const de: TranslationDict = {
     roomPlaceholder: "Zimmer- oder Wohnungsnummer",
     paymentSubtitle: "Wie Sie diese Bestellung bezahlen.",
     secureNote: "Ihre Bestelldaten sind verschlüsselt und werden niemals an Dritte weitergegeben.",
+    calculatingFee: 'Wird berechnet…',
+    directoryFailed: 'Die Hotelliste konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+    removeCoupon: 'Code entfernen',
   },
   confirmation: {
     title: 'Danke! Bestellung bestätigt',
@@ -256,6 +267,7 @@ export const de: TranslationDict = {
     detailTitle: 'Bestelldetails',
     backToOrders: 'Zurück zu Bestellungen',
     notFound: 'Bestellung nicht gefunden.',
+    itemCount: '{count} Artikel',
   },
   notifications: {
     addedToCart: 'Zum Warenkorb hinzugefügt',
@@ -278,6 +290,7 @@ export const de: TranslationDict = {
     currency: 'Währung',
     all: 'Alle',
     optional: 'optional',
+    viewAll: 'Alle anzeigen',
   },
   phone: {
     country: 'Ländervorwahl',
@@ -314,6 +327,7 @@ export const de: TranslationDict = {
     noResultsSubtitle: 'Nichts gefunden. Versuche andere Suchbegriffe.',
     suggestions: 'Beliebte Suchanfragen',
     clear: 'Suche löschen',
+    suggestionsLabel: 'Suchvorschläge',
   },
   notFound: {
     title: 'Seite nicht gefunden',

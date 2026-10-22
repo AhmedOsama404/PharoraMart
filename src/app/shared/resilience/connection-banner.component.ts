@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, inject, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { I18nService } from '../../core/services/i18n.service';
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
@@ -6,6 +6,10 @@ import { ConnectivityService } from '../../core/resilience/connectivity.service'
 /**
  * Slim, non-blocking connection banner. It never shifts the layout (sticky),
  * auto-dismisses after recovery, and is announced politely to screen readers.
+ *
+ * The banner and the header are both sticky, so the banner publishes its own
+ * height as `--rs-banner-h`: the header then parks right below it instead of
+ * painting over its top edge.
  */
 @Component({
   selector: 'app-connection-banner',
@@ -39,11 +43,13 @@ import { ConnectivityService } from '../../core/resilience/connectivity.service'
 export class ConnectionBannerComponent implements OnDestroy {
   readonly i18n = inject(I18nService);
   readonly connectivity = inject(ConnectivityService);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly visible = signal(false);
   readonly justRecovered = signal(false);
   private readonly sub: Subscription;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  private observer: ResizeObserver | null = null;
 
   constructor() {
     effect(() => {
@@ -64,10 +70,22 @@ export class ConnectionBannerComponent implements OnDestroy {
         this.justRecovered.set(false);
       }, 3500);
     });
+    if (typeof ResizeObserver !== 'undefined') {
+      this.observer = new ResizeObserver(() => this.publishHeight());
+      this.observer.observe(this.host.nativeElement);
+    }
+  }
+
+  /** Lets the sticky header park exactly below the banner. */
+  private publishHeight(): void {
+    const height = this.host.nativeElement.offsetHeight;
+    document.documentElement.style.setProperty('--rs-banner-h', `${height}px`);
   }
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
     if (this.hideTimer) clearTimeout(this.hideTimer);
+    this.observer?.disconnect();
+    document.documentElement.style.removeProperty('--rs-banner-h');
   }
 }

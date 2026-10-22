@@ -22,6 +22,7 @@ import { CartStore } from '../core/services/cart.store';
 import { FavoritesStore } from '../core/services/favorites.store';
 import { AuthService } from '../core/services/auth.service';
 import { ProductService } from '../core/services/product.service';
+import { environment } from '../../environments/environment';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
 import { StorefrontDefaultsService } from '../core/services/storefront-defaults.service';
 import { SiteContentService } from '../core/services/site-content.service';
@@ -50,7 +51,12 @@ export class HeaderComponent {
   private router = inject(Router);
 
   // Employee-editable brand + announcement (empty until loaded / when cleared).
-  protected brandName = computed(() => this.siteContent.text(this.siteContent.header()?.brandName, this.i18n.currentLang()));
+  // The brand name comes from the CMS; until it loads (or when it is left
+  // empty) the storefront still shows a name — and the logo link always has
+  // an accessible name.
+  protected brandName = computed(
+    () => this.siteContent.text(this.siteContent.header()?.brandName, this.i18n.currentLang()) || environment.appName,
+  );
   // Falls back to the vector mark if the edited logo is missing/unreachable, so
   // a dead upload never shows a broken-image icon in the header.
   protected logoFailed = signal(false);

@@ -1,7 +1,7 @@
 .footer { background: #132a20; color: #cfd8cc; margin-top: 3rem; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 2rem; padding: 2.5rem 1rem; }
 .logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 850; font-size: 1.2rem; color: #fff; }
-h4 { color: #fff; margin: 0 0 0.8rem; }
+.footer-heading { color: #fff; margin: 0 0 0.8rem; font-size: 1rem; font-weight: 700; }
 nav { display: flex; flex-direction: column; gap: 0.55rem; }
 nav a { color: #cfd8cc; text-decoration: none; }
 nav a:hover { color: #fff; }

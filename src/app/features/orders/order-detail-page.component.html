@@ -23,7 +23,12 @@
       </ul>
       <p-divider />
       <div class="kv"><span>{{ i18n.t('checkout.subtotal') }}</span><strong>{{ order()!.subtotal | money: order()!.currency }}</strong></div>
-      <div class="kv"><span>{{ i18n.t('checkout.delivery') }}</span><strong>{{ order()!.deliveryFee | money: order()!.currency }}</strong></div>
+      <div class="kv"><span>{{ i18n.t('checkout.delivery') }}</span>
+        <strong>
+          @if (order()!.deliveryFee === 0) { {{ i18n.t('cart.free') }} }
+          @else { {{ order()!.deliveryFee | money: order()!.currency }} }
+        </strong>
+      </div>
       <div class="kv grand"><span>{{ i18n.t('orders.total') }}</span><strong>{{ order()!.total | money: order()!.currency }}</strong></div>
       <p class="addr">{{ order()!.customer.fullName }} — {{ order()!.customer.hotelName }}, {{ order()!.customer.city }}</p>
     </p-card>
