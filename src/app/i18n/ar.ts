@@ -173,7 +173,6 @@ export const ar: TranslationDict = {
     contactMethodHint: "أخبرنا كيف تريد أن نُبلغك بهذا الطلب.",
     contactLanguage: "لغة التواصل",
     contactLanguageHint: "سنكتب إليك بهذه اللغة بخصوص طلبك.",
-    emailOnlyNotice: "سنرسل لك حالة الطلب على هذا البريد الإلكتروني.",
     emailUpdatesHint: "تحديثات الطلب عبر البريد الإلكتروني جزء من طلبك، لذلك نرسلها دائمًا.",
     hotel: 'الفندق',
     room: 'رقم الغرفة (اختياري)',

@@ -70,6 +70,16 @@ export interface BackendSuggest {
   image: string;
 }
 
+/**
+ * The active catalogue's price range, in the store's price contract
+ * currency (USD). `GET /products/price-range`.
+ */
+export interface BackendPriceRange {
+  minPrice: number;
+  maxPrice: number;
+  currency: string;
+}
+
 /** Null-tolerant array so malformed/partial payloads never crash the UI. */
 function arr<T>(v: T[] | null | undefined): T[] {
   return Array.isArray(v) ? v : [];

@@ -43,6 +43,7 @@
 | GET | `/products/featured` | — | `Product[]` |
 | GET | `/products/new` | — | `Product[]` |
 | GET | `/products/popular` | — | `Product[]` |
+| GET | `/products/price-range` | — | `{ minPrice: number, maxPrice: number, currency: "USD" }` |
 | GET | `/products/suggest?q=` | `q, limit` | `Product[]` (id, name, image) |
 | GET | `/categories` | — | `Category[]` |
 | GET | `/products/:id/related` | `limit` | `Product[]` |
@@ -54,6 +55,13 @@ tags[], attributes[{name,value}], variants?[{id,name,options[]}], createdAt }`.
 Prices are in the store base currency (USD in mock mode).
 
 `sort` values: `recommended | newest | price_asc | price_desc | name_asc | bestselling`.
+
+`GET /products/price-range` returns the price range of the **active**
+catalogue in USD (the store's price-filter contract currency), using the
+effective price (sale price when set). The catalog's price filter needs the
+real ceiling: a number bundled with the frontend would make a product priced
+above it impossible to filter. The storefront falls back to its bundled demo
+ceiling when this endpoint is unavailable, so an older backend still works.
 
 `Category` shape — see `src/app/models/product.model.ts` (dashboard-managed):
 `{ id, name, names{en,ar?,cs?,…}, description, descriptions?, image,

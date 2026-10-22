@@ -53,9 +53,23 @@
           @if (err('language'); as e) { <small class="err" id="language-err">{{ i18n.t(e) }}</small> }
         </div>
 
+        <!-- <div class="field field--spaced">
+          <span class="field-label" id="contactMethodLabel">{{ i18n.t('checkout.contactMethod') }}</span>
+          <div class="pill-group" role="radiogroup" [attr.aria-labelledby]="'contactMethodLabel'">
+            @for (option of contactOptions; track option.value) {
+              <label class="pill-choice" [class.selected]="form.get('contactMethod')?.value === option.value">
+                <input type="radio" formControlName="contactMethod" [value]="option.value" />
+                <span>{{ option.label }}</span>
+              </label>
+            }
+          </div>
+          <small class="hint">{{ i18n.t('checkout.contactMethodHint') }}</small>
+          @if (err('contactMethod'); as e) { <small class="err" id="contactMethod-err">{{ i18n.t(e) }}</small> }
+        </div> -->
+
         <p class="cm-notice">
           <i class="pi pi-envelope" aria-hidden="true"></i>
-          <span>{{ i18n.t('checkout.emailOnlyNotice') }}</span>
+          <span>{{ i18n.t('checkout.emailUpdatesHint') }}</span>
         </p>
       </p-card>
 
@@ -98,7 +112,13 @@
             <textarea pTextarea id="notes" formControlName="notes" rows="2" [fluid]="true" placeholder="{{ i18n.t('checkout.notesPlaceholder') }}"></textarea>
           </div>
         </div>
-        @if (directoryFailed()) { <p-message severity="error" [text]="i18n.t('checkout.directoryFailed')" /> }
+        @if (directoryFailed()) {
+          <div class="directory-error">
+            <p-message severity="error" [text]="i18n.t('checkout.directoryFailed')" />
+            <p-button [label]="i18n.t('common.retry')" icon="pi pi-refresh" severity="secondary" [outlined]="true"
+              size="small" (onClick)="retryDirectory()" />
+          </div>
+        }
       </p-card>
 
       <!-- Payment Card -->

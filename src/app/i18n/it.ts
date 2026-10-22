@@ -173,7 +173,6 @@ export const it: TranslationDict = {
     contactMethodHint: "Dicci come vuoi ricevere le informazioni su questo ordine.",
     contactLanguage: "Lingua di contatto",
     contactLanguageHint: "Ti scriveremo in questa lingua riguardo al tuo ordine.",
-    emailOnlyNotice: "Ti invieremo lo stato dell’ordine a questo indirizzo e-mail.",
     emailUpdatesHint: "Gli aggiornamenti via email fanno parte del tuo ordine, quindi li inviamo sempre.",
     hotel: 'Hotel',
     room: 'Numero di camera (facoltativo)',

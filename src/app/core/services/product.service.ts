@@ -7,7 +7,14 @@ import { pickLocaleText } from '../../shared/utils/localized.utils';
 import { environment } from '../../../environments/environment';
 import { I18nService } from './i18n.service';
 import { ApiClientService } from '../api/api-client.service';
-import { toProduct, toCategory, suggestToProduct, toProductQueryParams, BackendPaged, BackendProduct, BackendCategory, BackendSuggest } from '../api/catalog.mapper';
+import { toProduct, toCategory, suggestToProduct, toProductQueryParams, BackendPaged, BackendProduct, BackendCategory, BackendSuggest, BackendPriceRange } from '../api/catalog.mapper';
+
+/** The catalogue's price range, in the store's price contract currency. */
+export interface PriceRange {
+  readonly minPrice: number;
+  readonly maxPrice: number;
+  readonly currency: string;
+}
 
 /**
  * ProductService — single data-access boundary for products.
@@ -29,6 +36,8 @@ export class ProductService {
   private categoriesLoaded = false;
   /** The one live taxonomy request of this session (see categories()). */
   private categoriesRequest$: Observable<Category[]> | null = null;
+  /** The one live price-range request of this session (see priceRange()). */
+  private priceRangeRequest$: Observable<PriceRange | null> | null = null;
   /** When true, catalog requests fail — used to demo the error state. */
   forceError = signal(false);
 
@@ -151,6 +160,34 @@ export class ProductService {
       .filter((c) => c.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder);
     return of(active).pipe(delay(200));
+  }
+
+  /**
+   * The price range of the ACTIVE catalogue, in the store's price contract
+   * currency (USD). The catalog's price filter needs the real ceiling: a
+   * number bundled with the frontend would make a product priced above it
+   * impossible to filter.
+   *
+   * Null in mock mode (the bundled demo catalogue is the ceiling there).
+   */
+  priceRange(): Observable<PriceRange | null> {
+    if (!environment.useMockApi) {
+      if (!this.priceRangeRequest$) {
+        let request$!: Observable<PriceRange | null>;
+        request$ = this.api.get<BackendPriceRange>('products/price-range').pipe(
+          map((range) => ({ minPrice: range.minPrice, maxPrice: range.maxPrice, currency: range.currency })),
+          // A failed load must not be remembered: the next caller may retry.
+          catchError((err: unknown) => {
+            if (this.priceRangeRequest$ === request$) this.priceRangeRequest$ = null;
+            return throwError(() => err);
+          }),
+          shareReplay({ bufferSize: 1, refCount: false }),
+        );
+        this.priceRangeRequest$ = request$;
+      }
+      return this.priceRangeRequest$;
+    }
+    return of(null);
   }
 
   /**

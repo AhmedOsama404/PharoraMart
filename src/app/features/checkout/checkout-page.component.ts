@@ -51,6 +51,14 @@ import type { SiteCheckoutContent } from '../../models/site-content.model';
   styleUrl: './checkout-page.component.scss',
 })
 export class CheckoutPageComponent implements OnInit {
+  /**
+   * The payment method the API accepts. The server's `PaymentMethod` enum has
+   * exactly one member (CashOnDelivery), so the storefront offers exactly one
+   * method and states it once, here. The label and the explanation come from
+   * the CMS (`paymentMethodTitle` / `paymentMethodBody`).
+   */
+  private static readonly PAYMENT_METHOD = 'cash_on_delivery';
+
   protected i18n = inject(I18nService);
   protected siteContent = inject(SiteContentService);
   private currency = inject(CurrencyService);
@@ -87,11 +95,25 @@ export class CheckoutPageComponent implements OnInit {
     // The language the customer wants to be contacted in. It is required,
     // and it is frozen on the order: the messages always use it.
     language: ['', [Validators.required]],
-    // How the customer wants to be contacted about this order. WhatsApp is
-    // suspended for now, so the order status goes by email; the moment
-    // WhatsApp is back, the choice comes back with it.
+    // How the customer wants to be contacted about this order. The API accepts
+    // phone, whatsapp and email (ContactMethod); the storefront currently
+    // offers email only — order updates by email are part of the order, so
+    // they always go out. The choice control is parked in the template; the
+    // control stays wired so the recorded preference is always a value the
+    // server understands.
     contactMethod: ['email' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
   });
+
+  /**
+   * The contact methods the customer can pick once the choice control comes
+   * back. They mirror the API's `ContactMethod` enum, so the recorded
+   * preference is one the server understands.
+   */
+  protected contactOptions: { value: 'phone' | 'whatsapp' | 'email'; label: string }[] = [
+    { value: 'phone', label: this.i18n.t('checkout.contactPhone') },
+    { value: 'whatsapp', label: this.i18n.t('checkout.contactWhatsapp') },
+    { value: 'email', label: this.i18n.t('checkout.contactEmail') },
+  ];
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
   protected cities = signal<string[]>([]);
@@ -138,26 +160,7 @@ export class CheckoutPageComponent implements OnInit {
     // The directory is required to choose a hotel/city; if it cannot load the
     // form stays open (no crash) and submit is blocked by validation/quote.
     // Both calls read the same cached directory, so this is ONE request.
-    this.delivery
-      .hotels()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (list) => {
-          this.hotels.set(list);
-          this.directoryFailed.set(false);
-        },
-        error: () => {
-          this.hotels.set([]);
-          this.directoryFailed.set(true);
-        },
-      });
-    this.delivery
-      .cities()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (list) => this.cities.set(list),
-        error: () => this.cities.set([]),
-      });
+    this.loadDirectory();
     effect(() => {
       const code = this.currency.code();
       const subtotal = this.subtotal();
@@ -419,6 +422,40 @@ export class CheckoutPageComponent implements OnInit {
   });
   protected total = computed(() => this.subtotal() - this.couponDiscount() + this.deliveryFee());
 
+  /**
+   * Loads the hotel directory and the city list (both come from the same
+   * request). A failure is shown with a retry instead of leaving two empty
+   * dropdowns.
+   */
+  private loadDirectory(reload = false): void {
+    const hotels$ = reload ? this.delivery.reloadHotels() : this.delivery.hotels();
+    hotels$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => {
+          this.hotels.set(list);
+          this.directoryFailed.set(false);
+        },
+        error: () => {
+          this.hotels.set([]);
+          this.directoryFailed.set(true);
+        },
+      });
+    this.delivery
+      .cities()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => this.cities.set(list),
+        error: () => this.cities.set([]),
+      });
+  }
+
+  /** Explicit Retry after a failed directory load. */
+  protected retryDirectory(): void {
+    this.directoryFailed.set(false);
+    this.loadDirectory(true);
+  }
+
   protected err(name: string): string | null {
     return firstErrorKey(this.form.get(name));
   }
@@ -549,7 +586,7 @@ export class CheckoutPageComponent implements OnInit {
       deliveryFee: this.deliveryFee(),
       total: this.total(),
       currency: this.currency.code(),
-      paymentMethod: 'cash_on_delivery',
+      paymentMethod: CheckoutPageComponent.PAYMENT_METHOD,
       couponCode: this.couponApplied() || undefined,
       exchangeRateDate: this.rates.snapshot()?.date ?? this.quoteRateDate() ?? undefined,
     };

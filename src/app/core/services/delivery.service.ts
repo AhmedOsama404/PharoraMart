@@ -70,6 +70,16 @@ export class DeliveryService {
     ).pipe(delay(200));
   }
 
+  /**
+   * Drops the cached directory and loads it again. The checkout offers this
+   * when the first load failed, so a transient outage does not need a full
+   * page reload. The cities are derived from the same request.
+   */
+  reloadHotels(): Observable<Hotel[]> {
+    this.hotelsRequest$ = null;
+    return this.hotels();
+  }
+
   /** Distinct cities derived from the active list (future hotels add cities). */
   cities(): Observable<string[]> {
     return this.hotels().pipe(map((list) => [...new Set(list.map((h) => h.city))]));

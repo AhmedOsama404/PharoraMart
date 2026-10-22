@@ -5,7 +5,7 @@ import { Signal } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { of, throwError } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import { CheckoutPageComponent } from './checkout-page.component';
 import { ProductService } from '../../core/services/product.service';
 import { DeliveryService } from '../../core/services/delivery.service';
@@ -45,12 +45,15 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     getByIdsMany: () => of(MOCK_PRODUCTS.map((product) => ({ ...product, currency: product.currency ?? 'USD' }))),
     list: () => of({ items: MOCK_PRODUCTS.map((product) => ({ ...product, currency: product.currency ?? 'USD' })), total: MOCK_PRODUCTS.length }),
   };
+  // The directory is swappable so one test can make the first load fail.
+  let hotelDirectory: () => Observable<unknown[]> = () =>
+    of([
+      { id: 'h1', name: 'Hotel One', city: 'Marsa Alam', isActive: true, sortOrder: 1, zoneId: 'z1', deliveryFee: 6 },
+      { id: 'h2', name: 'Hotel Two', city: 'Hurghada', isActive: true, sortOrder: 1, zoneId: 'z2', deliveryFee: 12 },
+    ]);
   const stubDelivery = {
-    hotels: () =>
-      of([
-        { id: 'h1', name: 'Hotel One', city: 'Marsa Alam', isActive: true, sortOrder: 1, zoneId: 'z1', deliveryFee: 6 },
-        { id: 'h2', name: 'Hotel Two', city: 'Hurghada', isActive: true, sortOrder: 1, zoneId: 'z2', deliveryFee: 12 },
-      ]),
+    hotels: () => hotelDirectory(),
+    reloadHotels: () => hotelDirectory(),
     cities: () => of(['Marsa Alam', 'Hurghada']),
     hotelById: (id: string) =>
       id === 'h1'
@@ -83,7 +86,15 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => { environment.useMockApi = originalUseMockApi; });
+  afterEach(() => {
+    environment.useMockApi = originalUseMockApi;
+    // A test may have swapped the directory for a failing one.
+    hotelDirectory = () =>
+      of([
+        { id: 'h1', name: 'Hotel One', city: 'Marsa Alam', isActive: true, sortOrder: 1, zoneId: 'z1', deliveryFee: 6 },
+        { id: 'h2', name: 'Hotel Two', city: 'Hurghada', isActive: true, sortOrder: 1, zoneId: 'z2', deliveryFee: 12 },
+      ]);
+  });
 
   function fillContact(): void {
     // The email is the way the order status is sent, so it is required.
@@ -105,6 +116,38 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('6');
+  });
+
+  it('offers the contact methods the API accepts and sends the chosen one', () => {
+    const options = (comp as unknown as { contactOptions: { value: string; label: string }[] }).contactOptions;
+    expect(options.map((o) => o.value)).toEqual(['phone', 'whatsapp', 'email']);
+
+    // The email is the default: order updates by email are part of the order.
+    expect(x(comp).form.get('contactMethod')?.value).toBe('email');
+    x(comp).form.patchValue({ contactMethod: 'whatsapp' });
+    expect(x(comp).form.get('contactMethod')?.value).toBe('whatsapp');
+  });
+
+  it('retries the hotel directory after a failed load', () => {
+    // The form (and with it the directory error) only renders with a cart.
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    hotelDirectory = () => throwError(() => new Error('offline'));
+    const failFixture = TestBed.createComponent(CheckoutPageComponent);
+    failFixture.detectChanges();
+
+    const view = failFixture.componentInstance as unknown as {
+      directoryFailed: Signal<boolean>;
+      retryDirectory(): void;
+    };
+    expect(view.directoryFailed()).toBeTrue();
+    // The error is shown with a way out — not a dead end.
+    expect(failFixture.nativeElement.textContent as string).toContain('could not be loaded');
+
+    // The retry re-reads the directory and clears the error.
+    hotelDirectory = () => of([{ id: 'h1', name: 'Hotel One', city: 'Marsa Alam', isActive: true, sortOrder: 1, zoneId: 'z1', deliveryFee: 6 }]);
+    view.retryDirectory();
+    failFixture.detectChanges();
+    expect(view.directoryFailed()).toBeFalse();
   });
 
   it('shows a stable promo-code label after applying the entered code', () => {

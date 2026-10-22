@@ -62,6 +62,17 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
     backend.expectOne((r) => r.url.endsWith('/exchange-rates')).flush(RATES);
   }
 
+  /**
+   * Answers the catalogue's price range. The API owns the real ceiling of the
+   * active catalogue, so the page asks for it before it can bound the price
+   * filter.
+   */
+  function flushPriceRange(maxPrice = 120): void {
+    for (const req of backend.match((r) => r.url.endsWith('/products/price-range'))) {
+      req.flush({ minPrice: 4, maxPrice, currency: 'USD' });
+    }
+  }
+
   /** Consumes the pending catalogue request and returns its maxPrice bound (null = unbounded). */
   function consumeProductMaxPrice(): number | null {
     const req: TestRequest = backend.expectOne((r) => r.url.endsWith('/products'));
@@ -87,11 +98,12 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
     await harness.navigateByUrl(`/products${query}`, CatalogPageComponent);
     fixture = harness.fixture as unknown as ComponentFixture<CatalogPageComponent>;
 
-    // Intercept the three initialization requests in order:
+    // Intercept the initialization requests:
     // 1) exchange-rates (from effect triggered by currency change)
-    // 2) categories (ngOnInit subscription)
-    // 3) products (reload() from queryParamMap subscription)
+    // 2) categories + price-range (ngOnInit subscriptions)
+    // 3) products (the query-param subscription)
     flushRates();
+    flushPriceRange();
     backend
       .expectOne((r) => r.url.endsWith('/categories') || r.url.includes('/categories?'))
       .flush([]);
@@ -139,6 +151,31 @@ describe('CatalogPageComponent price filter (selected-currency native)', () => {
     expect(bound ?? 1).toBeLessThan(0.039);
     expect(chipTexts().find((t) => t.startsWith('≤'))).toContain('2');
     expect(router.url).toContain('max=2');
+  });
+
+  it('bounds the price filter with the catalogue ceiling the API reports', async () => {
+    localStorage.setItem('novamart.currency', 'USD');
+    await harness.navigateByUrl('/products', CatalogPageComponent);
+    fixture = harness.fixture as unknown as ComponentFixture<CatalogPageComponent>;
+    // The catalogue's most expensive product costs 480 USD.
+    flushPriceRange(480);
+    backend
+      .expectOne((r) => r.url.endsWith('/categories') || r.url.includes('/categories?'))
+      .flush([]);
+    backend.expectOne((r) => r.url.endsWith('/products')).flush(EMPTY_PAGE);
+    await settle();
+
+    // The ceiling follows the API (rounded up to the next 50), NOT the price
+    // of the demo catalogue that ships with the frontend.
+    const limit = (page() as unknown as { displayPriceLimit(): number }).displayPriceLimit();
+    expect(limit).toBe(500);
+
+    // A bound below the ceiling is applied as typed.
+    (page() as unknown as { onPriceInput(b: 'max', v: number): void }).onPriceInput('max', 200);
+    await settle();
+
+    expect(consumeProductMaxPrice()).toBe(200);
+    expect(appliedQuery().maxPrice).toBe(200);
   });
 
   it('clears the upper bound when its chip is removed', async () => {

@@ -5,7 +5,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Divider } from 'primeng/divider';
-import { Message } from 'primeng/message';
 import { Skeleton } from 'primeng/skeleton';
 import { I18nService } from '../../core/services/i18n.service';
 import { CurrencyService } from '../../core/services/currency.service';
@@ -25,7 +24,7 @@ import type { SiteOrderConfirmationContent } from '../../models/site-content.mod
   selector: 'app-confirmation-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SafeImageDirective, Button, Card, Divider, Message, Skeleton, EmptyStateComponent, MoneyPipe, DataBoundaryComponent],
+  imports: [SafeImageDirective, Button, Card, Divider, Skeleton, EmptyStateComponent, MoneyPipe, DataBoundaryComponent],
   templateUrl: './confirmation-page.component.html',
   styleUrl: './confirmation-page.component.scss',
 })

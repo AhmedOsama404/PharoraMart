@@ -175,7 +175,6 @@ export const en: TranslationDict = {
     contactMethodHint: "Tell us how you want to hear about this order.",
     contactLanguage: "Contact language",
     contactLanguageHint: "We will write to you in this language about your order.",
-    emailOnlyNotice: "We will send your order status to this email.",
     emailUpdatesHint: "Order updates by email are part of your order, so we always send them.",
     hotel: 'Hotel',
     room: 'Room number (optional)',

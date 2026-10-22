@@ -173,7 +173,6 @@ export const sk: TranslationDict = {
     contactMethodHint: "Povedzte nám, ako chcete byť informovaní o tejto objednávke.",
     contactLanguage: "Jazyk komunikácie",
     contactLanguageHint: "Píšeme vám v tomto jazyku o vašej objednávke.",
-    emailOnlyNotice: "Stav objednávky vám pošleme na túto e-mailovú adresu.",
     emailUpdatesHint: "Aktualizácie objednávky e-mailom sú súčasťou vašej objednávky, preto ich posielame vždy.",
     hotel: 'Hotel',
     room: 'Číslo izby (nepovinné)',

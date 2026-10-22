@@ -60,7 +60,13 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  protected maxPrice = Math.ceil(MAX_CATALOG_PRICE / 50) * 50;
+  /**
+   * The price ceiling of the catalogue, in USD. The API owns the real number
+   * (GET /products/price-range); the bundled demo catalogue is only the
+   * fallback for mock mode or an API without that endpoint. A product priced
+   * above the fallback must still be filterable, so the live value wins.
+   */
+  protected maxPrice = signal(Math.ceil(MAX_CATALOG_PRICE / 50) * 50);
   protected priceConversionAvailable = computed(() =>
     this.prices.convert(1, this.currency.code(), 'USD') != null,
   );
@@ -68,7 +74,7 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
     this.priceConversionAvailable() ? this.currency.code() : 'USD',
   );
   protected displayPriceLimit = computed(() =>
-    this.prices.convert(this.maxPrice, 'USD', this.filterCurrency()) ?? this.maxPrice,
+    this.prices.convert(this.maxPrice(), 'USD', this.filterCurrency()) ?? this.maxPrice(),
   );
   protected displayPriceStep = computed(() => Math.max(1, Math.round(this.displayPriceLimit() / 100)));
   protected pageSize = signal(environment.pageSize);
@@ -282,6 +288,22 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    // The catalogue's own price ceiling. Until it arrives the demo value is
+    // used, so the filter never shows a stale number for longer than one
+    // request.
+    this.products
+      .priceRange()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (range) => {
+          if (range && range.maxPrice > 0) {
+            this.maxPrice.set(Math.ceil(range.maxPrice / 50) * 50);
+          }
+        },
+        // Keep the fallback ceiling: an older API (or an outage) must not
+        // leave the price filter without a range.
+        error: () => undefined,
+      });
     // Filter categories come from the data source, independent of products.
     // A failed category request must not become an unhandled error and must
     // not block the product list: fall back to "All categories".
