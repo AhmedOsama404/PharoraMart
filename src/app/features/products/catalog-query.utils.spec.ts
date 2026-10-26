@@ -2,6 +2,8 @@ import {
   MAX_PAGE_SIZE,
   catalogQueryParams,
   lastPageFor,
+  niceCeil,
+  niceStep,
   parseCatalogFilters,
   type CatalogFilterState,
 } from './catalog-query.utils';
@@ -139,6 +141,57 @@ describe('catalog-query.utils', () => {
       expect(lastPageFor(12, 12)).toBe(1);
       expect(lastPageFor(0, 12)).toBe(1);
       expect(lastPageFor(Number.NaN, 12)).toBe(1);
+    });
+  });
+
+  describe('niceCeil', () => {
+    it('never rounds below the number it is scaling', () => {
+      // A rail shorter than the catalogue would hide the priciest product.
+      for (const amount of [1, 1.5, 4, 12, 97.43, 149, 1200, 0.33, 0.05]) {
+        expect(niceCeil(amount)).toBeGreaterThanOrEqual(amount);
+      }
+    });
+
+    it('ends the axis on a number a shopper would say out loud', () => {
+      expect(niceCeil(97.43)).toBe(100);
+      expect(niceCeil(149)).toBe(150);
+      expect(niceCeil(1200)).toBe(1200);
+      expect(niceCeil(7)).toBe(7);
+    });
+
+    it('keeps a cheap catalogue on a fraction-sized axis', () => {
+      // Products at 0.33 exist: rounding that away would put every handle at
+      // the left end of a rail that cannot express the price being filtered.
+      expect(niceCeil(0.33)).toBe(0.4);
+      expect(niceCeil(0.05)).toBe(0.05);
+    });
+
+    it('treats nothing to scale as nothing to draw', () => {
+      expect(niceCeil(0)).toBe(0);
+      expect(niceCeil(-5)).toBe(0);
+      expect(niceCeil(Number.NaN)).toBe(0);
+    });
+  });
+
+  describe('niceStep', () => {
+    it('splits an axis into stops a handle can actually land on', () => {
+      expect(niceStep(100)).toBe(2);
+      expect(niceStep(20)).toBe(0.5);
+      expect(niceStep(0.4)).toBe(0.01);
+    });
+
+    it('never answers zero, which would freeze the rail', () => {
+      expect(niceStep(0)).toBe(1);
+      expect(niceStep(Number.NaN)).toBe(1);
+      expect(niceStep(1e-9)).toBeGreaterThan(0);
+    });
+
+    it('stays fine enough to reach the cheapest bound on its own axis', () => {
+      // 0.33 has to be one of the stops of a 0.4 axis, or the fraction a
+      // visitor typed cannot be reproduced by dragging.
+      const ceiling = niceCeil(0.33);
+      const step = niceStep(ceiling);
+      expect(0.33 / step).toBeCloseTo(Math.round(0.33 / step), 6);
     });
   });
 });

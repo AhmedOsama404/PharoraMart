@@ -118,6 +118,31 @@ export class CurrencyService {
     }
   }
 
+  /**
+   * How the visitor's locale writes a currency: its symbol and whether that
+   * symbol precedes the amount ("$0.00" in English, "0,00 €" in German and
+   * "٣٠٠٫٠٠ ج.م." in Arabic). Control marks are stripped: this sits beside a
+   * number in a field, not mid-sentence, where a bidi mark would flip what
+   * surrounds it.
+   */
+  symbolPlacement(code?: string): { symbol: string; before: boolean } {
+    const normalized = (code ?? this.current().code).toUpperCase();
+    if (!this.codes().has(normalized)) return { symbol: normalized, before: true };
+    const locale = LANG_LOCALES[this.i18n.currentLang()];
+    try {
+      const parts = this.formatter(locale, normalized).formatToParts(0);
+      const at = parts.findIndex((p) => p.type === 'currency');
+      const amountAt = parts.findIndex((p) => p.type === 'integer');
+      const value = parts[at]?.value ?? normalized;
+      return {
+        symbol: value.replace(/[\u200E\u200F\u061C]/g, '').trim(),
+        before: at !== -1 && at < amountAt,
+      };
+    } catch {
+      return { symbol: normalized, before: true };
+    }
+  }
+
   formatDate(iso: string): string {
     const lang: SupportedLang = this.i18n.currentLang();
     // Read the version signal so template calls re-format on language switch.

@@ -12,12 +12,27 @@ h1 { margin: 0; font-size: clamp(1.95rem, 3.2vw, 2.65rem); line-height: 1.2; let
 .layout { display: grid; grid-template-columns: 17rem minmax(0, 1fr); gap: 1.75rem; align-items: start; }
 .filters { position: sticky; top: var(--sticky-top); max-height: calc(100dvh - var(--sticky-top) - 1rem); overflow-y: auto; background: linear-gradient(160deg, var(--surface-card) 0%, var(--surface-ground) 100%); border: 1px solid color-mix(in srgb, var(--surface-border) 84%, #d7c99f); border-radius: 1.25rem; padding: 1.25rem; display: grid; gap: 1.25rem; box-shadow: var(--shadow-card); }
 .f-group { display: grid; gap: 0.6rem; } .f-group > label, .f-group > .f-label { font-weight: 700; font-size: 0.9rem; line-height: 1.45; }
-.f-group.check { grid-template-columns: auto 1fr; align-items: center; }
+.f-group.check {
+  align-items: center;
+  /* The library's checkbox is the only control in this panel wearing the cool
+     grey form-field border; these tokens put it in the same warm family as the
+     fields around it and give it the page's own 2px focus ring. */
+  --p-checkbox-border-color: color-mix(in srgb, var(--surface-border) 88%, var(--primary));
+  --p-checkbox-hover-border-color: var(--primary);
+  --p-checkbox-border-radius: 0.4rem;
+  --p-checkbox-focus-ring-width: 2px;
+  --p-checkbox-focus-ring-color: var(--primary);
+  --p-checkbox-focus-ring-offset: 2px;
+}
 /* The checkbox and its text share one implicit label: clicking the text
    toggles the box, and the box is named by that text. */
 .f-group.check .check-label { display: inline-flex; align-items: center; gap: 0.55rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
-/* Two typed bounds: no slider, so there is no drag storm of requests and
-   neither field can silently change the other's meaning. */
+/* Two typed bounds, plus a rail that only short-cuts them. The rail commits
+   when a handle is released (and a keyboard step waits for the same debounce
+   as typing), so no path can fire a request per pixel of dragging. Its own
+   look lives in styles.scss: the mobile drawer paints its overlay on
+   document.body, outside this host, so a `:host ::ng-deep` rule would style
+   the sidebar rail and leave the drawer's unstyled. */
 .price-group { gap: 0.7rem; container-type: inline-size; }
 .price-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
 /* The desktop sidebar is only ~14.5rem wide inside, which leaves each field
@@ -30,7 +45,11 @@ h1 { margin: 0; font-size: clamp(1.95rem, 3.2vw, 2.65rem); line-height: 1.2; let
 .price-field-box { display: flex; align-items: center; gap: 0.35rem; min-width: 0; padding: 0.12rem 0.6rem; border: 1px solid color-mix(in srgb, var(--surface-border) 88%, var(--primary)); border-radius: 0.7rem; background: #fff; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
 .price-field-box:focus-within { border-color: color-mix(in srgb, var(--primary) 48%, var(--surface-border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
 .price-field-box.is-disabled { opacity: 0.62; background: color-mix(in srgb, var(--surface-ground) 60%, white); }
-.price-currency { flex: 0 0 auto; font-size: 0.68rem; font-weight: 750; color: var(--text-secondary); }
+.price-currency { flex: 0 0 auto; font-size: 0.72rem; font-weight: 750; color: var(--text-secondary); }
+/* English writes "$0.00"; the six European locales and Arabic write the symbol
+   after the amount. The order comes from the locale's own number format, so
+   the field never disagrees with the rail or the chips about where it goes. */
+.price-field-box.symbol-first .price-currency { order: -1; }
 .price-field-box input { width: 100%; min-width: 0; padding: 0.45rem 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 0.92rem; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
 .price-field-box input:enabled:focus { border: 0; outline: none; box-shadow: none; }
 .price-field-box input::-webkit-outer-spin-button, .price-field-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

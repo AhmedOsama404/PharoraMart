@@ -7,7 +7,7 @@
     <h1>{{ i18n.t('catalog.title') }}</h1>
     <p>{{ i18n.t('catalog.subtitle') }}</p>
   </div>
-  <p-button class="filters-btn" icon="pi pi-sliders-h" [label]="i18n.t('catalog.activeFilters')" [outlined]="true" (onClick)="drawer.set(true)" />
+  <p-button class="filters-btn" icon="pi pi-sliders-h" [label]="i18n.t('catalog.filters')" [outlined]="true" (onClick)="drawer.set(true)" />
 </div>
 
 <div class="toolbar">
@@ -95,7 +95,7 @@
   </section>
 </div>
 
-<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
+<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.filters')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
   <ng-container *ngTemplateOutlet="filterBody; context: { scope: 'drawer' }" />
 </p-drawer>
 
@@ -118,38 +118,67 @@
          and the mobile drawer, and an open drawer would otherwise double every
          id. -->
     <div class="price-inputs" role="group" [attr.aria-labelledby]="priceId('label', scope)">
+      @if (priceRailMax(); as ceiling) {
+        <!-- A shortcut over the same two bounds, never a third opinion about
+             them: the axis spans the catalogue's priciest product rounded up to
+             a legible number, grows to fit a bound typed above it, and its last
+             stop means "no maximum" exactly as an emptied field does. Typing
+             stays free — the rail cannot cap what the API will honour. -->
+        <div class="price-rail">
+          <!-- `[ngModel]`, not `[value]`: the handle geometry only re-runs when
+               the value reaches the component through its value accessor, and
+               `value` is not an input. A drag leaves this signal alone, so the
+               model can never snap the handle back under the pointer. -->
+          <p-slider [range]="true" [min]="0" [max]="ceiling" [step]="priceRailStep()"
+            [ngModel]="priceRailValue()" [disabled]="!priceConversionAvailable()" [pt]="priceRailPt()"
+            (onChange)="onRailChange($event)" (onSlideEnd)="onRailSlideEnd($event)" />
+          <div class="rail-ends" aria-hidden="true">
+            <span class="rail-end">{{ priceRailMinLabel() }}</span>
+            <span class="rail-end">{{ priceRailMaxLabel() }}</span>
+          </div>
+        </div>
+      }
       <label class="price-field" [attr.for]="priceId('min', scope)">
         <span class="price-field-label">{{ i18n.t('catalog.minPriceLabel') }}</span>
-        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()">
-          <span class="price-currency" aria-hidden="true">{{ filterCurrency() }}</span>
+        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()" [class.symbol-first]="priceCurrency().before">
           <input [id]="priceId('min', scope)" pInputText type="text" inputmode="decimal" autocomplete="off"
             [value]="minPriceInput()" (input)="onPriceInput('min', $any($event.target).value)"
-            (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" placeholder="0"
+            (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()"
+            [placeholder]="i18n.t('catalog.minPricePlaceholder')"
             [attr.aria-label]="i18n.t('catalog.minPriceLabel')"
             [attr.aria-invalid]="priceRangeError() ? 'true' : null"
+            [attr.aria-describedby]="priceRangeError() && priceConversionAvailable() ? priceId('msg', scope) : priceId('hint', scope)"
             [disabled]="!priceConversionAvailable()" />
+          <!-- The locale's own notation: "$" leads in English, "ج.م." and "€"
+               trail in Arabic and in the European locales. -->
+          <span class="price-currency" aria-hidden="true">{{ priceCurrency().symbol }}</span>
         </span>
       </label>
       <label class="price-field" [attr.for]="priceId('max', scope)">
         <span class="price-field-label">{{ i18n.t('catalog.maxPriceLabel') }}</span>
-        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()">
-          <span class="price-currency" aria-hidden="true">{{ filterCurrency() }}</span>
+        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()" [class.symbol-first]="priceCurrency().before">
           <input [id]="priceId('max', scope)" pInputText type="text" inputmode="decimal" autocomplete="off"
             [value]="maxPriceInput()" (input)="onPriceInput('max', $any($event.target).value)"
             (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()"
             [placeholder]="i18n.t('catalog.noMaxPrice')"
             [attr.aria-label]="i18n.t('catalog.maxPriceLabel')"
             [attr.aria-invalid]="priceRangeError() ? 'true' : null"
+            [attr.aria-describedby]="priceRangeError() && priceConversionAvailable() ? priceId('msg', scope) : priceId('hint', scope)"
             [disabled]="!priceConversionAvailable()" />
+          <span class="price-currency" aria-hidden="true">{{ priceCurrency().symbol }}</span>
         </span>
       </label>
     </div>
-    @if (!priceConversionAvailable()) { <small class="conversion-hint">{{ i18n.t('currency.conversionUnavailable') }}</small> }
-    @else if (priceErrorText(); as message) {
-      <!-- A live region rather than aria-describedby: both instances of this
-           template share the message, and the shopper who caused it is already
-           in the field that refused to apply. -->
-      <small class="price-msg is-error" role="status">{{ message }}</small>
+    @if (!priceConversionAvailable()) {
+      <small class="conversion-hint" [id]="priceId('hint', scope)">{{ i18n.t('currency.conversionUnavailable') }}</small>
+    } @else if (priceErrorText(); as message) {
+      <!-- Tied to both fields through aria-describedby and announced politely
+           while the shopper is still in the field that made the pair invalid. -->
+      <small class="price-msg is-error" [id]="priceId('msg', scope)" role="status">{{ message }}</small>
+    } @else {
+      <!-- The one place the accepted format is stated: a bound may be a
+           fraction, and an empty field is a bound the visitor chose not to set. -->
+      <small class="price-msg" [id]="priceId('hint', scope)">{{ i18n.t('catalog.priceHint') }}</small>
     }
   </div>
   <div class="f-group">

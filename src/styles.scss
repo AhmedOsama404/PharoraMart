@@ -1183,3 +1183,90 @@ img {
     transform: none;
   }
 }
+
+/* ==========================================================================
+   Catalogue price rail
+   ==========================================================================
+
+   Global, not component-scoped, and deliberately so: the mobile filter drawer
+   paints its overlay on document.body, outside the catalog page's host, so a
+   `:host ::ng-deep` rule would style the sidebar rail and leave the drawer's
+   at PrimeNG defaults — two prices controls, two looks. The rail only ever
+   short-cuts the two bound fields beside it; nothing here caps what can be
+   typed, and the far handle stop means "no maximum" exactly as an emptied
+   field does. */
+
+.price-rail {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0 0.15rem;
+  /* PrimeNG sizes the track from a two-class selector and centres a handle with
+     calc() on its own token, so an element rule only ties with the first — and
+     a tie is lost to the stylesheet it injects at runtime. A knob sized here
+     while the token still says 20px lands above the axis. The tokens are the
+     supported way in. */
+  --p-slider-track-size: 0.4rem;
+  --p-slider-track-border-radius: 999px;
+  --p-slider-track-background: color-mix(in srgb, var(--surface-border) 72%, #fffdf8);
+  --p-slider-range-background: var(--primary);
+  /* The preset's structure: a transparent box you grab, a solid dot you see, so
+     the touch area can grow without the knob growing with it. */
+  --p-slider-handle-width: 1.4rem;
+  --p-slider-handle-height: 1.4rem;
+  --p-slider-handle-background: transparent;
+  --p-slider-handle-hover-background: transparent;
+  --p-slider-handle-content-width: 1.05rem;
+  --p-slider-handle-content-height: 1.05rem;
+  --p-slider-handle-content-background: #fffdf8;
+  --p-slider-handle-content-hover-background: #fffdf8;
+  --p-slider-handle-content-shadow: 0 1px 3px rgb(24 36 27 / 14%), inset 0 0 0 2px var(--primary);
+  /* Same ring every other control on the page draws — the library's own is a
+     lighter 1px hairline that would make this the quietest focus state. */
+  --p-slider-handle-focus-ring-width: 2px;
+  --p-slider-handle-focus-ring-color: var(--primary);
+  --p-slider-handle-focus-ring-offset: 2px;
+}
+
+.price-rail .rail-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.price-rail .rail-end {
+  font-size: 0.68rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.price-rail .p-slider .p-slider-handle {
+  transition: transform 0.18s ease;
+}
+
+/* The visible knob stays 1.05rem; this transparent ring is what a thumb aims
+   for, so the rail reads slim and still answers a tap. */
+.price-rail .p-slider .p-slider-handle::after {
+  content: '';
+  position: absolute;
+  inset: -0.75rem;
+  border-radius: 50%;
+}
+
+/* Hover only: `p-slider-handle-active` marks whichever handle the library last
+   operated (it starts at 0), so scaling on that class would leave one knob
+   permanently larger than the other. */
+.price-rail .p-slider .p-slider-handle:hover {
+  transform: scale(1.08);
+}
+
+.price-rail .p-slider.p-disabled {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-rail .p-slider .p-slider-handle {
+    transition: none;
+  }
+}

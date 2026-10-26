@@ -70,8 +70,12 @@ export const fr: TranslationDict = {
     maxPriceLabel: 'Prix maximum',
     priceNegative: 'Saisissez un prix égal ou supérieur à 0.',
     priceOrder: 'Le prix maximum doit être au moins égal au prix minimum.',
+    noMinPrice: 'Sans minimum',
     noMaxPrice: 'Sans maximum',
+    minPricePlaceholder: '0,00',
+    priceHint: 'Les décimales sont acceptées, par ex. 0,35. Un champ vide signifie sans limite.',
     priceInvalid: 'Saisissez un prix, par exemple 0,25 ou 12,50.',
+    filters: 'Filtres',
   },
   product: {
     addToCart: 'Ajouter au panier',

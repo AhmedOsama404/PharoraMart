@@ -124,3 +124,50 @@ export function lastPageFor(total: number, pageSize: number): number {
   if (!Number.isFinite(total) || total <= 0) return 1;
   return Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
 }
+
+/**
+ * Price-rail geometry. The rail is a shortcut, never a cage: its axis must
+ * reach the priciest product in the catalogue and the typed bounds stay
+ * uncapped, so the two values below are derived per render from whatever the
+ * visitor currently means, not frozen from the server's answer.
+ */
+
+/** Ceilings a shopper would say out loud — 1.2 and 1.5 included, so a 149 catalogue ends at 150 rather than 200. */
+const CEILING_LADDER = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+
+/** Tick sizes for the same reason, coarser: a rail handle must be grabbable. */
+const STEP_LADDER = [1, 2, 5, 10] as const;
+
+/** Handle travel per unit of axis — a fine enough rail to land on 0.33. */
+const RAIL_STOPS = 60;
+
+/** The smallest ladder value at or above `amount`, scaled to its own decade. */
+function ladderCeil(amount: number, ladder: readonly number[]): number {
+  const magnitude = 10 ** Math.floor(Math.log10(amount));
+  const normalized = amount / magnitude;
+  // The tolerance is for the decade itself: 0.3 / 0.1 arrives as 3.0000000004
+  // and a ceiling that silently becomes the next rung is a rail that lies
+  // about its own top.
+  const rung = ladder.find((value) => normalized <= value + 1e-9) ?? ladder[ladder.length - 1];
+  return Number((rung * magnitude).toPrecision(12));
+}
+
+/**
+ * `amount` rounded up onto a legible number. Never below `amount` (the axis has
+ * to reach the priciest product) and never more than about 25% above it (an
+ * axis that dwarfs its data would squash every handle to the left).
+ */
+export function niceCeil(amount: number): number {
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  return ladderCeil(amount, CEILING_LADDER);
+}
+
+/**
+ * The step a rail spanning `range` should move in: about `RAIL_STOPS` stops,
+ * snapped up to a round number. A 100 ceiling steps by 2, a 0.4 one by 0.01 —
+ * so a fraction as small as 0.33 stays one drag away.
+ */
+export function niceStep(range: number): number {
+  if (!Number.isFinite(range) || range <= 0) return 1;
+  return ladderCeil(range / RAIL_STOPS, STEP_LADDER);
+}

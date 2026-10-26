@@ -70,8 +70,12 @@ export const ar: TranslationDict = {
     maxPriceLabel: 'الحد الأقصى للسعر',
     priceNegative: 'أدخل سعرًا صفرًا أو أكثر.',
     priceOrder: 'يجب أن يكون الحد الأقصى للسعر مساويًا للحد الأدنى أو أعلى منه.',
+    noMinPrice: 'بدون حد أدنى',
     noMaxPrice: 'بدون حد أقصى',
+    minPricePlaceholder: '٠٫٠٠',
+    priceHint: 'يمكن إدخال الكسور مثل ٠٫٣٥. الحقل الفارغ يعني عدم وجود حد.',
     priceInvalid: 'أدخل سعرًا مثل 0.25 أو 12.50.',
+    filters: 'المرشحات',
   },
   product: {
     addToCart: 'أضف إلى السلة',

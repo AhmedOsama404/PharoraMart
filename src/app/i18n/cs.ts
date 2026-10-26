@@ -70,8 +70,12 @@ export const cs: TranslationDict = {
     maxPriceLabel: 'Maximální cena',
     priceNegative: 'Zadejte cenu 0 nebo vyšší.',
     priceOrder: 'Maximální cena musí být alespoň stejná jako minimální cena.',
+    noMinPrice: 'Bez dolní hranice',
     noMaxPrice: 'Bez horní hranice',
+    minPricePlaceholder: '0,00',
+    priceHint: 'Desetinná čísla jsou povolena, např. 0,35. Prázdné pole znamená bez omezení.',
     priceInvalid: 'Zadejte cenu, například 0,25 nebo 12,50.',
+    filters: 'Filtry',
   },
   product: {
     addToCart: 'Přidat do košíku',

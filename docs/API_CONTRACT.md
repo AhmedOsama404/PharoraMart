@@ -58,10 +58,12 @@ Prices are in the store base currency (USD in mock mode).
 
 `GET /products/price-range` returns the price range of the **active**
 catalogue in USD (the store's price-filter contract currency), using the
-effective price (sale price when set). The catalog's price filter needs the
-real ceiling: a number bundled with the frontend would make a product priced
-above it impossible to filter. The storefront falls back to its bundled demo
-ceiling when this endpoint is unavailable, so an older backend still works.
+effective price (sale price when set). The catalog's price rail needs the real
+ceiling: a number bundled with the frontend would make a product priced above
+it impossible to reach by dragging. The storefront asks once per session and
+uses the answer only to size that rail — it never caps what may be typed. When
+the endpoint is unavailable, fails, or answers `(0, 0)` for an empty catalogue,
+no rail is drawn and the two bound fields keep working on their own.
 
 `Category` shape — see `src/app/models/product.model.ts` (dashboard-managed):
 `{ id, name, names{en,ar?,cs?,…}, description, descriptions?, image,
