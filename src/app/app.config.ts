@@ -1,7 +1,7 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding, TitleStrategy } from '@angular/router';
+import { provideRouter, PreloadAllModules, TitleStrategy, withComponentInputBinding, withPreloading } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 
@@ -16,7 +16,11 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(I18nService).initialize()),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withComponentInputBinding()),
+    // Every feature route is lazy, so the first visit to a page stalled while
+    // its chunk downloaded — the blank flash between pages. Preloading starts
+    // only once the app is stable, so it never competes with the first screen's
+    // own API calls.
+    provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
     provideHttpClient(withInterceptors([apiInterceptor])),
     provideAnimationsAsync(),
     providePrimeNG({

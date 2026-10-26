@@ -1,5 +1,14 @@
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'outfordelivery' | 'delivered' | 'cancelled';
 
+/**
+ * How the customer wants to be contacted about an order.
+ *
+ * The API accepts exactly two values (`OrderValidators.ContactMethods`:
+ * `whatsapp` and `email`); anything else is a 422. The type mirrors the
+ * server's allow-list, so a value the API would reject cannot be typed here.
+ */
+export type ContactMethod = 'whatsapp' | 'email';
+
 export interface CheckoutFormValue {
   fullName: string;
   phone: string;
@@ -13,7 +22,7 @@ export interface CheckoutFormValue {
   room?: string;
   notes?: string;
   /** Determined by environment.contactMode ('whatsapp' | 'email' | 'both'). */
-  contactMethod?: 'phone' | 'whatsapp' | 'email' | 'both';
+  contactMethod?: ContactMethod;
 }
 
 export interface OrderItemInput {
@@ -40,6 +49,12 @@ export interface CreateOrderRequest {
   language?: string;
   /** The customer opted in to WhatsApp updates at checkout. */
   whatsappOptIn?: boolean;
+  /**
+   * Proof of the consent text the customer saw: a SHA-256 hex of that exact
+   * text. The server stores it with the consent record, so "what was agreed"
+   * stays provable. Null when the customer did not opt in to WhatsApp.
+   */
+  consentTextHash?: string;
 }
 
 export interface Order extends CreateOrderRequest {

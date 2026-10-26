@@ -36,6 +36,27 @@ export class CurrencyService {
     }
 
   }
+
+  /**
+   * The currency the store prices in (`GET store/settings` → `defaultCurrency`).
+   *
+   * It is applied only when the visitor has NOT chosen a currency yet: a
+   * stored choice is the visitor's own and always wins. An unsupported code
+   * is ignored — the storefront never shows a currency it cannot format.
+   */
+  applyStoreDefault(code: string): void {
+    const normalized = code.trim().toUpperCase();
+    if (!this.options().some((currency) => currency.code === normalized)) return;
+    let hasChoice = false;
+    try {
+      hasChoice = !!localStorage.getItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (hasChoice) return;
+    this.code.set(normalized);
+  }
+
   setCurrency(code: string): void {
     const normalized = code.toUpperCase();
     if (!this.options().some((currency) => currency.code === normalized)) return;

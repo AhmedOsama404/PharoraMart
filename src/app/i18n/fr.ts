@@ -68,6 +68,10 @@ export const fr: TranslationDict = {
     activeFilters: 'Filtres actifs',
     minPriceLabel: 'Prix minimum',
     maxPriceLabel: 'Prix maximum',
+    priceNegative: 'Saisissez un prix égal ou supérieur à 0.',
+    priceOrder: 'Le prix maximum doit être au moins égal au prix minimum.',
+    noMaxPrice: 'Sans maximum',
+    priceInvalid: 'Saisissez un prix, par exemple 0,25 ou 12,50.',
   },
   product: {
     addToCart: 'Ajouter au panier',
@@ -87,6 +91,7 @@ export const fr: TranslationDict = {
     new: 'Nouveau',
     popular: 'Populaire',
     off: '-{percent} %',
+    ratingLabel: 'Note de {rating} sur 5 · {count} avis',
     breadcrumbsHome: 'Accueil',
     breadcrumbsCatalog: 'Boutique',
     maxStock: 'Seulement {count} en stock',
@@ -221,6 +226,9 @@ export const fr: TranslationDict = {
     calculatingFee: 'Calcul en cours…',
     directoryFailed: 'La liste des hôtels n’a pas pu être chargée. Veuillez réessayer.',
     removeCoupon: 'Retirer le code',
+    cartLoading: 'Chargement de votre panier et des derniers prix…',
+    feePending: 'Calcul des frais de livraison…',
+    whatsappUpdatesHint: 'Nous enverrons aussi les mises à jour de la commande par WhatsApp au numéro de mobile ci-dessus.',
   },
   confirmation: {
     title: 'Merci ! Commande confirmée',
@@ -243,6 +251,7 @@ export const fr: TranslationDict = {
     emailStatusNotice: "Nous vous enverrons le statut de la commande à cette adresse e-mail.",
     continueShopping: 'Continuer mes achats',
     viewOrders: 'Voir mes commandes',
+    contactTitle: 'Besoin de nous contacter ?',
     mockNotice: 'Mode démo : commande stockée localement uniquement. Aucun paiement ni livraison réels.',
   },
   orders: {

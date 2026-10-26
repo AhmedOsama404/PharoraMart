@@ -33,17 +33,21 @@
 
 <div class="layout">
   <aside class="filters" [attr.aria-label]="i18n.t('aria.filters')">
-    <ng-container *ngTemplateOutlet="filterBody" />
+    <ng-container *ngTemplateOutlet="filterBody; context: { scope: 'panel' }" />
   </aside>
   <section class="results" [attr.aria-busy]="state() === 'loading' || priceInputPending()">
-    <p class="count" aria-live="polite">
-      @if (state() === 'loading' || priceInputPending()) {
-        <p-skeleton width="5.5rem" height="1rem" borderRadius="999px" />
-      } @else {
-        {{ i18n.t('catalog.results', { count: total() }) }}
-      }
-    </p>
-    @if (slow()) {
+    @if (state() !== 'error') {
+      <!-- A failed load has no trustworthy count: the error card below is the
+           honest statement, not "0 products". -->
+      <p class="count" aria-live="polite">
+        @if (state() === 'loading' && !items().length) {
+          <p-skeleton width="5.5rem" height="1rem" borderRadius="999px" />
+        } @else {
+          {{ i18n.t('catalog.results', { count: total() }) }}
+        }
+      </p>
+    }
+    @if (slow() && !items().length) {
       <div class="rs-slow" role="status">
         <i class="pi pi-clock" aria-hidden="true"></i>
         <div>
@@ -53,7 +57,13 @@
         <p-button [label]="i18n.t('resilience.retry')" icon="pi pi-refresh" severity="secondary" [text]="true" (onClick)="retry()" />
       </div>
     }
-    @if (state() === 'loading' || priceInputPending()) {
+    @if (refreshing()) {
+      <!-- Existing results stay on screen while the refined query loads; this
+           thin bar is the only "busy" cue, so filtering never blanks the page
+           or triggers the slow-load hint. -->
+      <div class="refresh-bar" aria-hidden="true"></div>
+    }
+    @if (state() === 'loading' && !items().length) {
       <div class="grid skeleton-grid" role="status" [attr.aria-label]="i18n.t('aria.loadingProducts')">
         @for (i of [1,2,3,4,5,6]; track i) {
           <article class="product-skeleton" aria-hidden="true">
@@ -86,32 +96,61 @@
 </div>
 
 <p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
-  <ng-container *ngTemplateOutlet="filterBody" />
-  <p-button [label]="i18n.t('catalog.clearAll')" [text]="true" (onClick)="clearAll()" />
+  <ng-container *ngTemplateOutlet="filterBody; context: { scope: 'drawer' }" />
 </p-drawer>
 
-<ng-template #filterBody>
+<ng-template #filterBody let-scope="scope">
   <div class="f-group">
     <label>{{ i18n.t('catalog.categoryLabel') }}</label>
     <p-select [options]="categoryOptions()" [ngModel]="draft.category()" (onChange)="setCategory($event.value)"
       optionLabel="label" optionValue="value" [fluid]="true" [ariaLabel]="i18n.t('catalog.categoryLabel')"
       appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
   </div>
-  <div class="f-group">
-    <label>{{ i18n.t('catalog.priceRange') }}: {{ i18n.t('catalog.maxPriceLabel') }} {{ currency.format(displayPriceLimit(), filterCurrency()) }}</label>
-    <p-slider [ngModel]="draft.maxPrice() ?? displayPriceLimit()" (onChange)="setMaxPrice($event.value)" [min]="0"
-      [max]="displayPriceLimit()" [step]="displayPriceStep()" [disabled]="!priceConversionAvailable()"
-      [ariaLabel]="i18n.t('catalog.priceRange')" />
-    <div class="price-inputs">
-      <input pInputText type="number" step="0.01" [ngModel]="minPriceInput()" (ngModelChange)="onPriceInput('min', $event)"
-        (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.minPriceLabel')"
-        [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
-      <span aria-hidden="true">–</span>
-      <input pInputText type="number" step="0.01" [ngModel]="maxPriceInput()" (ngModelChange)="onPriceInput('max', $event)"
-        (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.maxPriceLabel')"
-        [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
+  <div class="f-group price-group">
+    <span class="f-label" [id]="priceId('label', scope)">{{ i18n.t('catalog.priceRange') }}</span>
+    <!-- Two fields only: the bound is typed in the visitor's currency and
+         applied on Enter, blur or a short pause. They are text inputs with a
+         decimal keypad rather than `type=number`, because a number input
+         reports a half-typed "0." as an empty value and the value accessor
+         wrote "0" back over the caret — a fraction could never be entered.
+         Neither field caps what may be typed: the API filters on any bound.
+         The ids are scoped because the very same template serves the sidebar
+         and the mobile drawer, and an open drawer would otherwise double every
+         id. -->
+    <div class="price-inputs" role="group" [attr.aria-labelledby]="priceId('label', scope)">
+      <label class="price-field" [attr.for]="priceId('min', scope)">
+        <span class="price-field-label">{{ i18n.t('catalog.minPriceLabel') }}</span>
+        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()">
+          <span class="price-currency" aria-hidden="true">{{ filterCurrency() }}</span>
+          <input [id]="priceId('min', scope)" pInputText type="text" inputmode="decimal" autocomplete="off"
+            [value]="minPriceInput()" (input)="onPriceInput('min', $any($event.target).value)"
+            (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" placeholder="0"
+            [attr.aria-label]="i18n.t('catalog.minPriceLabel')"
+            [attr.aria-invalid]="priceRangeError() ? 'true' : null"
+            [disabled]="!priceConversionAvailable()" />
+        </span>
+      </label>
+      <label class="price-field" [attr.for]="priceId('max', scope)">
+        <span class="price-field-label">{{ i18n.t('catalog.maxPriceLabel') }}</span>
+        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()">
+          <span class="price-currency" aria-hidden="true">{{ filterCurrency() }}</span>
+          <input [id]="priceId('max', scope)" pInputText type="text" inputmode="decimal" autocomplete="off"
+            [value]="maxPriceInput()" (input)="onPriceInput('max', $any($event.target).value)"
+            (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()"
+            [placeholder]="i18n.t('catalog.noMaxPrice')"
+            [attr.aria-label]="i18n.t('catalog.maxPriceLabel')"
+            [attr.aria-invalid]="priceRangeError() ? 'true' : null"
+            [disabled]="!priceConversionAvailable()" />
+        </span>
+      </label>
     </div>
     @if (!priceConversionAvailable()) { <small class="conversion-hint">{{ i18n.t('currency.conversionUnavailable') }}</small> }
+    @else if (priceErrorText(); as message) {
+      <!-- A live region rather than aria-describedby: both instances of this
+           template share the message, and the shopper who caused it is already
+           in the field that refused to apply. -->
+      <small class="price-msg is-error" role="status">{{ message }}</small>
+    }
   </div>
   <div class="f-group">
     <label>{{ i18n.t('catalog.availabilityLabel') }}</label>

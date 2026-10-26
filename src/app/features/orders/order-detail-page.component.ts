@@ -10,6 +10,7 @@ import { Tag } from 'primeng/tag';
 import { I18nService } from '../../core/services/i18n.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { OrderService } from '../../core/services/order.service';
+import { SiteContentService } from '../../core/services/site-content.service';
 import { ScrollService } from '../../core/services/scroll.service';
 import type { Order, OrderStatus } from '../../models/order.model';
 import { orderStatusLabel, orderStatusSeverity, type StatusSeverity } from '../../shared/utils/order-status.utils';
@@ -31,11 +32,28 @@ export class OrderDetailPageComponent implements OnInit {
   protected i18n = inject(I18nService);
   private currency = inject(CurrencyService);
   private orders = inject(OrderService);
+  private siteContent = inject(SiteContentService);
   private scroll = inject(ScrollService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private connectivity = inject(ConnectivityService);
   private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * The payment method, as the website content names it.
+   *
+   * The checkout owns that copy, so the order detail must not invent a
+   * second wording for it.
+   */
+  protected readonly paymentMethodLabel = computed(() => {
+    const label = this.siteContent.text(
+      this.siteContent.checkout()?.paymentMethodTitle as
+        | import('../../models/product.model').LocalizedText
+        | undefined,
+      this.i18n.currentLang(),
+    );
+    return label || this.i18n.t('confirmation.cashOnDelivery');
+  });
 
   protected state = signal<'loading' | 'ok' | 'error' | 'not_found'>('loading');
   protected order = signal<Order | null>(null);

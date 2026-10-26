@@ -1,8 +1,16 @@
-<header class="topbar">
+<header class="topbar" #topbar [class.is-scrolled]="scrolled()">
   @if (announcement()) {
   <div class="announce">
-      {{ announcement() }}
+    <div class="announce__inner container">
+      <span class="announce__seal" aria-hidden="true"><i class="pi pi-sparkles"></i></span>
+      <span class="announce__text">{{ announcement() }}</span>
+    </div>
   </div>
+  } @else if (!siteContent.ready()) {
+  <!-- The band is CMS-owned, so it only exists once Website Content arrives.
+       Reserving its height stops the header growing mid-load and pushing the
+       whole page down. -->
+  <div class="announce announce--reserved" aria-hidden="true"></div>
   }
   <div class="bar container">
     <button class="icon-btn menu-btn" (click)="mobileOpen.set(true)" [attr.aria-label]="i18n.t('nav.menu')">
@@ -24,20 +32,25 @@
         }
       }
     </nav>
-    <div class="search">
+    <div class="search" (focusout)="onSearchFocusOut($event)">
       <p-iconField iconPosition="left">
         <p-inputIcon class="pi pi-search" />
         <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onSearchInput($event)"
-          (keydown.enter)="goSearch()" [placeholder]="i18n.t('nav.searchPlaceholder')"
+          (keydown.enter)="$event.preventDefault(); onSearchEnter()" (keydown.escape)="onSuggestionEscape()"
+          (keydown.arrowdown)="$event.preventDefault(); onSuggestionArrow(1)"
+          (keydown.arrowup)="$event.preventDefault(); onSuggestionArrow(-1)"
+          role="combobox" aria-autocomplete="list" [attr.aria-expanded]="showSuggestions()"
+          aria-controls="header-suggest" [placeholder]="i18n.t('nav.searchPlaceholder')"
           [attr.aria-label]="i18n.t('nav.searchPlaceholder')" />
         @if (searchTerm) {
           <button class="clear-search" (click)="clearSearch()" [attr.aria-label]="i18n.t('search.clear')"><i class="pi pi-times" aria-hidden="true"></i></button>
         }
       </p-iconField>
       @if (showSuggestions()) {
-        <div class="suggest" role="group" [attr.aria-label]="i18n.t('search.suggestionsLabel')">
-          @for (p of suggestions(); track p.id) {
-            <a [routerLink]="['/products', p.id]" (click)="closeSuggestions()">
+        <div id="header-suggest" class="suggest" role="listbox" [attr.aria-label]="i18n.t('search.suggestionsLabel')">
+          @for (p of suggestions(); track p.id; let i = $index) {
+            <a role="option" [attr.aria-selected]="i === activeSuggestion()" [class.is-active]="i === activeSuggestion()"
+              [routerLink]="['/products', p.id]" (click)="closeSuggestions()">
               <img appSafeImg="product" [src]="p.images[0]" [alt]="p.names | localized: p.name" loading="lazy" />
               <span>{{ p.names | localized: p.name }}</span>
             </a>
@@ -51,20 +64,21 @@
     <div class="actions">
       <p-select [options]="langOptions()" [(ngModel)]="langModel" optionLabel="label" optionValue="value"
         (onChange)="onLang($event.value)" [ariaLabel]="i18n.t('language.label')" class="lang-select"
-        appendTo="body" panelStyleClass="premium-select-panel header-select-panel" scrollHeight="16rem" />
+        appendTo="body" panelStyleClass="premium-select-panel header-select-panel lang-select-panel" scrollHeight="16rem" />
       <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value"
         (ngModelChange)="onCurrency($event)" [ariaLabel]="i18n.t('currency.label')" class="cur-select"
-        appendTo="body" panelStyleClass="premium-select-panel header-select-panel" scrollHeight="16rem" />
-      <a routerLink="/favorites" class="icon-btn" [attr.aria-label]="favorites.count() > 0 ? i18n.t('nav.favorites') + ' (' + favorites.count() + ')' : i18n.t('nav.favorites')">
+        appendTo="body" panelStyleClass="premium-select-panel header-select-panel cur-select-panel" scrollHeight="16rem" />
+      <span class="actions-divider" aria-hidden="true"></span>
+      <a routerLink="/favorites" class="icon-btn heart-btn" [attr.aria-label]="favorites.count() > 0 ? i18n.t('nav.favorites') + ' (' + favorites.count() + ')' : i18n.t('nav.favorites')">
         <i class="pi pi-heart" aria-hidden="true"></i>
         @if (favorites.count() > 0) { <p-badge [value]="favorites.count()" severity="danger" /> }
       </a>
-      <a routerLink="/cart" class="icon-btn" [attr.aria-label]="cart.count() > 0 ? i18n.t('nav.cart') + ' (' + cart.count() + ')' : i18n.t('nav.cart')">
+      <a routerLink="/cart" class="icon-btn bag-btn" [attr.aria-label]="cart.count() > 0 ? i18n.t('nav.cart') + ' (' + cart.count() + ')' : i18n.t('nav.cart')">
         <i class="pi pi-shopping-cart" aria-hidden="true"></i>
         @if (cart.count() > 0) { <p-badge [value]="cart.count()" severity="success" /> }
       </a>
       @if (auth.isLoggedIn()) {
-        <button class="icon-btn" (click)="accountMenu.toggle($event)" [attr.aria-label]="i18n.t('nav.account')" [attr.aria-expanded]="accountMenu.overlayVisible" [attr.aria-haspopup]="true">
+        <button class="icon-btn account-btn" (click)="accountMenu.toggle($event)" [attr.aria-label]="i18n.t('nav.account')" [attr.aria-expanded]="accountMenu.overlayVisible" [attr.aria-haspopup]="true">
           <i class="pi pi-user" aria-hidden="true"></i>
         </button>
         <p-menu #accountMenu [popup]="true" [model]="accountItems()" appendTo="body" />

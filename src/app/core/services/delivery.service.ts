@@ -112,7 +112,18 @@ export class DeliveryService {
     if (!environment.useMockApi) {
       return this.api
         .post<BackendDeliveryQuote>('delivery/quote', { hotelId, subtotal, currency })
-        .pipe(map((q) => ({ hotelId: q.hotelId, fee: q.fee, currency: q.currency, source: 'api' as const, exchangeRateDate: q.exchangeRateDate ?? undefined })));
+        .pipe(
+          map((q) => ({
+            hotelId: q.hotelId,
+            fee: q.fee,
+            currency: q.currency,
+            source: 'api' as const,
+            exchangeRateDate: q.exchangeRateDate ?? undefined,
+            // The FX provenance travels with the quote: a converted fee says
+            // which rate produced it.
+            exchangeRateSource: q.exchangeRateSource ?? undefined,
+          })),
+        );
     }
     const hotel = this.hotelById(hotelId);
     if (!hotel) {

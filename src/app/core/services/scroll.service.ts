@@ -17,7 +17,7 @@ import { Injectable } from '@angular/core';
  */
 @Injectable({ providedIn: 'root' })
 export class ScrollService {
-  scrollToTop(behavior: ScrollBehavior = 'auto'): void {
+  scrollToTop(behavior: ScrollBehavior = 'instant'): void {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
     const body = document.body;

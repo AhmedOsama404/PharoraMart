@@ -68,6 +68,10 @@ export const ar: TranslationDict = {
     activeFilters: 'المرشحات النشطة',
     minPriceLabel: 'الحد الأدنى للسعر',
     maxPriceLabel: 'الحد الأقصى للسعر',
+    priceNegative: 'أدخل سعرًا صفرًا أو أكثر.',
+    priceOrder: 'يجب أن يكون الحد الأقصى للسعر مساويًا للحد الأدنى أو أعلى منه.',
+    noMaxPrice: 'بدون حد أقصى',
+    priceInvalid: 'أدخل سعرًا مثل 0.25 أو 12.50.',
   },
   product: {
     addToCart: 'أضف إلى السلة',
@@ -87,6 +91,7 @@ export const ar: TranslationDict = {
     new: 'جديد',
     popular: 'رائج',
     off: 'خصم {percent}%',
+    ratingLabel: 'التقييم {rating} من ٥ · {count} تقييم',
     breadcrumbsHome: 'الرئيسية',
     breadcrumbsCatalog: 'تسوّق',
     maxStock: 'المتاح {count} فقط',
@@ -221,6 +226,9 @@ export const ar: TranslationDict = {
     calculatingFee: 'جارٍ الحساب…',
     directoryFailed: 'تعذّر تحميل قائمة الفنادق. يرجى المحاولة مرة أخرى.',
     removeCoupon: 'إزالة الرمز',
+    cartLoading: 'جارٍ تحميل سلة التسوق وأحدث الأسعار…',
+    feePending: 'جارٍ حساب رسوم التوصيل…',
+    whatsappUpdatesHint: 'سنرسل أيضًا تحديثات الطلب عبر واتساب إلى رقم الجوال أعلاه.',
   },
   confirmation: {
     title: 'شكرًا لك! تم تأكيد الطلب',
@@ -243,6 +251,7 @@ export const ar: TranslationDict = {
     emailStatusNotice: "سنرسل لك حالة الطلب على هذا البريد الإلكتروني.",
     continueShopping: 'مواصلة التسوق',
     viewOrders: 'عرض طلباتي',
+    contactTitle: 'هل تحتاج للتواصل معنا؟',
     mockNotice: 'وضع تجريبي: الطلب محفوظ محليًا فقط. لا يوجد دفع أو توصيل حقيقي.',
   },
   orders: {

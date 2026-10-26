@@ -165,8 +165,24 @@ export class AuthService {
     }
   }
 
-  /** Demo password reset — never sends email; resolves after a delay. */
-  requestPasswordReset(_email: string): Observable<{ ok: true }> {
+  /**
+   * Ask the server to start a password reset.
+   *
+   * The API answers 200 for every well-formed email (no account
+   * disclosure), so the screen can say "if that address exists, we sent a
+   * link" without leaking whether it does. This used to be a demo that
+   * resolved locally and sent nothing at all.
+   */
+  requestPasswordReset(email: string): Observable<{ ok: true }> {
+    if (!environment.useMockApi) {
+      return this.api.post<{ ok: true }>(
+        'auth/forgot-password',
+        { email: email.trim() },
+        undefined,
+        { silent: true },
+      );
+    }
+    // Mock mode: the same answer the live API gives, without an account.
     return of({ ok: true as const }).pipe(delay(700));
   }
 }

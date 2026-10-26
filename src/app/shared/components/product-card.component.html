@@ -1,57 +1,82 @@
 <article class="product-card">
-  <a class="media img-frame" [routerLink]="['/products', product.id]">
-    <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-    <img appSafeImg="product"
-      [src]="product.images[0]"
-      [alt]="product.names | localized: product.name"
-      loading="lazy"
-    />
-    <span class="badges">
-      @if (product.salePrice != null) {
-        <p-tag severity="danger" [value]="i18n.t('product.off', { percent: discount() })" />
+  <div class="media">
+    <a class="media-link img-frame" [routerLink]="['/products', product.id]">
+      <i class="pi pi-image img-fallback" aria-hidden="true"></i>
+      <img appSafeImg="product"
+        [src]="product.images[0]"
+        [alt]="product.names | localized: product.name"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+    <div class="badges">
+      @if (isDiscounted()) {
+        <span class="badge badge-sale">{{ i18n.t('product.off', { percent: discount() }) }}</span>
       }
       @if (product.isNew) {
-        <p-tag severity="info" [value]="i18n.t('product.new')" />
+        <span class="badge badge-new">{{ i18n.t('product.new') }}</span>
       }
-    </span>
-  </a>
-  <button
-    type="button"
-    class="fav-btn"
-    [class.active]="favorites.has(product.id)"
-    (click)="onFav($event)"
-    [attr.aria-label]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
-    [attr.aria-pressed]="favorites.has(product.id)"
-    [pTooltip]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
-    tooltipPosition="top"
-  >
-    <i class="pi" [class.pi-heart-fill]="favorites.has(product.id)" [class.pi-heart]="!favorites.has(product.id)" aria-hidden="true"></i>
-  </button>
+    </div>
+    <button
+      type="button"
+      class="fav-btn"
+      [class.active]="favorites.has(product.id)"
+      (click)="onFav($event)"
+      [attr.aria-label]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+      [attr.aria-pressed]="favorites.has(product.id)"
+      [pTooltip]="favorites.has(product.id) ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+      tooltipPosition="top"
+    >
+      <i class="pi" [class.pi-heart-fill]="favorites.has(product.id)" [class.pi-heart]="!favorites.has(product.id)" aria-hidden="true"></i>
+    </button>
+  </div>
+
   <div class="body">
     <a class="name" [routerLink]="['/products', product.id]">{{ product.names | localized: product.name }}</a>
-    <div class="purchase-meta" [class.sale-price]="product.salePrice != null">
-      <div class="stock-status" [class.out]="product.stock <= 0" [class.low]="product.stock > 0 && product.stock <= 5">
-        <span class="status-dot" aria-hidden="true"></span>
+
+    <div class="meta-row" [class.solo]="!hasRating()">
+      @if (hasRating()) {
+        <span class="rating" role="img"
+          [attr.aria-label]="i18n.t('product.ratingLabel', { rating: ratingText(), count: reviewsText() })">
+          <span class="stars" aria-hidden="true">
+            @for (star of stars(); track $index) {
+              <i class="pi"
+                [class.pi-star-fill]="star === 'full'"
+                [class.pi-star-half-fill]="star === 'half'"
+                [class.pi-star]="star === 'empty'"></i>
+            }
+          </span>
+          <span class="rating-score" aria-hidden="true">{{ ratingText() }}</span>
+          <span class="rating-count" aria-hidden="true">({{ reviewsText() }})</span>
+        </span>
+      }
+      <span class="stock"
+        [class.low]="product.stock > 0 && product.stock <= 5"
+        [class.out]="product.stock <= 0">
+        <span class="stock-dot" aria-hidden="true"></span>
         @if (product.stock <= 0) { {{ i18n.t('product.outOfStock') }} }
         @else if (product.stock <= 5) { {{ i18n.t('product.lowStock', { count: product.stock }) }} }
         @else { {{ i18n.t('product.inStock') }} }
-      </div>
-      <div class="price-row">
-        <span class="price">{{ effective() | resolvedMoney: priceCurrency() }}</span>
-        @if (product.salePrice != null) {
-          <span class="old">{{ product.price | resolvedMoney: priceCurrency() }}</span>
-        }
-      </div>
+      </span>
     </div>
+
+    <div class="price-row" [class.on-sale]="isDiscounted()">
+      <span class="price">{{ effective() | resolvedMoney: priceCurrency() }}</span>
+      @if (isDiscounted()) {
+        <s class="old">{{ product.price | resolvedMoney: priceCurrency() }}</s>
+      }
+    </div>
+
     <div class="cart-action-row">
-      <app-qty-selector [qty]="quantity()" [min]="0" [max]="maxQty()"
-        [ariaLabel]="i18n.t('product.qty')" (qtyChange)="quantity.set($event)" />
+      @if (product.stock > 0) {
+        <app-qty-selector [qty]="quantity()" [min]="1" [max]="maxQty()"
+          [ariaLabel]="i18n.t('product.qty')" (qtyChange)="quantity.set($event)" />
+      }
       <p-button
-        [label]="i18n.t('product.addToCart')"
+        [label]="product.stock <= 0 ? i18n.t('product.outOfStock') : i18n.t('product.addToCart')"
         icon="pi pi-shopping-cart"
-        size="small"
         [fluid]="true"
-        [disabled]="product.stock <= 0 || quantity() === 0"
+        [disabled]="product.stock <= 0"
         (onClick)="addToCart()"
       />
     </div>

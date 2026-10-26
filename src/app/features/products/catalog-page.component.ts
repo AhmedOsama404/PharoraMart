@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, effect, inject, signal, untracked, type WritableSignal } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -13,9 +13,13 @@ import { InputText } from 'primeng/inputtext';
 import { Paginator, type PaginatorState } from 'primeng/paginator';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
-import { Slider } from 'primeng/slider';
 import { EMPTY, Subject, catchError, switchMap, tap } from 'rxjs';
-import { MAX_CATALOG_PRICE } from '../../data-access/mock-data';
+import {
+  catalogQueryParams,
+  lastPageFor,
+  parseCatalogFilters,
+  type CatalogFilterState,
+} from './catalog-query.utils';
 import { I18nService } from '../../core/services/i18n.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { PriceResolverService } from '../../core/services/price-resolver.service';
@@ -36,12 +40,39 @@ interface SortOption {
   value: SortKey;
 }
 
+/** The raw text one price field holds; a cleared field reads as empty. */
+function fieldText(value: number | string | null): string {
+  return value === null || value === undefined ? '' : String(value).trim();
+}
+
 /**
- * The catalogue's price ceiling, rounded up to a whole 10. It is never below
- * the catalogue's most expensive product, so every product stays filterable.
+ * A typed price bound read the way the visitor means it.
+ *
+ * Both decimal marks work ("12,5" is twelve and a half) and a second mark is
+ * read as a thousands group ("1,234.56"), because a bound is a plain amount and
+ * every locale on this storefront types fractions differently. Arabic-Indic and
+ * Extended digits are folded to ASCII so an Arabic keyboard is not second-class.
+ * Anything that is not a number yields `null`, so the form can say so instead
+ * of guessing a meaning for the text.
  */
-function ceilingFor(maxPrice: number): number {
-  return Math.max(10, Math.ceil(maxPrice / 10) * 10);
+function parseAmount(raw: string): number | null {
+  const digits = raw
+    // Arabic-Indic (٠-٩) and Extended (۰-۹) blocks both start on a 16 boundary,
+    // so the low nibble is the digit.
+    .replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (d) => String(d.charCodeAt(0) % 16))
+    .replace(/\u066B/g, '.')
+    .replace(/\u066C/g, '');
+  const text = digits.replace(/\s/g, '');
+  if (text === '') return 0;
+  const commaIsDecimal = text.lastIndexOf(',') > text.lastIndexOf('.');
+  const normalized = commaIsDecimal
+    ? text.replace(/\./g, '').replace(',', '.')
+    : text.replace(/,/g, '');
+  // An optional sign, digits, and at most one decimal mark with digits on at
+  // least one side: "1e3", "12.5.7" and "--4" are mistakes, not amounts.
+  if (!/^[+-]?\d*(\.\d*)?$/.test(normalized) || !/\d/.test(normalized)) return null;
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
 }
 
 @Component({
@@ -50,7 +81,7 @@ function ceilingFor(maxPrice: number): number {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink, NgTemplateOutlet, FormsModule, Button, Checkbox, Chip, Drawer, IconField, InputIcon, InputText,
-    Paginator, Select, Skeleton, Slider, ProductCardComponent, EmptyStateComponent,
+    Paginator, Select, Skeleton, ProductCardComponent, EmptyStateComponent,
   ],
   templateUrl: './catalog-page.component.html',
   styleUrl: './catalog-page.component.scss',
@@ -68,39 +99,41 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  /**
-   * The price ceiling of the catalogue, in USD. The API owns the real number
-   * (GET /products/price-range); the bundled demo catalogue is only the
-   * fallback for mock mode or an API without that endpoint. A product priced
-   * above the fallback must still be filterable, so the live value wins.
-   *
-   * The ceiling is rounded up to a whole 10 so the slider has friendly
-   * steps; the top of the range always means "no upper bound".
-   */
-  protected maxPrice = signal(ceilingFor(MAX_CATALOG_PRICE));
+  /** Bounds are only meaningful once a rate exists to translate them. */
   protected priceConversionAvailable = computed(() =>
     this.prices.convert(1, this.currency.code(), 'USD') != null,
   );
   protected filterCurrency = computed(() =>
     this.priceConversionAvailable() ? this.currency.code() : 'USD',
   );
-  protected displayPriceLimit = computed(() =>
-    this.prices.convert(this.maxPrice(), 'USD', this.filterCurrency()) ?? this.maxPrice(),
-  );
-  protected displayPriceStep = computed(() => Math.max(1, Math.round(this.displayPriceLimit() / 100)));
   protected pageSize = signal(environment.pageSize);
   protected drawer = signal(false);
-  protected minPriceInput = signal<number | string>(0);
-  protected maxPriceInput = signal<number | string>('');
+  /** The two fields hold the raw text while the visitor types. */
+  protected minPriceInput = signal<number | string | null>(0);
+  protected maxPriceInput = signal<number | string | null>('');
   protected priceInputPending = signal(false);
+  /**
+   * Why the last typed range was refused, or `null` when the bounds are usable.
+   * Contradictory input is reported in the form instead of being quietly
+   * rewritten — see `applyPriceRange`.
+   */
+  protected priceRangeError = signal<'negative' | 'order' | 'invalid' | null>(null);
+  /** The message that states why the last typed range was refused. */
+  protected readonly priceErrorText = computed(() => {
+    const key = this.priceRangeError();
+    if (key === 'negative') return this.i18n.t('catalog.priceNegative');
+    if (key === 'order') return this.i18n.t('catalog.priceOrder');
+    if (key === 'invalid') return this.i18n.t('catalog.priceInvalid');
+    return '';
+  });
 
   // Draft filter state. Applied to the URL (debounced for search) so listings
   // stay bookmarkable and survive refresh/back-forward navigation.
   //
   // Price bounds live in the VISITOR'S SELECTED CURRENCY — exactly what the
-  // slider, the two number fields and the chips show. The only conversion to
-  // the server's USD contract happens in `currentQuery()`, so UI and applied
-  // state can never disagree. `maxPrice: null` means "no upper bound".
+  // two number fields and the chips show. The only conversion to the server's
+  // USD contract happens in `currentQuery()`, so UI and applied state can never
+  // disagree. `maxPrice: null` means "no upper bound".
   protected draft = {
     q: signal(''),
     category: signal(''),
@@ -115,13 +148,21 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   protected total = signal(0);
   protected page = signal(1);
   protected state = signal<'loading' | 'ok' | 'error'>('loading');
-  /** True after 3 s of loading, so a slow backend is explained, not hidden. */
+  /**
+   * A refinement (new filters or page) over results that are already on
+   * screen. Those stay visible; only a load with nothing to show uses the
+   * skeleton grid, so a filter change never blanks the page.
+   */
+  protected refreshing = computed(() => this.state() === 'loading' && this.items().length > 0);
+  /** True after 3 s of an empty first load, so a slow backend is explained. */
   protected slow = signal(false);
   private slowTimer: ReturnType<typeof setTimeout> | null = null;
   // Active categories from the data source (drives the filter, never hardcoded).
   protected categories = signal<Category[]>([]);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private priceInputTimer: ReturnType<typeof setTimeout> | null = null;
+  /** A destroyed page must never publish a URL or start a request. */
+  private destroyed = false;
   private connectivity = inject(ConnectivityService);
   private readonly destroyRef = inject(DestroyRef);
   /**
@@ -138,14 +179,23 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   private lastPriceCurrency: string | null = null;
 
   constructor() {
+    // Price bounds are expressed in the filter currency; a currency switch
+    // re-expresses them (and reloads) here and only here.
     effect(() => {
       const code = this.currency.code();
-      // Track rate arrival too: once conversion is possible the (empty-form)
-      // upper field should show the catalog ceiling in the selected currency.
-      this.displayPriceLimit();
+      // Track rate arrival too: the bounds are stored in the filter currency,
+      // so the first usable snapshot has to re-express whatever is on screen.
+      this.priceConversionAvailable();
       const pending = this.priceInputPending();
       untracked(() => this.onPriceCurrencyChanged(code, pending));
-      this.trackSlowHint(this.state() === 'loading' || pending);
+    });
+    // Separate effect: the slow hint depends on the load state, not on prices.
+    // Mixing both made every load transition re-run the price rebinding.
+    // Only a load that has nothing to show can be "slow to the visitor":
+    // while existing results stay on screen, the thin progress bar is enough.
+    effect(() => {
+      const busy = this.state() === 'loading' && this.items().length === 0;
+      untracked(() => this.trackSlowHint(busy));
     });
     this.connectivity.recovered$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -168,6 +218,18 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
               this.items.set(res.items);
               this.total.set(res.total);
               this.autoRetried = false;
+              // A page past the last one (stale bookmark, or filters that
+              // shrank the result set) would render "no products" beside a
+              // non-zero count. Land on the last real page instead; publishing
+              // it re-runs this one loader, so there is still one request per
+              // applied query.
+              const lastPage = lastPageFor(res.total, this.pageSize());
+              if (res.items.length === 0 && this.page() > lastPage) {
+                this.state.set('loading');
+                this.page.set(lastPage);
+                this.pushUrl();
+                return;
+              }
               this.state.set('ok');
             }),
             // The failure is rendered by the page (retry / offline banner);
@@ -207,11 +269,26 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
       );
       rebound = true;
     }
-    if (!pending) {
-      this.minPriceInput.set(this.draft.minPrice());
-      this.maxPriceInput.set(this.draft.maxPrice() ?? this.displayPriceLimit());
+    // A refused edit deliberately is not in the draft, so the form keeps it:
+    // the visitor is about to correct the number, not re-read the applied bounds.
+    if (!pending && !this.priceRangeError()) {
+      this.syncPriceField(this.minPriceInput, this.draft.minPrice());
+      // An empty upper field is the visible form of "no upper bound".
+      this.syncPriceField(this.maxPriceInput, this.draft.maxPrice());
     }
     if (rebound) this.refresh();
+  }
+
+  /**
+   * Points a price field at an applied bound — unless its text already says
+   * exactly that number. Both the draft and the URL speak normalized numbers,
+   * and writing them back over the visitor's own spelling ("12,5", "0.") under
+   * a live caret is what made a fraction impossible to type.
+   */
+  private syncPriceField(field: WritableSignal<number | string | null>, bound: number | null): void {
+    const raw = fieldText(field());
+    if (raw !== '' && parseAmount(raw) === bound) return;
+    field.set(bound ?? '');
   }
 
   /**
@@ -228,7 +305,13 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
     if (from === to) return amount;
     const usd = this.prices.convertPrecise(amount, from, 'USD');
     if (usd == null) return amount;
-    return this.prices.convert(usd, 'USD', to) ?? amount;
+    const converted = this.prices.convertPrecise(usd, 'USD', to);
+    if (converted == null) return amount;
+    // Two decimals read as money, but a fraction bound must survive the pivot:
+    // 0.23 EGP is 0.004 EUR, and rounding that to 00 would quietly drop the
+    // filter the visitor just set. A bound that rounds away stays exact.
+    const rounded = Math.round((converted + Number.EPSILON) * 100) / 100;
+    return rounded > 0 || amount === 0 ? rounded : converted;
   }
 
   /** Explicit Retry: reset the breaker, probe health, refetch immediately. */
@@ -239,7 +322,27 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.clearSlowTimer();
+    // A debounce that outlives the page would publish its URL from the
+    // deactivated route, pulling the visitor back out of whatever they
+    // navigated to (e.g. a product they clicked while typing).
+    this.clearSearchTimer();
+    this.clearPriceInputTimer();
+  }
+
+  private clearSearchTimer(): void {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+  }
+
+  private clearPriceInputTimer(): void {
+    if (this.priceInputTimer) {
+      clearTimeout(this.priceInputTimer);
+      this.priceInputTimer = null;
+    }
   }
 
   private trackSlowHint(busy: boolean): void {
@@ -287,34 +390,28 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
     { label: this.i18n.t('catalog.outOfStock'), value: 'out_of_stock' },
   ]);
 
+  /** Localized label for a non-"all" availability, shared by the chips. */
+  private availabilityLabel = computed<Record<Availability, string>>(() => ({
+    in_stock: this.i18n.t('catalog.inStock'),
+    low_stock: this.i18n.t('catalog.lowStock'),
+    out_of_stock: this.i18n.t('catalog.outOfStock'),
+  }));
+
   protected activeChips = computed(() => {
     const chips: { key: string; label: string }[] = [];
     if (this.draft.q()) chips.push({ key: 'q', label: `“${this.draft.q()}”` });
     if (this.draft.category()) chips.push({ key: 'category', label: this.products.categoryName(this.draft.category()!) });
     if (this.draft.minPrice() > 0) chips.push({ key: 'min', label: `≥ ${this.currency.format(this.draft.minPrice(), this.filterCurrency())}` });
     if (this.draft.maxPrice() !== null) chips.push({ key: 'max', label: `≤ ${this.currency.format(this.draft.maxPrice()!, this.filterCurrency())}` });
-    if (this.draft.availability() !== 'all') chips.push({ key: 'avail', label: this.draft.availability() });
+    // The enum value is a contract token, never display text: show the same
+    // localized label the availability select offers.
+    const availability = this.draft.availability();
+    if (availability !== 'all') chips.push({ key: 'avail', label: this.availabilityLabel()[availability] });
     if (this.draft.sale()) chips.push({ key: 'sale', label: this.i18n.t('catalog.onSaleOnly') });
     return chips;
   });
 
   ngOnInit(): void {
-    // The catalogue's own price ceiling. Until it arrives the demo value is
-    // used, so the filter never shows a stale number for longer than one
-    // request.
-    this.products
-      .priceRange()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (range) => {
-          if (range && range.maxPrice > 0) {
-            this.maxPrice.set(ceilingFor(range.maxPrice));
-          }
-        },
-        // Keep the fallback ceiling: an older API (or an outage) must not
-        // leave the price filter without a range.
-        error: () => undefined,
-      });
     // Filter categories come from the data source, independent of products.
     // A failed category request must not become an unhandled error and must
     // not block the product list: fall back to "All categories".
@@ -344,27 +441,36 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
 
   /** Rebuilds the draft filter state from the URL. */
   private applyQueryParams(params: ParamMap): void {
-    this.draft.q.set(params.get('q') ?? '');
-    this.draft.category.set(params.get('category') ?? '');
+    // The URL is untrusted input: the parser validates every value (unknown
+    // sort/availability, a page below one, an oversized page size, bounds that
+    // contradict each other) so no filter control or request can receive a
+    // value it does not understand.
+    const next = parseCatalogFilters(params, { pageSize: environment.pageSize });
+    this.draft.q.set(next.q);
+    this.draft.category.set(next.category);
     // Price params are numbers in the CURRENTLY SELECTED currency, matching
     // what the controls show. An absent `max` means "no upper bound".
-    this.draft.minPrice.set(Math.max(0, Number(params.get('min') ?? 0) || 0));
-    const maxParam = params.get('max');
-    const maxNumber = maxParam == null || maxParam === '' ? Number.NaN : Number(maxParam);
-    this.draft.maxPrice.set(Number.isFinite(maxNumber) ? maxNumber : null);
+    this.draft.minPrice.set(next.minPrice);
+    this.draft.maxPrice.set(next.maxPrice);
     if (!this.priceInputPending()) {
-      this.minPriceInput.set(this.draft.minPrice());
-      this.maxPriceInput.set(this.draft.maxPrice() ?? this.displayPriceLimit());
+      // Re-sync each field only when its text does not already MEAN the
+      // incoming bound — see `syncPriceField`.
+      this.syncPriceField(this.minPriceInput, next.minPrice);
+      this.syncPriceField(this.maxPriceInput, next.maxPrice);
+      // The range came from the URL, which is coherent by construction, so any
+      // earlier complaint about typed input no longer applies. An uncommitted
+      // edit keeps its verdict on screen.
+      this.priceRangeError.set(null);
     }
-    this.draft.availability.set((params.get('avail') as 'all' | Availability) ?? 'all');
-    this.draft.sale.set(params.get('sale') === '1');
-    this.draft.sort.set((params.get('sort') as SortKey) ?? 'recommended');
-    this.page.set(Number(params.get('page') ?? 1) || 1);
+    this.draft.availability.set(next.availability);
+    this.draft.sale.set(next.sale);
+    this.draft.sort.set(next.sort);
+    this.page.set(next.page);
     // The page size is part of the listing too, so a shared/bookmarked URL
-    // shows the same number of products per page.
-    const sizeParam = params.get('size');
-    const size = sizeParam == null || sizeParam === '' ? environment.pageSize : Number(sizeParam);
-    if (Number.isFinite(size) && size > 0) this.pageSize.set(size);
+    // shows the same number of products per page — clamped to what the server
+    // accepts (`ListQuery.MaxPageSize`), so the pager and the server always
+    // agree on the page size and the page count.
+    this.pageSize.set(next.pageSize);
   }
 
   private currentQuery(): CatalogQuery {
@@ -392,23 +498,32 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   }
 
   private pushUrl(): void {
+    // A page that is already gone must not publish a URL: navigation from a
+    // deactivated route would drag the visitor back to the listing.
+    if (this.destroyed) return;
+    // Every known param is published (a `null` removes it), so clearing a
+    // filter cannot leave its stale value in the URL.
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {
-        q: this.draft.q() || null,
-        category: this.draft.category() || null,
-        min: this.draft.minPrice() || null,
-        max: this.draft.maxPrice(),
-        priceMode: null,
-        avail: this.draft.availability() !== 'all' ? this.draft.availability() : null,
-        sale: this.draft.sale() ? 1 : null,
-        sort: this.draft.sort() !== 'recommended' ? this.draft.sort() : null,
-        page: this.page() > 1 ? this.page() : null,
-        size: this.pageSize() !== environment.pageSize ? this.pageSize() : null,
-      },
+      queryParams: catalogQueryParams(this.filterState(), { pageSize: environment.pageSize }),
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  }
+
+  /** The applied filter state, in the shape the URL helpers speak. */
+  private filterState(): CatalogFilterState {
+    return {
+      q: this.draft.q(),
+      category: this.draft.category(),
+      minPrice: this.draft.minPrice(),
+      maxPrice: this.draft.maxPrice(),
+      availability: this.draft.availability(),
+      sale: this.draft.sale(),
+      sort: this.draft.sort(),
+      page: this.page(),
+      pageSize: this.pageSize(),
+    };
   }
 
   /**
@@ -433,8 +548,11 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
 
   protected onSearchType(): void {
     // Debounce typing so each keystroke doesn't push a URL + request.
-    if (this.searchTimer) clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.refresh(), 350);
+    this.clearSearchTimer();
+    this.searchTimer = setTimeout(() => {
+      this.searchTimer = null;
+      this.refresh();
+    }, 350);
   }
 
   protected setSort(v: SortKey): void {
@@ -447,26 +565,19 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
     this.refresh();
   }
 
-  protected setMaxPrice(v: number | string | number[] | undefined): void {
-    if (!this.priceConversionAvailable()) return;
-    const n = Array.isArray(v) ? v[0] : Number(v);
-    if (!Number.isFinite(n)) return;
-    const limit = this.displayPriceLimit();
-    const displayValue = Math.max(0, Math.min(limit, n));
-    // Reaching the catalog ceiling means "no upper bound" again.
-    const maxValue = displayValue >= limit ? null : displayValue;
-    const nextMax = maxValue === null ? null : Math.max(this.draft.minPrice(), maxValue);
-    const changed = nextMax !== this.draft.maxPrice();
-    this.draft.maxPrice.set(nextMax);
-    this.maxPriceInput.set(nextMax ?? '');
-    if (changed) this.refresh();
+  /**
+   * The filter body is instantiated twice — the sidebar and the mobile drawer —
+   * so an id used by a `<label for>` has to be unique per instance.
+   */
+  protected priceId(part: 'label' | 'min' | 'max', scope: string): string {
+    return `catalog-price-${part}-${scope}`;
   }
 
-  protected onPriceInput(bound: 'min' | 'max', value: number | string): void {
+  protected onPriceInput(bound: 'min' | 'max', value: number | string | null): void {
     if (bound === 'min') this.minPriceInput.set(value);
     else this.maxPriceInput.set(value);
     this.priceInputPending.set(true);
-    if (this.priceInputTimer) clearTimeout(this.priceInputTimer);
+    this.clearPriceInputTimer();
     this.priceInputTimer = setTimeout(() => {
       this.priceInputTimer = null;
       this.applyPriceRange();
@@ -474,38 +585,57 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   }
 
   protected applyPriceRange(): void {
-    if (this.priceInputTimer) clearTimeout(this.priceInputTimer);
-    this.priceInputTimer = null;
+    this.clearPriceInputTimer();
 
-    const minRaw = String(this.minPriceInput()).trim();
-    const maxRaw = String(this.maxPriceInput()).trim();
-    // An emptied field clears its bound; numbers mean the selected currency.
-    const minDisplay = minRaw === '' ? 0 : Number(minRaw);
-    const maxDisplay: number | null = maxRaw === '' ? null : Number(maxRaw);
-    if (
-      !Number.isFinite(minDisplay) ||
-      (maxDisplay !== null && !Number.isFinite(maxDisplay)) ||
-      !this.priceConversionAvailable()
-    ) {
-      // Unusable input or no usable rate: refuse to apply a guessed meaning.
+    // The fields hold the raw text while the visitor types, so an emptied one
+    // reads as '' and must clear its bound rather than parse into something.
+    const minRaw = fieldText(this.minPriceInput());
+    const maxRaw = fieldText(this.maxPriceInput());
+    if (!this.priceConversionAvailable()) {
+      // No usable rate: refuse to apply a guessed meaning to the numbers.
+      this.priceInputPending.set(false);
+      return;
+    }
+    // An emptied lower field means 0; an emptied upper field means "no bound".
+    const minDisplay = minRaw === '' ? 0 : parseAmount(minRaw);
+    const maxDisplay: number | null = maxRaw === '' ? null : parseAmount(maxRaw);
+    if (minDisplay === null || (maxRaw !== '' && maxDisplay === null)) {
+      // Not an amount at all. Say so — silently keeping the old bounds reads as
+      // a filter that ignores what was typed.
+      this.priceRangeError.set('invalid');
       this.priceInputPending.set(false);
       return;
     }
 
-    const limit = this.displayPriceLimit();
-    const nextMin = Math.max(0, Math.min(limit, minDisplay));
-    // Reaching the catalog ceiling means "no upper bound" again — the same
-    // rule the slider follows — so a typed value at (or above) the ceiling
-    // clears the bound instead of pinning it to the ceiling.
-    const cappedMax = maxDisplay === null ? null : Math.max(nextMin, Math.min(limit, maxDisplay));
-    const nextMax = cappedMax !== null && cappedMax >= limit ? null : cappedMax;
+    if (minDisplay < 0 || (maxDisplay !== null && maxDisplay < 0)) {
+      // A negative price filters nothing, so it is a mistake rather than a
+      // bound. Say so; do not floor it to 0 behind the visitor's back.
+      this.priceRangeError.set('negative');
+      this.priceInputPending.set(false);
+      return;
+    }
+    // There is deliberately NO upper clamp here: the API filters on any
+    // `maxPrice` it is given, a budget above the priciest product is a
+    // legitimate question, and rewriting the number would make the form
+    // disagree with the results on screen.
+    const nextMin = minDisplay;
+    const nextMax = maxDisplay;
+    if (nextMax !== null && nextMax < nextMin) {
+      // Reversed bounds match nothing. Keep the last applied range and explain,
+      // instead of silently raising the maximum to meet the minimum.
+      this.priceRangeError.set('order');
+      this.priceInputPending.set(false);
+      return;
+    }
+    this.priceRangeError.set(null);
+
     const changed = nextMin !== this.draft.minPrice() || nextMax !== this.draft.maxPrice();
     this.draft.minPrice.set(nextMin);
     this.draft.maxPrice.set(nextMax);
-    // Echo the normalized values so the form never lies about what is applied
-    // (e.g. a value beyond the catalog ceiling snaps back to the ceiling).
-    this.minPriceInput.set(nextMin);
-    this.maxPriceInput.set(nextMax ?? limit);
+    // Echo only a field whose text does not already say what was applied, so a
+    // value accepted exactly as typed is never re-written under the caret.
+    this.syncPriceField(this.minPriceInput, nextMin);
+    this.syncPriceField(this.maxPriceInput, nextMax);
     this.priceInputPending.set(false);
     if (changed) this.refresh();
   }
@@ -541,8 +671,7 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   }
 
   protected clearAll(): void {
-    if (this.priceInputTimer) clearTimeout(this.priceInputTimer);
-    this.priceInputTimer = null;
+    this.clearPriceInputTimer();
     this.priceInputPending.set(false);
     this.draft.q.set('');
     this.draft.category.set('');

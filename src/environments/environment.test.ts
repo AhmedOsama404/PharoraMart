@@ -10,6 +10,9 @@ export const environment = {
   useMockApi: true,
   requestTimeoutMs: 10000,
   getRetryAttempts: 2,
+  // Ceiling for the background /health/live check (see environment.ts). Kept
+  // identical to the real configs so the probe specs assert the shipped value.
+  livenessProbeTimeoutMs: 8000,
   appName: 'Pharora',
   defaultLang: 'en' as const,
   defaultCurrency: 'USD' as const,

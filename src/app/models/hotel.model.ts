@@ -13,6 +13,11 @@ export interface Hotel {
   names?: LocalizedText;
   /** City/region, e.g. 'Marsa Alam'. Data-driven: new cities appear automatically. */
   city: string;
+  /**
+   * The stable city id the hotel belongs to (`Hotels.CityId` → `cities.Id`).
+   * The name above is a display value and can change; this is the key.
+   */
+  cityId?: string;
   /** Sub-area, e.g. 'Port Ghalib', 'Makadi Bay'. */
   area?: string;
   /** Inactive hotels are hidden from selection; existing orders keep snapshots. */
@@ -42,5 +47,7 @@ export interface DeliveryQuote {
   currency: string;
   source: 'sample' | 'api';
   exchangeRateDate?: string;
+  /** Where the exchange rate came from, when the fee was converted. */
+  exchangeRateSource?: string;
   etaDays?: string;
 }

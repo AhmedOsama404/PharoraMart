@@ -187,8 +187,10 @@ Public, unauthenticated reads the storefront needs once the dashboard exists:
 | GET | `/store/settings` | `{ whatsappNumber, supportEmail, businessHours, contactMode, defaultCurrency }` |
 | GET | `/store/homepage` | `{ heroProductIds[], featuredCategoryIds[], promoCategoryId?, perks[] }` |
 
-Today these live in `src/environments/environment*.ts` (contact/mode/hours)
-and in-component queries (`featured()`, `popular()`); the shapes above let the
+Today the storefront reads `/store/settings` once per session (`ContactService`);
+the contact/mode/hours in `src/environments/environment*.ts` stay the fallback
+until (and unless) the API answers. `/store/homepage` still lives in
+in-component queries (`featured()`, `popular()`); the shapes above let the
 dashboard take over without touching components.
 
 ## 8. Switching mock → real API
@@ -198,3 +200,54 @@ dashboard take over without touching components.
 2. Implement the `*Service` HTTP methods via `ApiClientService`
    (replace the `of(...).pipe(delay(...))` mock branches).
 3. Keep method signatures, models and component code unchanged.
+
+## 9. Contract alignment (Phase 8)
+
+The API is the authority for every rule below; the storefront sends what the
+API declares and nothing more.
+
+### Coupon validation carries the basket
+
+`POST /api/v1/coupons/validate` now applies the SAME scope rule as order
+placement. The request therefore carries the basket:
+
+```json
+{ "code": "SAVE10", "subtotal": 20, "productIds": ["karkadeh"] }
+```
+
+* `productIds` is the list of product ids in the basket.
+* A **product- or category-scoped coupon** is refused with
+  `coupon_not_applicable` when the basket does not match — exactly as
+  order placement refuses it. Before this the validation answered "valid"
+  and the order was rejected at submit, so the customer saw the coupon
+  applied and the checkout failed.
+* The request identity includes the basket, so swapping one product for
+  another of the same price re-validates the coupon.
+
+### The order request
+
+| Field | Rule |
+|---|---|
+| `customer.contactMethod` | exactly `whatsapp` or `email` — the API's allow-list. The client type mirrors it, so a value the API would reject cannot be typed. |
+| `items[].image` | a **required string**: a product without a picture sends `""`, never `undefined` (which is a 400). |
+| `consentTextHash` | a SHA-256 hex (64 chars) of the consent line the customer saw, sent only when the customer opted in to WhatsApp. The server stores it with the consent record, so "what was agreed" stays provable. |
+
+### Password reset is a real request
+
+`POST /api/v1/auth/forgot-password` is now called (it answers 200 for every
+well-formed address, so no account is disclosed). The API's reset *delivery*
+is still a stub — it validates and answers, but no email leaves the server
+yet — so the screen keeps saying so.
+
+### The store's default currency
+
+`GET /api/v1/store/settings` publishes `defaultCurrency`. The storefront
+reads it and applies it as the currency a NEW visitor sees; a visitor who
+already chose a currency keeps their own choice (it is remembered).
+
+### DTO fields the client now keeps
+
+* `HotelDto.cityId` — the stable city id (the name above is a display
+  value).
+* `DeliveryQuoteDto.exchangeRateSource` — the FX provenance of a converted
+  fee.

@@ -68,6 +68,10 @@ export const cs: TranslationDict = {
     activeFilters: 'Aktivní filtry',
     minPriceLabel: 'Minimální cena',
     maxPriceLabel: 'Maximální cena',
+    priceNegative: 'Zadejte cenu 0 nebo vyšší.',
+    priceOrder: 'Maximální cena musí být alespoň stejná jako minimální cena.',
+    noMaxPrice: 'Bez horní hranice',
+    priceInvalid: 'Zadejte cenu, například 0,25 nebo 12,50.',
   },
   product: {
     addToCart: 'Přidat do košíku',
@@ -87,6 +91,7 @@ export const cs: TranslationDict = {
     new: 'Novinka',
     popular: 'Populární',
     off: 'Sleva {percent} %',
+    ratingLabel: 'Hodnocení {rating} z 5 · {count} recenzí',
     breadcrumbsHome: 'Domů',
     breadcrumbsCatalog: 'Obchod',
     maxStock: 'K dispozici pouze {count} ks',
@@ -221,6 +226,9 @@ export const cs: TranslationDict = {
     calculatingFee: 'Vypočítává se…',
     directoryFailed: 'Seznam hotelů se nepodařilo načíst. Zkuste to prosím znovu.',
     removeCoupon: 'Odebrat kód',
+    cartLoading: 'Načítáme košík a nejnovější ceny…',
+    feePending: 'Počítáme poplatek za doručení…',
+    whatsappUpdatesHint: 'Aktualizace objednávky budeme zasílat také přes WhatsApp na mobilní číslo uvedené výše.',
   },
   confirmation: {
     title: 'Děkujeme! Objednávka potvrzena',
@@ -243,6 +251,7 @@ export const cs: TranslationDict = {
     emailStatusNotice: "Stav objednávky vám pošleme na tento e-mail.",
     continueShopping: 'Pokračovat v nákupu',
     viewOrders: 'Zobrazit objednávky',
+    contactTitle: 'Potřebujete nás kontaktovat?',
     mockNotice: 'Ukázkový režim: objednávka je uložena pouze lokálně. Neprobíhá reálná platba ani doručení.',
   },
   orders: {

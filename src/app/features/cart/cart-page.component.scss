@@ -19,7 +19,7 @@ h1 { margin: 0; font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.2; letter-
 .unavailable-icon { width: 3rem; height: 3rem; border-radius: 0.7rem; display: grid; place-items: center;
   background: var(--surface-ground); color: var(--text-secondary); font-size: 1.3rem; }
 .row-between { display: flex; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
-.summary { position: sticky; top: 7rem; background: linear-gradient(160deg, #fff 0%, #f8f7ef 100%); }
+.summary { position: sticky; top: var(--sticky-top); max-height: calc(100dvh - var(--sticky-top) - 1rem); overflow-y: auto; background: linear-gradient(160deg, var(--surface-card) 0%, var(--surface-ground) 100%); }
 .summary h2 { margin: 0 0 0.15rem; font-size: 1.15rem; }
 .summary p-message { display: block; margin-block: 0.15rem 0.35rem; }
 .t-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-block: 0.3rem; }

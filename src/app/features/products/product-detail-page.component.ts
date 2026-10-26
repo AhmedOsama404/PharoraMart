@@ -30,7 +30,6 @@ import { MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
-import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import { pickLocaleText } from '../../shared/utils/localized.utils';
 import type { ProductVariant } from '../../models/product.model';
 
@@ -366,10 +365,5 @@ export class ProductDetailPageComponent implements OnDestroy {
 
   protected goHome(): void {
     this.router.navigate(['/']);
-  }
-
-  protected fbImg(ev: Event, seed = 'novamart-detail'): void {
-    // Shared two-stage recovery (picsum attempt, then framed placeholder).
-    handleImgError(ev, seed);
   }
 }

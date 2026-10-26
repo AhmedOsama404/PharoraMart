@@ -66,6 +66,19 @@ h1 { margin: 0; font-size: clamp(1.8rem, 2.7vw, 2.2rem); line-height: 1.25; lett
 .field.full { grid-column: 1 / -1; }
 .err { display: block; margin-top: 0.35rem; color: var(--danger); font-size: 0.75rem; }
 .hint { display: block; margin-top: 0.3rem; font-size: 0.75rem; color: var(--text-secondary); }
+/* The line that says what the chosen contact method changes. */
+.hint--contact { font-size: var(--font-size-sm); color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary)); }
+
+/* The contact detail the chosen method uses is marked, so the customer sees
+   where the order will be sent. */
+.field--preferred :is(input, textarea) {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--surface-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 9%, transparent);
+}
+:host ::ng-deep .field--preferred .phone__number {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--surface-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 9%, transparent);
+}
 
 /* Premium COD styling */
 .premium-cod {
@@ -88,8 +101,9 @@ h1 { margin: 0; font-size: clamp(1.8rem, 2.7vw, 2.2rem); line-height: 1.25; lett
 
 /* Summary sidebar */
 /* A sticky summary that is taller than the viewport can never show its
-   bottom, so it scrolls inside itself instead of hiding the order button. */
-.summary { position: sticky; top: 7rem; max-height: calc(100dvh - 8rem); overflow-y: auto; background: linear-gradient(160deg, #fff 0%, #f9f8f2 100%); }
+   bottom, so it scrolls inside itself. The order button is pinned to the
+   bottom of the card, so it never scrolls out of sight. */
+.summary { position: sticky; top: var(--sticky-top); max-height: calc(100dvh - var(--sticky-top) - 1rem); overflow-y: auto; background: linear-gradient(160deg, var(--surface-card) 0%, var(--surface-ground) 100%); }
 .summary .card-header {
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
@@ -120,11 +134,106 @@ h1 { margin: 0; font-size: clamp(1.8rem, 2.7vw, 2.2rem); line-height: 1.25; lett
 .grand { margin-top: 0.3rem; padding: 0.75rem 0.9rem; border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--surface-border)); border-radius: 0.85rem; background: linear-gradient(110deg, #eef6ef, #fff 90%); font-size: 1.1rem; color: var(--primary); }
 .grand strong { color: var(--primary); font-size: 1.25rem; font-weight: 800; }
 
-.summary-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+.summary-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  /* Full-bleed inside the card, so the content that scrolls past the
+     button never shows through it. */
+  margin: 1rem -1.1rem 0;
+  padding: 0.85rem 1.1rem 1.1rem;
+  background: linear-gradient(180deg, #fbfaf5 0%, #f9f8f2 100%);
+  border-top: 1px solid var(--surface-border);
+  /* Matches the card's radius in styles.scss (.p-card). */
+  border-radius: 0 0 1.15rem 1.15rem;
+}
 
-.secure-note { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--surface-border, #eee); font-size: 0.7rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; justify-content: center; opacity: 0.7; }
+/* The live status next to the order button: why it is disabled, or that the
+   order is being placed. It is a live region, so it must not be a
+   p-message (those announce assertively). */
+.order-status {
+  display: flex; align-items: flex-start; gap: 0.45rem;
+  min-height: 1.1rem;
+  font-size: var(--font-size-sm); line-height: var(--line-height-tight);
+  color: var(--text-secondary);
+}
+.order-status i { margin-top: 0.15rem; font-size: 0.9rem; color: var(--primary); }
+.order-status i.pi-exclamation-triangle { color: var(--danger); }
 
-:host ::ng-deep .summary .p-card-body { padding: 1.1rem; }
+.secure-note {
+  margin-top: 0.9rem;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  display: flex; align-items: center; gap: 0.4rem; justify-content: center;
+  text-align: center;
+}
+
+/* The call to action: the total, then the button that submits the order.
+   The label, the icon and the colour come from the website content. */
+.place-order {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.place-order__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--surface-border));
+  border-radius: 0.85rem;
+  background: linear-gradient(110deg, #eef6ef, #fff 92%);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.place-order__total strong {
+  color: var(--primary);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .place-order__button .p-button {
+  min-height: 3.1rem;
+  border-radius: 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 0.65rem 1.4rem color-mix(in srgb, var(--primary) 26%, transparent);
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+:host ::ng-deep .place-order__button .p-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.9rem 1.8rem color-mix(in srgb, var(--primary) 32%, transparent);
+}
+
+:host ::ng-deep .place-order__button .p-button:not(:disabled):active {
+  transform: translateY(0);
+}
+
+:host ::ng-deep .place-order-btn--success {
+  background: var(--success, #2f8459);
+  border-color: var(--success, #2f8459);
+}
+
+:host ::ng-deep .place-order-btn--accent {
+  background: var(--accent, #c9a227);
+  border-color: var(--accent, #c9a227);
+  color: #2e2503;
+}
+
+:host ::ng-deep .place-order-btn--contrast {
+  background: var(--text-primary, #1e2b23);
+  border-color: var(--text-primary, #1e2b23);
+}
+
+:host ::ng-deep .summary .p-card-body { padding: 1.1rem 1.1rem 0; }
 
 /* One warm line about the order status and the email. */
 .cm-notice {

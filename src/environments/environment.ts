@@ -22,4 +22,8 @@ export const environment = {
   // Resilience: hard per-attempt timeout (ms) and retry budget for idempotent GETs.
   requestTimeoutMs: 10000,
   getRetryAttempts: 2,
+  // Ceiling for the background /health/live check. Deliberately its own knob:
+  // the probe is the only unsolicited recovery signal, so it must not be
+  // stricter than the data requests whose breaker it clears.
+  livenessProbeTimeoutMs: 8000,
 };

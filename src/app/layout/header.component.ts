@@ -1,6 +1,6 @@
 import { SafeImageDirective } from '../shared/resilience/safe-image.directive';
 import { LocalizedPipe } from '../shared/pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, NgZone, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { LocalizedText } from '../models/product.model';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
@@ -70,9 +70,15 @@ export class HeaderComponent {
   });
 
   protected mobileOpen = signal(false);
+  /** True once the page is scrolled: the bar then gains a shadow and a hairline. */
+  protected readonly scrolled = signal(false);
   protected searchTerm = '';
   protected suggestions = signal<{ id: string; name: string; names?: LocalizedText; images: string[] }[]>([]);
   protected showSuggestions = signal(false);
+  /** -1 means "typing a free-text query"; Enter then searches instead of opening. */
+  protected activeSuggestion = signal(-1);
+  /** Sticky panels below the header offset from this element's real height. */
+  private topbarEl = viewChild<ElementRef<HTMLElement>>('topbar');
   // Keystrokes funnel through here so only settled input hits the service.
   private search$ = new Subject<string>();
 
@@ -82,10 +88,12 @@ export class HeaderComponent {
   // Memoized option lists: p-select must keep a stable array reference or it
   // resyncs every change-detection cycle (see product-detail root cause).
   // One option per supported language; labels come from the dictionaries so the
-  // selector itself is fully translated. Generic key lookup keeps this working
-  // when languages are added — no per-language branches to maintain.
+  // selector itself is fully translated. Sorting by the visible label keeps the
+  // menu predictable in every locale.
   protected langOptions = computed(() =>
-    SUPPORTED_LANGS.map((l) => ({ label: this.i18n.t(`language.${l}`), value: l })),
+    SUPPORTED_LANGS.map((l) => ({ label: this.i18n.t(`language.${l}`), value: l })).sort((a, b) =>
+      a.label.localeCompare(b.label, this.i18n.currentLang()),
+    ),
   );
 
   protected accountItems = computed<MenuItem[]>(() => [
@@ -111,8 +119,76 @@ export class HeaderComponent {
       )
       .subscribe((items) => {
         this.suggestions.set(items);
+        this.activeSuggestion.set(-1);
         this.showSuggestions.set(this.searchTerm.trim().length > 0);
       });
+
+    // The bar earns a shadow once the page moves. Scroll fires every frame, so
+    // it is observed outside Angular: only the flip of `scrolled` re-renders.
+    const zone = inject(NgZone);
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const onScroll = () => {
+        const scrolled = window.scrollY > 8;
+        if (scrolled !== this.scrolled()) this.scrolled.set(scrolled);
+      };
+      zone.runOutsideAngular(() => window.addEventListener('scroll', onScroll, { passive: true }));
+      onScroll();
+      destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
+
+      // Sticky side rails (catalog filters, cart and checkout summaries) used to
+      // hardcode `top: 7rem`. The bar is not 7rem: the announcement band comes
+      // from the CMS, the language label and the brand name reflow per locale,
+      // and the font can be scaled — so a guessed offset either tucked the rail
+      // under the header or left a gap. Publishing the measured height lets the
+      // offset track all three.
+      const publishHeight = () => {
+        const el = this.topbarEl()?.nativeElement;
+        if (el) document.documentElement.style.setProperty('--rs-header-h', `${el.offsetHeight}px`);
+      };
+      publishHeight();
+      let observer: ResizeObserver | undefined;
+      if (typeof ResizeObserver !== 'undefined') {
+        observer = new ResizeObserver(publishHeight);
+        const el = this.topbarEl()?.nativeElement;
+        if (el) observer.observe(el);
+      }
+      // The Arabic dropdown alignment in styles.scss shifts a panel by its own
+      // trigger's width, so the width has to be known there. Publishing it lets
+      // both triggers be content-sized in Arabic exactly as they are in English;
+      // pinned to a worst-case box instead, the two labels sat half a trigger
+      // apart. A locale change reflows the label and the observer re-publishes.
+      const triggerVars: ReadonlyArray<readonly [string, string]> = [
+        ['.lang-select', '--rs-rtl-lang-w'],
+        ['.cur-select', '--rs-rtl-cur-w'],
+      ];
+      const publishTriggerWidths = () => {
+        const bar = this.topbarEl()?.nativeElement;
+        if (!bar) return;
+        for (const [selector, variable] of triggerVars) {
+          const width = bar.querySelector(selector)?.getBoundingClientRect().width ?? 0;
+          // Both selects are hidden on a phone, where no panel can open: keep
+          // the last real measurement rather than publishing a zero width.
+          if (width > 0) document.documentElement.style.setProperty(variable, `${width}px`);
+        }
+      };
+      publishTriggerWidths();
+      let widthObserver: ResizeObserver | undefined;
+      if (typeof ResizeObserver !== 'undefined') {
+        widthObserver = new ResizeObserver(publishTriggerWidths);
+        const bar = this.topbarEl()?.nativeElement;
+        for (const [selector] of triggerVars) {
+          const el = bar?.querySelector(selector);
+          if (el) widthObserver.observe(el);
+        }
+      }
+      destroyRef.onDestroy(() => {
+        observer?.disconnect();
+        widthObserver?.disconnect();
+        document.documentElement.style.removeProperty('--rs-header-h');
+        for (const [, variable] of triggerVars) document.documentElement.style.removeProperty(variable);
+      });
+    });
   }
 
   protected onSearchInput(term: string): void {
@@ -133,6 +209,43 @@ export class HeaderComponent {
 
   protected closeSuggestions(): void {
     this.showSuggestions.set(false);
+    this.activeSuggestion.set(-1);
+  }
+
+  /** Arrow-key walk through the open suggestion list. */
+  protected onSuggestionArrow(step: -1 | 1): void {
+    const count = this.suggestions().length;
+    if (!this.showSuggestions() || count === 0) return;
+    const current = this.activeSuggestion();
+    const next = (current + step + count) % count;
+    this.activeSuggestion.set(next);
+  }
+
+  /** Enter opens the highlighted suggestion; with nothing highlighted it searches. */
+  protected onSearchEnter(): void {
+    const index = this.activeSuggestion();
+    const pick = index >= 0 ? this.suggestions()[index] : undefined;
+    if (!pick) {
+      this.goSearch();
+      return;
+    }
+    this.closeSuggestions();
+    void this.router.navigate(['/products', pick.id]);
+  }
+
+  protected onSuggestionEscape(): void {
+    this.closeSuggestions();
+  }
+
+  /**
+   * Pointer clicks outside the field move focus, which is the reliable signal
+   * that the list is no longer wanted — a document `click` listener would fight
+   * the suggestion anchors themselves and cost a global listener per header.
+   */
+  protected onSearchFocusOut(event: FocusEvent): void {
+    const next = event.relatedTarget as Node | null;
+    if (next && (event.currentTarget as HTMLElement).contains(next)) return;
+    this.closeSuggestions();
   }
 
   // Suggestion thumbnails share the two-stage recovery (fixed-size box).

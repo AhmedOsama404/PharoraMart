@@ -15,7 +15,7 @@
           <div class="row">
             <div>
               <strong>{{ i18n.t('orders.orderNumber') }} {{ o.orderNumber }}</strong>
-              <div class="meta">{{ dateOf(o.createdAt) }} · {{ i18n.t('orders.itemCount', { count: itemCount(o) }) }} · {{ i18n.t('confirmation.cashOnDelivery') }}</div>
+              <div class="meta">{{ dateOf(o.createdAt) }} · {{ i18n.t('orders.itemCount', { count: itemCount(o) }) }} · {{ paymentMethodLabel() }}</div>
             </div>
             <p-tag [value]="statusLabel(o.status)" [severity]="statusSeverity(o.status)" />
             <strong>{{ o.total | money: o.currency }}</strong>

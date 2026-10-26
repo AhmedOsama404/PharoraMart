@@ -160,4 +160,17 @@ describe('catalog.mapper', () => {
   it('returns empty params for an empty query', () => {
     expect(toProductQueryParams({})).toEqual({});
   });
+
+  it('sends every sort key the catalog UI can choose', () => {
+    // The server's sort list is closed: an unknown key is a 422. The storefront
+    // sends the "Recommended" option as a real key, so it must be accepted.
+    for (const sort of ['recommended', 'newest', 'price_asc', 'price_desc', 'name_asc', 'bestselling'] as const) {
+      expect(toProductQueryParams({ sort })['sort']).toBe(sort);
+    }
+  });
+
+  it('never sends a sort key the server does not know', () => {
+    const params = toProductQueryParams({ sort: 'nonsense' as never });
+    expect('sort' in params).toBeFalse();
+  });
 });

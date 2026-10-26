@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Signal } from '@angular/core';
+import { Signal, WritableSignal } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -19,6 +19,7 @@ import { testRatesProvider } from '../../../testing/hermetic-api';
 import { ApiClientService } from '../../core/api/api-client.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { environment } from '../../../environments/environment';
+import type { CreateOrderRequest } from '../../models/order.model';
 
 describe('CheckoutPageComponent (hotel delivery)', () => {
   let fixture: ComponentFixture<CheckoutPageComponent>;
@@ -26,13 +27,18 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
   let orders: OrderService;
   let cart: CartStore;
   let originalUseMockApi: boolean;
+  let originalContactMode: 'whatsapp' | 'email' | 'both';
 
   // Test-only view over protected members (the template is the real caller).
   type Exposed = {
     form: FormGroup;
     couponControl: FormControl<string>;
     couponApplied: Signal<string>;
+    couponError: Signal<string>;
+    submitError: WritableSignal<string>;
     subtotal: Signal<number>;
+    contactOptions: Signal<{ value: string; label: string }[]>;
+    selectedContact: Signal<string>;
     applyCoupon(): void;
     onHotelChange(v: unknown): void;
     submit(): Promise<void>;
@@ -66,6 +72,7 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
   beforeEach(() => {
     localStorage.clear();
     originalUseMockApi = environment.useMockApi;
+    originalContactMode = environment.contactMode;
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -88,6 +95,7 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
 
   afterEach(() => {
     environment.useMockApi = originalUseMockApi;
+    environment.contactMode = originalContactMode;
     // A test may have swapped the directory for a failing one.
     hotelDirectory = () =>
       of([
@@ -118,14 +126,78 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     expect(text).toContain('6');
   });
 
-  it('offers the contact methods the API accepts and sends the chosen one', () => {
-    const options = (comp as unknown as { contactOptions: { value: string; label: string }[] }).contactOptions;
-    expect(options.map((o) => o.value)).toEqual(['phone', 'whatsapp', 'email']);
+  it('offers the contact methods the store supports and sends the chosen one', () => {
+    // The store supports both channels: WhatsApp and email are offered.
+    expect(x(comp).contactOptions().map((o) => o.value)).toEqual(['whatsapp', 'email']);
 
-    // The email is the default: order updates by email are part of the order.
+    // Email is the default: order updates by email are part of the order.
     expect(x(comp).form.get('contactMethod')?.value).toBe('email');
     x(comp).form.patchValue({ contactMethod: 'whatsapp' });
     expect(x(comp).form.get('contactMethod')?.value).toBe('whatsapp');
+    // The choice is mirrored for the template (the contact detail to mark).
+    expect(x(comp).selectedContact()).toBe('whatsapp');
+  });
+
+  it('offers only WhatsApp when the store supports only WhatsApp', () => {
+    environment.contactMode = 'whatsapp';
+    const waFixture = TestBed.createComponent(CheckoutPageComponent);
+    const waComp = waFixture.componentInstance;
+    waFixture.detectChanges();
+
+    expect(x(waComp).contactOptions().map((o) => o.value)).toEqual(['whatsapp']);
+    // The order starts with the only method the store can use.
+    expect(x(waComp).form.get('contactMethod')?.value).toBe('whatsapp');
+  });
+
+  it('offers only email when the store supports only email', () => {
+    environment.contactMode = 'email';
+    const mailFixture = TestBed.createComponent(CheckoutPageComponent);
+    const mailComp = mailFixture.componentInstance;
+    mailFixture.detectChanges();
+
+    expect(x(mailComp).contactOptions().map((o) => o.value)).toEqual(['email']);
+    expect(x(mailComp).form.get('contactMethod')?.value).toBe('email');
+  });
+
+  it('sends the chosen contact method with the order', async () => {
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    fillContact();
+    x(comp).form.get('hotelId')?.setValue('h1');
+    x(comp).onHotelChange('h1');
+    x(comp).form.get('contactMethod')?.setValue('whatsapp');
+    fixture.detectChanges();
+
+    const create = spyOn(orders, 'create').and.callThrough();
+    await x(comp).submit();
+
+    const req = create.calls.mostRecent().args[0] as CreateOrderRequest;
+    expect(req.customer.contactMethod).toBe('whatsapp');
+    // The contact method IS the opt-in: WhatsApp updates only when it is chosen.
+    expect(req.whatsappOptIn).toBeTrue();
+    // The proof of the consent text travels with the opt-in, so the server can
+    // record WHAT was agreed, not only that something was.
+    expect(req.consentTextHash).toBeTruthy();
+    expect(req.consentTextHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('sends an empty image for a product without a picture, never undefined', async () => {
+    // The API's order item `image` is a required string: `undefined` is a 400.
+    const withoutImage = { ...MOCK_PRODUCTS[0], images: [] as string[], currency: 'USD' };
+    spyOn(stubProducts, 'getByIdsMany').and.returnValue(of([withoutImage]));
+    cart.add(withoutImage.id, 1, undefined, undefined, 99);
+    fillContact();
+    x(comp).form.get('hotelId')?.setValue('h1');
+    x(comp).onHotelChange('h1');
+    fixture.detectChanges();
+
+    const create = spyOn(orders, 'create').and.callThrough();
+    await x(comp).submit();
+
+    const req = create.calls.mostRecent().args[0] as CreateOrderRequest;
+    expect(req.items.length).toBeGreaterThan(0);
+    for (const item of req.items) {
+      expect(typeof item.image).toBe('string');
+    }
   });
 
   it('retries the hotel directory after a failed load', () => {
@@ -150,7 +222,7 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     expect(view.directoryFailed()).toBeFalse();
   });
 
-  it('shows a stable promo-code label after applying the entered code', () => {
+  it('keeps the apply label on the action and shows the applied code', () => {
     cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
     environment.useMockApi = false;
     const api = TestBed.inject(ApiClientService);
@@ -161,7 +233,66 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
 
     const button = fixture.nativeElement.querySelector('.coupon-row button') as HTMLButtonElement;
     expect(x(comp).couponApplied()).toBe('TDBYY20HFY');
-    expect(button.textContent?.trim()).toBe('Promo code applied');
+    // The button still applies a code, so its label says what it does.
+    expect(button.textContent?.trim()).toBe('Apply promo code');
+    // The applied code is shown next to it, with a way to take it off.
+    const applied = fixture.nativeElement.querySelector('.coupon-applied') as HTMLElement;
+    expect(applied.textContent).toContain('TDBYY20HFY');
+  });
+
+  it('applies the promo code on Enter and never places the order', () => {
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    environment.useMockApi = false;
+    fixture.detectChanges();
+    const api = TestBed.inject(ApiClientService);
+    const post = spyOn(api, 'post').and.returnValue(of({ valid: true, code: 'SAVE10', discount: 3 }));
+    const create = spyOn(orders, 'create').and.callThrough();
+    x(comp).couponControl.setValue('save10');
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('.coupon-row input') as HTMLInputElement;
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    input.dispatchEvent(enter);
+    fixture.detectChanges();
+
+    // Enter applies the code...
+    expect(post).toHaveBeenCalled();
+    expect(x(comp).couponApplied()).toBe('SAVE10');
+    // ...and never submits the form, which would place the order.
+    expect(enter.defaultPrevented).toBeTrue();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('sends the basket with the coupon validation, so the server can apply the scope rule', () => {
+    cart.add(MOCK_PRODUCTS[0].id, 2, undefined, undefined, 99);
+    environment.useMockApi = false;
+    fixture.detectChanges();
+    const api = TestBed.inject(ApiClientService);
+    const post = spyOn(api, 'post').and.returnValue(of({ valid: true, discount: 3 }));
+
+    x(comp).couponControl.setValue('save10');
+    x(comp).applyCoupon();
+
+    // A product-scoped coupon depends on WHAT is in the basket. Without the
+    // basket the server cannot apply the same rule order placement applies,
+    // and the coupon would be "valid" here but rejected at submit.
+    expect(post).toHaveBeenCalled();
+    const body = post.calls.mostRecent().args[1] as { productIds: string[] };
+    expect(body.productIds).toContain(MOCK_PRODUCTS[0].id);
+  });
+
+  it('says what is missing when the promo code is empty', () => {    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    fixture.detectChanges();
+    x(comp).applyCoupon();
+    fixture.detectChanges();
+    expect(x(comp).couponError()).toBe('Enter a coupon code first.');
+  });
+
+  it('clears the error of the last attempt when the customer edits the form', () => {
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    x(comp).submitError.set('Something went wrong.');
+    x(comp).form.get('fullName')?.setValue('Another Guest');
+    expect(x(comp).submitError()).toBe('');
   });
 
   it('revalidates the coupon with the recalculated subtotal after currency changes', () => {

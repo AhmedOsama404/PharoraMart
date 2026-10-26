@@ -15,6 +15,22 @@ import { ConnectivityService } from '../../core/resilience/connectivity.service'
   selector: 'app-connection-banner',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Angular components are `display: inline` unless told otherwise, and that
+  // broke this banner twice over: Chrome's ResizeObserver skips inline boxes,
+  // so the height published for the header stayed at 0px forever, and a sticky
+  // child inside a parent exactly its own height has no range to travel in, so
+  // the banner — and its Retry link — scrolled away. The host carries the
+  // stickiness instead, against the page-height layout root.
+  styles: [
+    `
+      :host {
+        display: block;
+        position: sticky;
+        top: 0;
+        z-index: 900;
+      }
+    `,
+  ],
   template: `
     @if (visible()) {
       <div

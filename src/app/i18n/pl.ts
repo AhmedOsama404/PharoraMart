@@ -68,6 +68,10 @@ export const pl: TranslationDict = {
     activeFilters: 'Aktywne filtry',
     minPriceLabel: 'Cena minimalna',
     maxPriceLabel: 'Cena maksymalna',
+    priceNegative: 'Podaj cenę równą lub wyższą od 0.',
+    priceOrder: 'Cena maksymalna musi być co najmniej równa cenie minimalnej.',
+    noMaxPrice: 'Bez górnej granicy',
+    priceInvalid: 'Podaj cenę, na przykład 0,25 lub 12,50.',
   },
   product: {
     addToCart: 'Dodaj do koszyka',
@@ -87,6 +91,7 @@ export const pl: TranslationDict = {
     new: 'Nowość',
     popular: 'Popularne',
     off: '{percent} % taniej',
+    ratingLabel: 'Ocena {rating} na 5 · {count} opinii',
     breadcrumbsHome: 'Start',
     breadcrumbsCatalog: 'Sklep',
     maxStock: 'Dostępne tylko {count}',
@@ -221,6 +226,9 @@ export const pl: TranslationDict = {
     calculatingFee: 'Obliczanie…',
     directoryFailed: 'Nie udało się wczytać listy hoteli. Spróbuj ponownie.',
     removeCoupon: 'Usuń kod',
+    cartLoading: 'Wczytujemy koszyk i najnowsze ceny…',
+    feePending: 'Obliczamy opłatę za dostawę…',
+    whatsappUpdatesHint: 'Będziemy też wysyłać aktualizacje zamówienia przez WhatsApp na numer telefonu podany powyżej.',
   },
   confirmation: {
     title: 'Dziękujemy! Zamówienie potwierdzone',
@@ -243,6 +251,7 @@ export const pl: TranslationDict = {
     emailStatusNotice: "Status zamówienia wyślemy na ten adres e-mail.",
     continueShopping: 'Kontynuuj zakupy',
     viewOrders: 'Zobacz zamówienia',
+    contactTitle: 'Potrzebujesz skontaktować się z nami?',
     mockNotice: 'Tryb demo: zamówienie tylko lokalnie. Brak prawdziwej płatności i dostawy.',
   },
   orders: {

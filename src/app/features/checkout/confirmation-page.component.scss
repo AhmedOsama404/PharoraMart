@@ -33,3 +33,114 @@ ol { padding-inline-start: 1.2rem; display: grid; gap: 0.4rem; color: var(--text
     font-size: 0.85rem;
   }
 }
+
+/* The demo notice: an administrator-controlled note under the thank-you
+   header. */
+.demo-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 0.9rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, var(--surface-ground) 55%, white);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.demo-note i {
+  margin-top: 0.1rem;
+  color: var(--primary);
+}
+
+/* The two customer-contact actions: WhatsApp first (it is the channel the
+   store prefers), email second. */
+.actions-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+:host ::ng-deep .action--whatsapp .p-button {
+  min-height: 3rem;
+  border-radius: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 0.6rem 1.3rem rgb(37 211 102 / 24%);
+}
+
+:host ::ng-deep .action .p-button {
+  min-height: 2.85rem;
+  border-radius: 0.9rem;
+  font-weight: 650;
+}
+
+/* The store's own channels: the WhatsApp number, the support email and the
+   business hours — exactly what the dashboard published. */
+.channels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.9rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--surface-ground) 55%, white);
+
+  h3 {
+    margin: 0 0 0.15rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+}
+
+.channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.channel i {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: none;
+  border-radius: 0.5rem;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  font-size: 0.85rem;
+}
+
+.channel--whatsapp i {
+  background: #e7f9ee;
+  border-color: rgb(37 211 102 / 30%);
+  color: #128c4a;
+}
+
+.channel--email i {
+  background: var(--primary-soft);
+  border-color: color-mix(in srgb, var(--primary) 24%, transparent);
+  color: var(--primary);
+}
+
+.channel--hours {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.channel--hours i {
+  color: var(--text-secondary);
+}
+
+a.channel:hover span {
+  text-decoration: underline;
+}

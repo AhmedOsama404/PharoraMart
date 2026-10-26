@@ -166,10 +166,9 @@
 
 /* ----------------------------- connection -------------------------------- */
 
+/* Stickiness lives on `app-connection-banner` itself (see that component): a
+   sticky element cannot travel inside a parent that is exactly its own height. */
 .rs-connection {
-  position: sticky;
-  top: 0;
-  z-index: 900;
   display: flex;
   align-items: center;
   justify-content: center;

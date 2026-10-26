@@ -1,27 +1,23 @@
 <footer class="footer">
   <div class="container grid">
-    @if (footer(); as f) {
     <div class="brand">
       <div class="logo">
         @if (logoUrl(); as logo) { <img appSafeImg="logo" class="footer-logo" [src]="logo" [alt]="brandName()" /> } @else { <app-brand-logo /> }
         <span>{{ brandName() }}</span>
       </div>
       @if (tagline()) { <p>{{ tagline() }}</p> }
-      @if (f.contacts.length) {
+      @if (contactRows().length) {
       <div class="contact">
-        @for (c of f.contacts; track $index) {
-          @if (siteContent.text(c.text, i18n.currentLang()); as text) {
-            @if (contactHref(c.icon, text); as href) {
-              <a [href]="href" [target]="siteContent.externalLink(href) ? '_blank' : null" [rel]="siteContent.externalLink(href) ? 'noopener' : null"><i [class]="siteContent.icon(c.icon)"></i> {{ text }}</a>
-            } @else {
-              <span><i [class]="siteContent.icon(c.icon)"></i> {{ text }}</span>
-            }
+        @for (c of contactRows(); track $index) {
+          @if (contactHref(c.icon, c.text); as href) {
+            <a [href]="href" [target]="siteContent.externalLink(href) ? '_blank' : null" [rel]="siteContent.externalLink(href) ? 'noopener' : null"><i [class]="c.icon"></i> {{ c.text }}</a>
+          } @else {
+            <span><i [class]="c.icon"></i> {{ c.text }}</span>
           }
         }
       </div>
       }
     </div>
-    }
     @for (column of footer()?.columns ?? []; track $index) {
       @if (siteContent.text(column.header, i18n.currentLang()); as header) {
         <nav [attr.aria-label]="header">

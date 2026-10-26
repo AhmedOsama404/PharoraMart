@@ -47,7 +47,9 @@ export class ForgotPageComponent implements OnInit {
     }
     this.busy.set(true);
     this.serverError.set('');
-    // Demo only: resolves without sending any email (see the template notice).
+    // The request goes to the API, which validates the address and answers
+    // without disclosing whether an account exists. (The API's reset
+    // delivery is still a stub, so no email leaves the server yet.)
     this.auth
       .requestPasswordReset(this.form.getRawValue().email)
       .pipe(takeUntilDestroyed(this.destroyRef))

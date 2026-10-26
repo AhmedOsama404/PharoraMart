@@ -68,6 +68,10 @@ export const de: TranslationDict = {
     activeFilters: 'Aktive Filter',
     minPriceLabel: 'Mindestpreis',
     maxPriceLabel: 'Höchstpreis',
+    priceNegative: 'Geben Sie einen Preis von 0 oder mehr ein.',
+    priceOrder: 'Der Höchstpreis muss mindestens so hoch sein wie der Mindestpreis.',
+    noMaxPrice: 'Kein Höchstpreis',
+    priceInvalid: 'Geben Sie einen Preis ein, z. B. 0,25 oder 12,50.',
   },
   product: {
     addToCart: 'In den Warenkorb',
@@ -87,6 +91,7 @@ export const de: TranslationDict = {
     new: 'Neu',
     popular: 'Beliebt',
     off: '{percent} % Rabatt',
+    ratingLabel: 'Bewertung {rating} von 5 · {count} Bewertungen',
     breadcrumbsHome: 'Start',
     breadcrumbsCatalog: 'Shop',
     maxStock: 'Nur {count} auf Lager',
@@ -221,6 +226,9 @@ export const de: TranslationDict = {
     calculatingFee: 'Wird berechnet…',
     directoryFailed: 'Die Hotelliste konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
     removeCoupon: 'Code entfernen',
+    cartLoading: 'Warenkorb und neueste Preise werden geladen…',
+    feePending: 'Liefergebühr wird berechnet…',
+    whatsappUpdatesHint: 'Wir senden die Bestellupdates auch per WhatsApp an die oben angegebene Mobilnummer.',
   },
   confirmation: {
     title: 'Danke! Bestellung bestätigt',
@@ -243,6 +251,7 @@ export const de: TranslationDict = {
     emailStatusNotice: "Wir senden Ihnen den Bestellstatus an diese E-Mail-Adresse.",
     continueShopping: 'Weiter shoppen',
     viewOrders: 'Meine Bestellungen',
+    contactTitle: 'Sie müssen uns erreichen?',
     mockNotice: 'Demo-Modus: Diese Bestellung wird nur lokal gespeichert. Keine echte Zahlung oder Lieferung.',
   },
   orders: {

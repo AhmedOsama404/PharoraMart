@@ -96,9 +96,61 @@ export class ConfirmationPageComponent implements OnInit {
     return this.siteContent.text(content?.[key] as import('../../models/product.model').LocalizedText | undefined, this.i18n.currentLang()) || this.i18n.t(fallbackKey);
   }
 
-  protected show(key: 'showNextSteps' | 'showWhatsAppButton' | 'showEmailButton' | 'showDemoNotice'): boolean {
+  protected show(key: 'showNextSteps' | 'showWhatsAppButton' | 'showEmailButton' | 'showDemoNotice' | 'showContactDetails'): boolean {
     return this.siteContent.orderConfirmation()?.[key] !== false;
   }
+
+  /**
+   * The payment method, as the website content names it.
+   *
+   * The checkout owns that copy (`paymentMethodTitle`), so the confirmation
+   * and the order history must not invent a second wording for it.
+   */
+  protected readonly paymentMethodLabel = computed(() => {
+    const checkout = this.siteContent.checkout();
+    const label = this.siteContent.text(
+      checkout?.paymentMethodTitle as import('../../models/product.model').LocalizedText | undefined,
+      this.i18n.currentLang(),
+    );
+    return label || this.i18n.t('confirmation.cashOnDelivery');
+  });
+
+  /** The heading of the "how to reach us" block. */
+  protected readonly contactTitle = computed(
+    () =>
+      this.siteContent.text(
+        this.siteContent.orderConfirmation()?.contactTitle as
+          | import('../../models/product.model').LocalizedText
+          | undefined,
+        this.i18n.currentLang(),
+      ) || this.i18n.t('confirmation.contactTitle'),
+  );
+
+  /** The store's WhatsApp number — the channel the button opens. */
+  protected readonly whatsappNumber = computed(() => this.contact.channels()?.whatsappNumber ?? '');
+
+  /** The store's support email — the channel the button opens. */
+  protected readonly supportEmail = computed(() => this.contact.channels()?.supportEmail ?? '');
+
+  /** The store's business hours. */
+  protected readonly businessHours = computed(() => this.contact.channels()?.businessHours ?? '');
+
+  /** True when at least one contact channel can be shown. */
+  protected readonly hasContactDetails = computed(
+    () => !!this.whatsappNumber() || !!this.supportEmail(),
+  );
+
+  /** The wa.me link of the store's WhatsApp number (digits only). */
+  protected readonly whatsAppLink = computed(() => {
+    const digits = this.whatsappNumber().replace(/\D/g, '');
+    return digits ? `https://wa.me/${digits}` : '';
+  });
+
+  /** The mailto: link of the store's support email. */
+  protected readonly emailLink = computed(() => {
+    const email = this.supportEmail().trim();
+    return email ? `mailto:${email}` : '';
+  });
 
   /** Explicit Retry after an outage: reset the breaker and refetch. */
   protected retry(): void {

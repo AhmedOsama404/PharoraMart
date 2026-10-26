@@ -14,7 +14,7 @@ Scope: storefront integration only — no dashboard/backend implementation here.
 | Auth/session | `AuthService` localStorage demo (**not secure**) | `POST /auth/*`, Bearer tokens |
 | Orders | `OrderService` localStorage + idempotency keys | `POST /orders` (server validates + recomputes) |
 | Contact | `wa.me`/`mailto:` links (open apps, send nothing) | server-side WhatsApp/email providers |
-| Settings/homepage | `environment.*` + in-component queries | `GET /store/settings`, `/store/homepage` |
+| Settings/homepage | `GET /store/settings` (fallback: `environment.*`) + in-component queries | `GET /store/homepage` |
 
 ## Base URL and environments
 

@@ -68,6 +68,10 @@ export const sk: TranslationDict = {
     activeFilters: 'Aktívne filtre',
     minPriceLabel: 'Minimálna cena',
     maxPriceLabel: 'Maximálna cena',
+    priceNegative: 'Zadajte cenu 0 alebo vyššiu.',
+    priceOrder: 'Maximálna cena musí byť aspoň rovnaká ako minimálna cena.',
+    noMaxPrice: 'Bez hornej hranice',
+    priceInvalid: 'Zadajte cenu, napríklad 0,25 alebo 12,50.',
   },
   product: {
     addToCart: 'Pridať do košíka',
@@ -87,6 +91,7 @@ export const sk: TranslationDict = {
     new: 'Novinka',
     popular: 'Populárne',
     off: 'Zľava {percent} %',
+    ratingLabel: 'Hodnotenie {rating} z 5 · {count} recenzií',
     breadcrumbsHome: 'Domov',
     breadcrumbsCatalog: 'Obchod',
     maxStock: 'K dispozícii len {count} ks',
@@ -221,6 +226,9 @@ export const sk: TranslationDict = {
     calculatingFee: 'Prepočítava sa…',
     directoryFailed: 'Zoznam hotelov sa nepodarilo načítať. Skúste to prosím znova.',
     removeCoupon: 'Odstrániť kód',
+    cartLoading: 'Načítavame košík a najnovšie ceny…',
+    feePending: 'Počítame poplatok za doručenie…',
+    whatsappUpdatesHint: 'Aktualizácie objednávky budeme posielať aj cez WhatsApp na telefónne číslo uvedené vyššie.',
   },
   confirmation: {
     title: 'Ďakujeme! Objednávka potvrdená',
@@ -243,6 +251,7 @@ export const sk: TranslationDict = {
     emailStatusNotice: "Stav objednávky vám pošleme na túto e-mailovú adresu.",
     continueShopping: 'Pokračovať v nákupe',
     viewOrders: 'Zobraziť objednávky',
+    contactTitle: 'Potrebujete sa nás kontaktovať?',
     mockNotice: 'Ukážkový režim: objednávka je uložená len lokálne. Neprebieha reálna platba ani doručenie.',
   },
   orders: {
