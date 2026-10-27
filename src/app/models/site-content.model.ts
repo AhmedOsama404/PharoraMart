@@ -19,7 +19,7 @@ export interface SiteHighlight {
 
 export interface SiteHeader {
   brandName: LocalizedText;
-  logoUrl: string | null;
+  logoUrl: string;
   announcementText: LocalizedText;
   announcementVisible: boolean;
 }
@@ -28,8 +28,8 @@ export interface SiteHero {
   badge: LocalizedText;
   headline: LocalizedText;
   description: LocalizedText;
-  primaryButton: SiteButton;
-  secondaryButton: SiteButton;
+  primaryButton: SiteButton | null;
+  secondaryButton: SiteButton | null;
   highlights: SiteHighlight[];
   productIds: (string | null)[];
 }
@@ -48,9 +48,9 @@ export interface SiteHomeSection {
 }
 
 export interface SiteHomeSections {
-  featured: SiteHomeSection;
-  newArrivals: SiteHomeSection;
-  popular: SiteHomeSection;
+  featured: SiteHomeSection | null;
+  newArrivals: SiteHomeSection | null;
+  popular: SiteHomeSection | null;
 }
 
 export interface SiteCheckoutContent {
@@ -65,6 +65,14 @@ export interface SiteCheckoutContent {
   placeOrderLabel: LocalizedText;
   backToCartLabel: LocalizedText;
   showCouponEntry: boolean;
+  /** Optional sub-headings under each card title (blank = built-in wording). */
+  contactSubtitle: LocalizedText;
+  addressSubtitle: LocalizedText;
+  paymentSubtitle: LocalizedText;
+  reviewSubtitle: LocalizedText;
+  /** The place-order call to action: its PrimeIcons class and its visual tone. */
+  placeOrderIcon: string;
+  placeOrderTone: string;
 }
 
 export interface SiteOrderConfirmationContent {
@@ -85,6 +93,9 @@ export interface SiteOrderConfirmationContent {
   showWhatsAppButton: boolean;
   showEmailButton: boolean;
   showDemoNotice: boolean;
+  /** The "how to reach us" block: its heading and whether the channels show. */
+  contactTitle: LocalizedText;
+  showContactDetails: boolean;
 }
 
 export interface SiteFooterContact {
@@ -103,7 +114,7 @@ export interface SiteFooterColumn {
 }
 
 export interface SiteFooter {
-  logoUrl: string | null;
+  logoUrl: string;
   brandName: LocalizedText;
   tagline: LocalizedText;
   contacts: SiteFooterContact[];
@@ -112,13 +123,19 @@ export interface SiteFooter {
   noticeText: LocalizedText;
 }
 
-/** One anonymous read feeds the header, home page and footer. */
+/**
+ * One anonymous read feeds the header, home page and footer.
+ *
+ * A section is null when the payload does not carry it; every field inside a
+ * section is always present with a usable type, so the templates can
+ * dereference them without a guard (see SiteContentService).
+ */
 export interface SiteContent {
-  header: SiteHeader;
-  hero: SiteHero;
-  categoriesSection: SiteCategoriesSection;
+  header: SiteHeader | null;
+  hero: SiteHero | null;
+  categoriesSection: SiteCategoriesSection | null;
   homeSections: SiteHomeSections;
-  footer: SiteFooter;
-  checkout: SiteCheckoutContent;
-  orderConfirmation: SiteOrderConfirmationContent;
+  footer: SiteFooter | null;
+  checkout: SiteCheckoutContent | null;
+  orderConfirmation: SiteOrderConfirmationContent | null;
 }

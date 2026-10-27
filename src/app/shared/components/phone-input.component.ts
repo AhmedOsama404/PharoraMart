@@ -54,6 +54,13 @@ export class PhoneInputComponent implements ControlValueAccessor {
   /** id applied to the number field so an external <label for> stays wired. */
   readonly inputId = input('phone');
 
+  /**
+   * id of the element that describes this field (the inline error message).
+   * The number input points at it, so a screen reader reads the reason the
+   * field is invalid instead of only seeing "invalid".
+   */
+  readonly describedBy = input<string | null>(null);
+
   /** Region preselected for an empty field (callers may override per usage). */
   @Input() set defaultCountry(value: CountryCode | null | undefined) {
     if (value && !this.userTouched() && !this.national()) {

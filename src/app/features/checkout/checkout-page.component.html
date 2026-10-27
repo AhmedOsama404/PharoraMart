@@ -1,7 +1,7 @@
 <h1>{{ copy('title', 'checkout.title') }}</h1>
 <p class="sub">{{ copy('subtitle', 'checkout.subtitle') }}</p>
-@if (blockedReason()) { <p-message severity="warn" [text]="blockedReason()" /> }
 @if (!cart.lines().length) {
+  @if (blockedReason()) { <p-message severity="warn" [text]="blockedReason()" /> }
   <app-empty-state icon="pi-shopping-cart" [title]="i18n.t('checkout.emptyCart')"
     [actionLabel]="i18n.t('cart.startShopping')" (actionClick)="go('/products')" />
 } @else {
@@ -15,42 +15,73 @@
           </div>
           <div>
             <h2>{{ copy('contactTitle', 'checkout.contactTitle') }}</h2>
-            <p class="card-header__subtitle">{{ i18n.t('checkout.contactSubtitle') }}</p>
+            <p class="card-header__subtitle">{{ copy('contactSubtitle', 'checkout.contactSubtitle') }}</p>
           </div>
         </header>
 
         <div class="grid2">
           <div class="field">
             <label for="fullName">{{ i18n.t('checkout.fullName') }}</label>
-            <input pInputText id="fullName" formControlName="fullName" autocomplete="name" [fluid]="true" placeholder="{{ i18n.t('checkout.fullNamePlaceholder') }}" />
-            @if (err('fullName'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+            <input pInputText id="fullName" formControlName="fullName" autocomplete="name" [fluid]="true"
+              (keydown.enter)="onFieldEnter($event)"
+              [attr.aria-describedby]="err('fullName') ? 'fullName-err' : null"
+              [attr.aria-invalid]="err('fullName') ? true : null"
+              placeholder="{{ i18n.t('checkout.fullNamePlaceholder') }}" />
+            @if (err('fullName'); as e) { <small class="err" id="fullName-err">{{ i18n.t(e) }}</small> }
           </div>
-          <div class="field">
+          <div class="field" [class.field--preferred]="contactFocus() === 'phone'">
             <label for="phone">{{ i18n.t('checkout.phone') }}</label>
-            <app-phone-input inputId="phone" formControlName="phone" />
-            @if (err('phone'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+            <app-phone-input inputId="phone" [describedBy]="err('phone') ? 'phone-err' : null" formControlName="phone"
+              (keydown.enter)="onFieldEnter($event)" />
+            @if (err('phone'); as e) { <small class="err" id="phone-err">{{ i18n.t(e) }}</small> }
           </div>
-          <div class="field">
+          <div class="field" [class.field--preferred]="contactFocus() === 'email'">
             <label for="email">{{ i18n.t('checkout.email') }}</label>
             <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true"
+              (keydown.enter)="onFieldEnter($event)"
+              [attr.aria-describedby]="err('email') ? 'email-err' : null"
+              [attr.aria-invalid]="err('email') ? true : null"
               [readonly]="emailFromAccount()" placeholder="{{ i18n.t('checkout.emailPlaceholder') }}" />
-            @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+            @if (err('email'); as e) { <small class="err" id="email-err">{{ i18n.t(e) }}</small> }
           </div>
         </div>
 
         <div class="field field--spaced">
           <label for="language">{{ i18n.t('checkout.contactLanguage') }}</label>
-          <p-select id="language" formControlName="language" [options]="languageOptions()" optionLabel="label"
+          <p-select inputId="language" formControlName="language" [options]="languageOptions()" optionLabel="label"
             optionValue="value" [placeholder]="i18n.t('checkout.contactLanguage')" [fluid]="true"
+            [ariaLabel]="i18n.t('checkout.contactLanguage')"
             appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
           <small class="hint">{{ i18n.t('checkout.contactLanguageHint') }}</small>
-          @if (err('language'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+          @if (err('language'); as e) { <small class="err" id="language-err">{{ i18n.t(e) }}</small> }
         </div>
 
-        <p class="cm-notice">
-          <i class="pi pi-envelope" aria-hidden="true"></i>
-          <span>{{ i18n.t('checkout.emailOnlyNotice') }}</span>
-        </p>
+        <!-- How the customer hears about the order. The strip under the pills
+             says what will actually be sent; the WhatsApp line is the consent
+             text the order records a hash of, so it is not reworded here. -->
+        @if (contactOptions().length) {
+          <div class="field field--spaced">
+            <span class="field-label" id="contactMethodLabel">{{ i18n.t('checkout.contactMethod') }}</span>
+            <div class="pill-group" role="radiogroup" aria-labelledby="contactMethodLabel">
+              @for (option of contactOptions(); track option.value) {
+                <label class="pill-choice" [class.selected]="selectedContact() === option.value">
+                  <input type="radio" formControlName="contactMethod" [value]="option.value" />
+                  <span>{{ option.label }}</span>
+                </label>
+              }
+            </div>
+            <p class="update-note">
+              @if (whatsappSelected()) {
+                <i class="pi pi-whatsapp" aria-hidden="true"></i>
+                <span>{{ i18n.t('checkout.whatsappUpdatesHint') }}</span>
+              } @else {
+                <i class="pi pi-envelope" aria-hidden="true"></i>
+                <span>{{ i18n.t('checkout.emailUpdatesHint') }}</span>
+              }
+            </p>
+            @if (err('contactMethod'); as e) { <small class="err" id="contactMethod-err">{{ i18n.t(e) }}</small> }
+          </div>
+        }
       </p-card>
 
       <!-- Address Card -->
@@ -61,35 +92,45 @@
           </div>
           <div>
             <h2>{{ copy('addressTitle', 'checkout.addressTitle') }}</h2>
-            <p class="card-header__subtitle">{{ i18n.t('checkout.addressSubtitle') }}</p>
+            <p class="card-header__subtitle">{{ copy('addressSubtitle', 'checkout.addressSubtitle') }}</p>
           </div>
         </header>
 
         <div class="grid2">
           <div class="field">
             <label for="city">{{ i18n.t('checkout.city') }}</label>
-            <p-select id="city" formControlName="city" [options]="cityOptions()" optionLabel="label" optionValue="value"
+            <p-select inputId="city" formControlName="city" [options]="cityOptions()" optionLabel="label" optionValue="value"
               [placeholder]="i18n.t('checkout.city')" [fluid]="true" (onChange)="onCityChange($event.value)"
+              [ariaLabel]="i18n.t('checkout.city')"
               appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
-            @if (err('city'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+            @if (err('city'); as e) { <small class="err" id="city-err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">
             <label for="hotel">{{ i18n.t('checkout.hotel') }}</label>
-            <p-select id="hotel" formControlName="hotelId" [options]="hotelOptions()" optionLabel="label" optionValue="value"
+            <p-select inputId="hotel" formControlName="hotelId" [options]="hotelOptions()" optionLabel="label" optionValue="value"
               [placeholder]="i18n.t('checkout.selectHotel')" [filter]="true" [filterPlaceholder]="i18n.t('checkout.searchHotel')"
               [emptyMessage]="i18n.t('checkout.noHotels')" [fluid]="true" (onChange)="onHotelChange($event.value)"
+              [ariaLabel]="i18n.t('checkout.hotel')"
               appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
-            @if (err('hotelId'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+            @if (err('hotelId'); as e) { <small class="err" id="hotel-err">{{ i18n.t(e) }}</small> }
           </div>
           <div class="field">
             <label for="room">{{ i18n.t('checkout.room') }}</label>
-            <input pInputText id="room" formControlName="room" autocomplete="off" [fluid]="true" placeholder="{{ i18n.t('checkout.roomPlaceholder') }}" />
+            <input pInputText id="room" formControlName="room" autocomplete="off" [fluid]="true"
+              (keydown.enter)="onFieldEnter($event)" placeholder="{{ i18n.t('checkout.roomPlaceholder') }}" />
           </div>
           <div class="field">
             <label for="notes">{{ i18n.t('checkout.notes') }}</label>
             <textarea pTextarea id="notes" formControlName="notes" rows="2" [fluid]="true" placeholder="{{ i18n.t('checkout.notesPlaceholder') }}"></textarea>
           </div>
         </div>
+        @if (directoryFailed()) {
+          <div class="directory-error">
+            <p-message severity="error" [text]="i18n.t('checkout.directoryFailed')" />
+            <p-button [label]="i18n.t('common.retry')" icon="pi pi-refresh" severity="secondary" [outlined]="true"
+              size="small" (onClick)="retryDirectory()" />
+          </div>
+        }
       </p-card>
 
       <!-- Payment Card -->
@@ -100,17 +141,17 @@
           </div>
           <div>
             <h2>{{ copy('paymentTitle', 'checkout.paymentTitle') }}</h2>
-            <p class="card-header__subtitle">{{ i18n.t('checkout.paymentSubtitle') }}</p>
+            <p class="card-header__subtitle">{{ copy('paymentSubtitle', 'checkout.paymentSubtitle') }}</p>
           </div>
         </header>
 
-        <label class="cod premium-cod">
-          <span class="cod-icon"><i class="pi pi-money-bill"></i></span>
+        <div class="cod premium-cod" role="group" [attr.aria-label]="copy('paymentMethodTitle', 'checkout.codTitle')">
+          <span class="cod-icon" aria-hidden="true"><i class="pi pi-money-bill"></i></span>
           <div class="cod-text">
             <strong>{{ copy('paymentMethodTitle', 'checkout.codTitle') }}</strong>
             <small>{{ copy('paymentMethodBody', 'checkout.codSubtitle') }}</small>
           </div>
-        </label>
+        </div>
       </p-card>
     </div>
 
@@ -122,7 +163,7 @@
         </div>
         <div>
           <h2>{{ copy('reviewTitle', 'checkout.reviewTitle') }}</h2>
-          <p class="card-header__subtitle">{{ i18n.t('checkout.reviewSubtitle') }}</p>
+          <p class="card-header__subtitle">{{ copy('reviewSubtitle', 'checkout.reviewSubtitle') }}</p>
         </div>
       </header>
 
@@ -153,10 +194,21 @@
 
         @if (siteContent.checkout()?.showCouponEntry !== false) {
           <div class="coupon-row">
-            <input pInputText [formControl]="couponControl" [placeholder]="i18n.t('checkout.couponCode')" [attr.aria-label]="i18n.t('checkout.couponCode')" />
-            <p-button [label]="couponApplied() ? i18n.t('checkout.couponApplied') : i18n.t('checkout.applyCoupon')" severity="secondary"
-              [loading]="couponBusy()" [disabled]="couponBusy()" (onClick)="applyCoupon()" />
+            <input pInputText [formControl]="couponControl" [placeholder]="i18n.t('checkout.couponCode')"
+              [attr.aria-label]="i18n.t('checkout.couponCode')" (keydown.enter)="onCouponEnter($event)" />
+            <p-button [label]="i18n.t('checkout.applyCoupon')" severity="secondary"
+              [loading]="couponBusy()" [disabled]="couponBusy() || placing()" (onClick)="applyCoupon()" />
           </div>
+          @if (couponApplied()) {
+            <div class="coupon-applied">
+              <span role="status" aria-live="polite">
+                <span class="rs-sr-only">{{ i18n.t('checkout.couponApplied') }}: </span>
+                <i class="pi pi-tag" aria-hidden="true"></i> {{ couponApplied() }}
+              </span>
+              <p-button [label]="i18n.t('checkout.removeCoupon')" severity="secondary" [text]="true" size="small"
+                (onClick)="removeCoupon()" />
+            </div>
+          }
         }
         @if (couponError()) { <p-message severity="error" [text]="couponError()" /> }
         @if (couponDiscount() > 0) {
@@ -164,27 +216,70 @@
         }
         <div class="t-row"><span>{{ i18n.t('checkout.delivery') }}</span>
           <strong>
-            @if (quotedFee() == null) { {{ i18n.t('cart.calculatedAtCheckout') }} }
+            @if (quotePending()) { {{ i18n.t('checkout.calculatingFee') }} }
+            @else if (quotedFee() == null) { {{ i18n.t('cart.calculatedAtCheckout') }} }
             @else if (deliveryFee() === 0) { {{ i18n.t('cart.free') }} }
             @else { {{ deliveryFee() | money }} }
           </strong>
         </div>
-        <p-divider />
-        <div class="t-row grand"><span>{{ i18n.t('checkout.total') }}</span><strong>{{ total() | money }}</strong></div>
       </div>
 
       @if (submitError()) { <p-message severity="error" [text]="submitError()" /> }
-
-      <div class="summary-actions">
-        <p-button type="submit" [label]="placing() ? i18n.t('checkout.placing') : copy('placeOrderLabel', 'checkout.placeOrder')"
-          icon="pi pi-check" [loading]="placing()" [disabled]="placing() || couponBusy() || checkoutBlocked()" [fluid]="true" />
-        <p-button [label]="copy('backToCartLabel', 'checkout.backToCart')" severity="secondary" [text]="true" [fluid]="true" (onClick)="go('/cart')" />
-      </div>
 
       <p class="secure-note">
         <i class="pi pi-lock" aria-hidden="true"></i>
         {{ i18n.t('checkout.secureNote') }}
       </p>
+
+      <div class="summary-actions">
+        <!-- Why the button is disabled, and what happens while it works. The
+             button lives in this sticky card, so the reason is right here. -->
+        <div class="order-status" role="status" aria-live="polite" aria-atomic="true" [attr.aria-busy]="placing()">
+          @if (orderStatus(); as status) {
+            <i class="pi" [class.pi-spinner]="status.kind === 'busy'" [class.pi-spin]="status.kind === 'busy'"
+              [class.pi-exclamation-triangle]="status.kind === 'blocked'" aria-hidden="true"></i>
+            <span>{{ status.text }}</span>
+          }
+        </div>
+
+        <!-- The call to action: the total the customer pays, then the button
+             that submits the order. The label, the icon and the colour come
+             from the website content, so an administrator owns them. -->
+        <div class="place-order">
+          <div class="place-order__total" aria-live="polite" aria-atomic="true">
+            <span>{{ i18n.t('checkout.total') }}</span>
+            @if (quotePending()) {
+              <strong class="is-pending">{{ i18n.t('checkout.calculatingFee') }}</strong>
+            } @else if (quotedFee() == null) {
+              <!-- No hotel yet: the fee is unknown, so a number here would be
+                   a total that changes the moment one is picked. -->
+              <strong class="is-pending">{{ i18n.t('cart.calculatedAtCheckout') }}</strong>
+            } @else {
+              <strong>{{ total() | money }}</strong>
+            }
+          </div>
+
+          <p-button
+            type="submit"
+            class="place-order__button"
+            [styleClass]="'place-order-btn place-order-btn--' + placeOrderTone()"
+            [label]="placing() ? i18n.t('checkout.placing') : copy('placeOrderLabel', 'checkout.placeOrder')"
+            [icon]="placeOrderIcon()"
+            [loading]="placing()"
+            [disabled]="placing() || couponBusy() || checkoutBlocked()"
+            [fluid]="true"
+          />
+
+          <p-button
+            [label]="copy('backToCartLabel', 'checkout.backToCart')"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [text]="true"
+            [fluid]="true"
+            (onClick)="go('/cart')"
+          />
+        </div>
+      </div>
     </p-card>
   </form>
 }

@@ -9,29 +9,37 @@
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="field">
         <label for="name">{{ i18n.t('auth.name') }}</label>
-        <input pInputText id="name" formControlName="name" autocomplete="name" [fluid]="true" />
-        @if (err('name'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+        <input pInputText id="name" formControlName="name" autocomplete="name" [fluid]="true"
+          [attr.aria-describedby]="err('name') ? 'name-err' : null"
+          [attr.aria-invalid]="err('name') ? true : null" />
+        @if (err('name'); as e) { <small class="err" id="name-err">{{ i18n.t(e) }}</small> }
       </div>
       <div class="field">
         <label for="email">{{ i18n.t('auth.email') }}</label>
-        <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true" />
-        @if (err('email'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+        <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true"
+          [attr.aria-describedby]="err('email') ? 'email-err' : null"
+          [attr.aria-invalid]="err('email') ? true : null" />
+        @if (err('email'); as e) { <small class="err" id="email-err">{{ i18n.t(e) }}</small> }
       </div>
       <div class="field">
         <label for="phone">{{ i18n.t('auth.phone') }}</label>
-        <app-phone-input inputId="phone" formControlName="phone" />
-        @if (err('phone'); as e) { <small class="err">{{ i18n.t(e) }}</small> }
+        <app-phone-input inputId="phone" [describedBy]="err('phone') ? 'phone-err' : null" formControlName="phone" />
+        @if (err('phone'); as e) { <small class="err" id="phone-err">{{ i18n.t(e) }}</small> }
       </div>
       <div class="field">
         <label for="password">{{ i18n.t('auth.password') }}</label>
-        <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="true" [fluid]="true" autocomplete="new-password" />
-        @if (err('password'); as e) { <small class="err">{{ e === 'validation.minLength' ? i18n.t(e, { min: 6 }) : i18n.t(e) }}</small> }
+        <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="true" [fluid]="true" autocomplete="new-password"
+          [attr.aria-describedby]="err('password') ? 'password-err' : null"
+          [attr.aria-invalid]="err('password') ? true : null" />
+        @if (err('password'); as e) { <small class="err" id="password-err">{{ e === 'validation.minLength' ? i18n.t(e, { min: 6 }) : i18n.t(e) }}</small> }
       </div>
       <div class="field">
         <label for="confirm">{{ i18n.t('auth.confirmPassword') }}</label>
-        <p-password id="confirm" formControlName="confirmPassword" [toggleMask]="true" [feedback]="false" [fluid]="true" autocomplete="new-password" />
-        @if (form.errors?.['passwordMismatch'] && (form.get('confirmPassword')?.touched || form.get('confirmPassword')?.dirty)) {
-          <small class="err">{{ i18n.t('validation.passwordMismatch') }}</small>
+        <p-password id="confirm" formControlName="confirmPassword" [toggleMask]="true" [feedback]="false" [fluid]="true" autocomplete="new-password"
+          [attr.aria-describedby]="mismatch() ? 'confirm-err' : null"
+          [attr.aria-invalid]="mismatch() ? true : null" />
+        @if (mismatch()) {
+          <small class="err" id="confirm-err">{{ i18n.t('validation.passwordMismatch') }}</small>
         }
       </div>
       @if (serverError()) { <p-message severity="error" [text]="serverError()" /> }

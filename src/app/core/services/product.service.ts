@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Observable, delay, forkJoin, of, throwError, map, tap } from 'rxjs';
+import { Observable, catchError, delay, forkJoin, of, throwError, map, shareReplay, tap } from 'rxjs';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../../data-access/mock-data';
 import { queryProducts } from '../../data-access/catalog.utils';
 import type { CatalogQuery, Category, Product } from '../../models/product.model';
@@ -7,7 +7,14 @@ import { pickLocaleText } from '../../shared/utils/localized.utils';
 import { environment } from '../../../environments/environment';
 import { I18nService } from './i18n.service';
 import { ApiClientService } from '../api/api-client.service';
-import { toProduct, toCategory, suggestToProduct, toProductQueryParams, BackendPaged, BackendProduct, BackendCategory, BackendSuggest } from '../api/catalog.mapper';
+import { toProduct, toCategory, suggestToProduct, toProductQueryParams, BackendPaged, BackendProduct, BackendCategory, BackendSuggest, BackendPriceRange } from '../api/catalog.mapper';
+
+/** The catalogue's price range, in the store's price contract currency. */
+export interface PriceRange {
+  readonly minPrice: number;
+  readonly maxPrice: number;
+  readonly currency: string;
+}
 
 /**
  * ProductService — single data-access boundary for products.
@@ -27,6 +34,10 @@ export class ProductService {
   private liveCategories = signal<Category[]>([]);
   /** Guards preloadCategories() so a page load issues at most one request. */
   private categoriesLoaded = false;
+  /** The one live taxonomy request of this session (see categories()). */
+  private categoriesRequest$: Observable<Category[]> | null = null;
+  /** The one live price-range request of this session (see priceRange()). */
+  private priceRangeRequest$: Observable<PriceRange | null> | null = null;
   /** When true, catalog requests fail — used to demo the error state. */
   forceError = signal(false);
 
@@ -118,18 +129,65 @@ export class ProductService {
    */
   categories(): Observable<Category[]> {
     if (!environment.useMockApi) {
-      return this.api.get<BackendCategory[]>('categories').pipe(
-        map((items) => items.map(toCategory)),
-        tap((items) => {
-          this.liveCategories.set(items);
-          this.categoriesLoaded = true;
-        }),
-      );
+      // The taxonomy is fetched at most once per session: the home page, the
+      // catalog filter and the product breadcrumb all need it, and it only
+      // changes when the dashboard publishes a new one.
+      if (!this.categoriesRequest$) {
+        let request$!: Observable<Category[]>;
+        request$ = this.api.get<BackendCategory[]>('categories').pipe(
+          map((items) => items.map(toCategory)),
+          tap((items) => {
+            this.liveCategories.set(items);
+            this.categoriesLoaded = true;
+          }),
+          // A failed load must not be remembered: the next caller may retry.
+          catchError((err: unknown) => {
+            if (this.categoriesRequest$ === request$) {
+              this.categoriesRequest$ = null;
+              this.categoriesLoaded = false;
+            }
+            return throwError(() => err);
+          }),
+          // `refCount: false` keeps the answer for the whole session, so the
+          // three callers share ONE request instead of one each.
+          shareReplay({ bufferSize: 1, refCount: false }),
+        );
+        this.categoriesRequest$ = request$;
+      }
+      return this.categoriesRequest$;
     }
     const active = this.categoriesStore()
       .filter((c) => c.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder);
     return of(active).pipe(delay(200));
+  }
+
+  /**
+   * The price range of the ACTIVE catalogue, in the store's price contract
+   * currency (USD). The catalog's price filter needs the real ceiling: a
+   * number bundled with the frontend would make a product priced above it
+   * impossible to filter.
+   *
+   * Null in mock mode (the bundled demo catalogue is the ceiling there).
+   */
+  priceRange(): Observable<PriceRange | null> {
+    if (!environment.useMockApi) {
+      if (!this.priceRangeRequest$) {
+        let request$!: Observable<PriceRange | null>;
+        request$ = this.api.get<BackendPriceRange>('products/price-range').pipe(
+          map((range) => ({ minPrice: range.minPrice, maxPrice: range.maxPrice, currency: range.currency })),
+          // A failed load must not be remembered: the next caller may retry.
+          catchError((err: unknown) => {
+            if (this.priceRangeRequest$ === request$) this.priceRangeRequest$ = null;
+            return throwError(() => err);
+          }),
+          shareReplay({ bufferSize: 1, refCount: false }),
+        );
+        this.priceRangeRequest$ = request$;
+      }
+      return this.priceRangeRequest$;
+    }
+    return of(null);
   }
 
   /**

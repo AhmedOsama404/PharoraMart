@@ -22,11 +22,14 @@
     <div class="gallery">
       <div class="img-frame main-frame">
         <i class="pi pi-image img-fallback" aria-hidden="true"></i>
-        <img appSafeImg="product" class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name" />
+        <img appSafeImg="product" class="main" [src]="images()[activeImg()]" [alt]="product()!.names | localized: product()!.name"
+          loading="eager" fetchpriority="high" decoding="async" />
       </div>
-      <div class="thumbs" role="tablist" aria-label="product images">
+      <div class="thumbs" role="group" [attr.aria-label]="i18n.t('product.imageGallery')">
         @for (src of images(); track src; let i = $index) {
-          <button [class.active]="i === activeImg()" (click)="activeImg.set(i)" [attr.aria-label]="'image ' + (i + 1)">
+          <button type="button" [class.active]="i === activeImg()" (click)="activeImg.set(i)"
+            [attr.aria-label]="i18n.t('product.imageLabel', { n: i + 1 })"
+            [attr.aria-current]="i === activeImg()">
             <span class="img-frame thumb-frame">
               <i class="pi pi-image img-fallback" aria-hidden="true"></i>
               <img appSafeImg="product" [src]="src" [alt]="product()!.names | localized: product()!.name" loading="lazy" />
@@ -46,8 +49,8 @@
         <span>{{ i18n.t('product.sku') }}: {{ product()!.sku }}</span>
       </div>
       <div class="price-row">
-        <span class="price">{{ effective() | resolvedMoney: product()!.currency }}</span>
-        @if (product()!.salePrice != null) { <span class="old">{{ product()!.price | resolvedMoney: product()!.currency }}</span> }
+        <span class="price">{{ effective() | resolvedMoney: priceCurrency() }}</span>
+        @if (product()!.salePrice != null) { <span class="old">{{ product()!.price | resolvedMoney: priceCurrency() }}</span> }
       </div>
       <p class="stock" [class.out]="availability() === 'out_of_stock'">
         @if (availability() === 'out_of_stock') { {{ i18n.t('product.outOfStock') }} }
@@ -83,7 +86,7 @@
           [disabled]="product()!.stock <= 0" (onClick)="addToCart()" />
         <p-button [icon]="isFav() ? 'pi pi-heart-fill' : 'pi pi-heart'"
           [severity]="isFav() ? 'danger' : 'secondary'" [outlined]="!isFav()"
-          [attr.aria-label]="isFav() ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
+          [ariaLabel]="isFav() ? i18n.t('product.favoriteRemove') : i18n.t('product.favoriteAdd')"
           (onClick)="toggleFav()" />
       </div>
       <p-tabs value="0">
@@ -101,7 +104,7 @@
                 }
               </dl>
             } @else {
-              <p class="desc">{{ i18n.t('errors.notFound') }}</p>
+              <p class="desc">{{ i18n.t('product.noAttributes') }}</p>
             }
           </p-tabpanel>
         </p-tabpanels>

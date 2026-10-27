@@ -30,7 +30,10 @@ export class ConnectivityService implements OnDestroy {
   private probeTimer: ReturnType<typeof setTimeout> | null = null;
   private listeners: Array<() => void> = [];
   private readonly retryHooks = new Set<() => void>();
+  private readonly recoverHooks = new Set<() => void>();
   private destroyed = false;
+  /** Set while a liveness probe is on the wire; also aborts it on teardown. */
+  private probeController: AbortController | null = null;
 
   constructor(
     @Inject(DOCUMENT) private readonly doc: Document,
@@ -45,10 +48,13 @@ export class ConnectivityService implements OnDestroy {
     this.probeAttempts = 0;
     this.lastSuccessAt.set(Date.now());
     this.browserOnline.set(true);
-    if (this.statusSignal() !== 'online') {
-      this.statusSignal.set('online');
-      this.recovered$.next();
-    }
+    const wasUnhealthy = this.statusSignal() !== 'online';
+    if (wasUnhealthy) this.statusSignal.set('online');
+    // Clear client-side gating BEFORE announcing recovery: screens refetch in
+    // reaction to `recovered$`, and those requests must not meet a breaker
+    // that is still cooling down.
+    for (const hook of this.recoverHooks) hook();
+    if (wasUnhealthy) this.recovered$.next();
     this.clearProbe();
   }
 
@@ -71,6 +77,15 @@ export class ConnectivityService implements OnDestroy {
   }
 
   /**
+   * Registers a callback fired whenever the backend is proven reachable again,
+   * including by the background liveness probe. Used by the API client to
+   * release its circuit breaker so recovery refetches are not rejected.
+   */
+  onRecover(hook: () => void): void {
+    this.recoverHooks.add(hook);
+  }
+
+  /**
    * Explicit user Retry: clear client-side breaker state so the next request
    * is a real probe, and re-check backend health in parallel.
    */
@@ -83,11 +98,26 @@ export class ConnectivityService implements OnDestroy {
   probe(): void {
     // Hermetic unit tests enable mock mode: never touch the network.
     if (this.destroyed || environment.useMockApi) return;
+    // One probe on the wire at a time. Focus, tab visibility, the periodic
+    // retry and the user's Retry button all call this, and every raw fetch
+    // takes one of the six HTTP/1.1 sockets the browser grants the API origin
+    // — the same sockets the page's own data is queued behind.
+    if (this.probeController) return;
     const root = serverRoot(environment.apiBaseUrl);
     if (!root) return;
     this.clearProbe();
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const timer = controller ? setTimeout(() => controller.abort(), 3000) : null;
+    this.probeController = controller;
+    // The probe is the only unsolicited recovery signal in the app, so it has
+    // to be calibrated like the traffic it gates. It used to abort at 3 000 ms
+    // while a data request is granted 10 000 ms per attempt: a local backend
+    // that answers `/health/live` in 4 s — the normal IIS Express figure here,
+    // measured — therefore failed its own health check, `markSuccess` never
+    // ran, the circuit breaker was never released, and the storefront stayed
+    // cut off from a server that was working. The data path's timeouts are
+    // untouched; this ceiling only governs the check.
+    const probeMs = Math.max(1_000, environment.livenessProbeTimeoutMs ?? 8_000);
+    const timer = controller ? setTimeout(() => controller.abort(), probeMs) : null;
     fetch(`${root}/health/live`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
@@ -95,8 +125,18 @@ export class ConnectivityService implements OnDestroy {
       signal: controller?.signal,
     })
       .then((res) => {
-        if (!res.ok) throw new Error(`health ${res.status}`);
-        this.zone.run(() => this.markSuccess());
+        this.zone.run(() => {
+          if (res.ok) {
+            this.markSuccess();
+            return;
+          }
+          // The server ANSWERED, so the connection is not lost. An unhealthy
+          // 503 backs off without overwriting the status the data path
+          // reported: blaming the network for the API's own problem would
+          // suppress the error the shopper needs to see.
+          this.probeAttempts += 1;
+          this.scheduleProbe();
+        });
       })
       .catch(() => {
         this.zone.run(() => {
@@ -109,11 +149,15 @@ export class ConnectivityService implements OnDestroy {
       })
       .finally(() => {
         if (timer) clearTimeout(timer);
+        if (controller && this.probeController === controller) this.probeController = null;
       });
   }
 
   ngOnDestroy(): void {
     this.destroyed = true;
+    // A probe still on the wire would otherwise call back into a dead store.
+    this.probeController?.abort();
+    this.probeController = null;
     this.clearProbe();
     for (const off of this.listeners) off();
     this.listeners = [];

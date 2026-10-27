@@ -1,13 +1,12 @@
 import { SafeImageDirective } from '../../shared/resilience/safe-image.directive';
 import { SUPPORTED_LANGS } from '../../core/config/i18n.config';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked, type OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
-import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
@@ -25,32 +24,52 @@ import { ScrollService } from '../../core/services/scroll.service';
 import { ApiClientService } from '../../core/api/api-client.service';
 import { ApiErrorService } from '../../core/services/api-error.service';
 import { firstErrorKey, phoneValidator } from '../../shared/utils/validators';
+import { consentTextHash } from '../../shared/utils/consent-hash.utils';
 import { PhoneInputComponent } from '../../shared/components/phone-input.component';
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import type { CreateOrderRequest } from '../../models/order.model';
 import type { Hotel } from '../../models/hotel.model';
+import type { Product } from '../../models/product.model';
+import { pickLocaleText } from '../../shared/utils/localized.utils';
 import { environment } from '../../../environments/environment';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { PriceResolverService } from '../../core/services/price-resolver.service';
 import { ExchangeRatesService } from '../../core/services/exchange-rates.service';
-import { SiteContentService } from '../../core/services/site-content.service';
+import { SiteContentService, DEFAULT_PLACE_ORDER_ICON, DEFAULT_PLACE_ORDER_TONE } from '../../core/services/site-content.service';
+import { ContactService } from '../../core/services/contact.service';
 import type { SiteCheckoutContent } from '../../models/site-content.model';
+
+/**
+ * The contact methods the API's `ContactMethod` enum accepts: `whatsapp` and
+ * `email`. The server rejects anything else with a 422, so the type is the
+ * server's allow-list — a value the API would refuse cannot be typed here.
+ */
+type ContactMethod = 'whatsapp' | 'email';
 
 @Component({
   selector: 'app-checkout-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafeImageDirective,
-    ReactiveFormsModule, Button, Card, Divider, InputText, Message,
+    ReactiveFormsModule, Button, Card, InputText, Message,
     Select, Textarea, Skeleton, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],
   templateUrl: './checkout-page.component.html',
   styleUrl: './checkout-page.component.scss',
 })
 export class CheckoutPageComponent implements OnInit {
+  /**
+   * The payment method the API accepts. The server's `PaymentMethod` enum has
+   * exactly one member (CashOnDelivery), so the storefront offers exactly one
+   * method and states it once, here. The label and the explanation come from
+   * the CMS (`paymentMethodTitle` / `paymentMethodBody`).
+   */
+  private static readonly PAYMENT_METHOD = 'cash_on_delivery';
+
   protected i18n = inject(I18nService);
   protected siteContent = inject(SiteContentService);
+  private contact = inject(ContactService);
   private currency = inject(CurrencyService);
   private prices = inject(PriceResolverService);
   private rates = inject(ExchangeRatesService);
@@ -66,6 +85,7 @@ export class CheckoutPageComponent implements OnInit {
   private router = inject(Router);
   private scroll = inject(ScrollService);
   private connectivity = inject(ConnectivityService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected placing = signal(false);
   protected submitError = signal('');
@@ -84,18 +104,79 @@ export class CheckoutPageComponent implements OnInit {
     // The language the customer wants to be contacted in. It is required,
     // and it is frozen on the order: the messages always use it.
     language: ['', [Validators.required]],
-    // How the customer wants to be contacted about this order. WhatsApp is
-    // suspended for now, so the order status goes by email; the moment
-    // WhatsApp is back, the choice comes back with it.
-    contactMethod: ['email' as 'phone' | 'whatsapp' | 'email', [Validators.required]],
+    // How the customer wants to be contacted about this order. The API accepts
+    // exactly `whatsapp` and `email` (ContactMethod); the storefront offers
+    // the methods the store can actually reach the customer on (see
+    // contactOptions) and always records one the server understands.
+    contactMethod: ['email' as ContactMethod, [Validators.required]],
   });
+
+  /**
+   * The contact support the store publishes. The contact service owns it
+   * (it follows the backend settings); it is read through a tiny helper so
+   * that a plain getter and a signal are both accepted, and so the signal
+   * shape stays reactive.
+   */
+  private readonly contactMode = computed<'whatsapp' | 'email' | 'both'>(() => {
+    const raw = this.contact.mode as unknown;
+    const value = (typeof raw === 'function' ? (raw as () => string)() : raw) as string;
+    return value === 'whatsapp' || value === 'email' ? value : 'both';
+  });
+
+  /**
+   * The method the order starts with: the only one the store offers, or
+   * email when both are on (order updates by email always go out).
+   */
+  private readonly defaultContactMethod = computed<ContactMethod>(() =>
+    this.contactMode() === 'whatsapp' ? 'whatsapp' : 'email',
+  );
+
+  /**
+   * The contact methods the customer can pick. The store owns that answer:
+   * the contact service knows which channel the store supports (it follows
+   * the backend settings), and the storefront only offers what can really be
+   * used to reach the customer.
+   */
+  protected contactOptions = computed<{ value: ContactMethod; label: string }[]>(() => {
+    const mode = this.contactMode();
+    const options: { value: ContactMethod; label: string }[] = [];
+    if (mode === 'whatsapp' || mode === 'both') {
+      options.push({ value: 'whatsapp', label: this.i18n.t('checkout.contactWhatsapp') });
+    }
+    if (mode === 'email' || mode === 'both') {
+      options.push({ value: 'email', label: this.i18n.t('checkout.contactEmail') });
+    }
+    return options;
+  });
+
+  /** The contact method the customer picked (a mirror of the form control). */
+  protected selectedContact = signal<ContactMethod>('email');
+
+  /**
+   * The contact field the chosen method uses: WhatsApp goes to the mobile
+   * number, email to the address. The order highlights that field so the
+   * customer sees which detail the order will be sent to.
+   */
+  protected contactFocus = computed<'phone' | 'email' | null>(() => {
+    const method = this.selectedContact();
+    if (method === 'whatsapp') return 'phone';
+    if (method === 'email') return 'email';
+    return null;
+  });
+
+  /** True when the customer wants the order updates on WhatsApp as well. */
+  protected whatsappSelected = computed(() => this.selectedContact() === 'whatsapp');
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
   protected cities = signal<string[]>([]);
   protected hotels = signal<Hotel[]>([]);
+  /** True when the directory could not be loaded (the selects would be empty). */
+  protected directoryFailed = signal(false);
   // Authoritative delivery fee for the chosen hotel. Null = no hotel chosen
   // yet; the quote service (mock today, backend tomorrow) is the only writer.
   protected quotedFee = signal<number | null>(null);
+  /** True while a fee is being fetched: the total is not known yet. */
+  protected quotePending = signal(false);
   protected quoteFailed = signal(false);
   // Coupon state (live mode only): the backend validates and prices the code;
   // the receipted discount below is informational until the order returns.
@@ -130,14 +211,8 @@ export class CheckoutPageComponent implements OnInit {
   constructor() {
     // The directory is required to choose a hotel/city; if it cannot load the
     // form stays open (no crash) and submit is blocked by validation/quote.
-    this.delivery.hotels().subscribe({
-      next: (list) => this.hotels.set(list),
-      error: () => this.hotels.set([]),
-    });
-    this.delivery.cities().subscribe({
-      next: (list) => this.cities.set(list),
-      error: () => this.cities.set([]),
-    });
+    // Both calls read the same cached directory, so this is ONE request.
+    this.loadDirectory();
     effect(() => {
       const code = this.currency.code();
       const subtotal = this.subtotal();
@@ -156,6 +231,9 @@ export class CheckoutPageComponent implements OnInit {
       }
       const subtotal = this.subtotal();
       const currencyCode = this.currency.code();
+      // The basket is read here so a swap (same total, different products)
+      // revalidates the coupon: a product-scoped coupon depends on WHAT is in
+      // the basket, not only on how much it costs.
       const key = this.couponValidationKey(code, subtotal, currencyCode);
       if (key !== this.lastCouponValidationKey) {
         untracked(() => this.validateCoupon(code, subtotal, currencyCode));
@@ -166,9 +244,28 @@ export class CheckoutPageComponent implements OnInit {
     if (u) {
       this.form.patchValue({ fullName: u.name, email: u.email, phone: u.phone ?? '' });
     }
+    // The store's own contact support decides what the order starts with.
+    this.form.controls.contactMethod.setValue(this.defaultContactMethod());
+    this.selectedContact.set(this.defaultContactMethod());
+    // The store's support can change (backend settings): the recorded
+    // preference always stays one the server understands.
+    effect(() => {
+      const allowed = this.contactOptions().map((o) => o.value);
+      if (!allowed.includes(this.form.controls.contactMethod.value)) {
+        this.form.controls.contactMethod.setValue(this.defaultContactMethod());
+      }
+    });
+    // An edit ends the last attempt's complaint: the message on screen must
+    // always describe the order the customer is placing right now.
+    this.form.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.selectedContact.set(this.form.controls.contactMethod.value);
+        if (this.submitError()) this.submitError.set('');
+      });
     // When the backend comes back, unblock the money flow without a reload.
     this.connectivity.recovered$
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (this.view.failed()) this.view.refresh();
         const hotelId = this.selectedHotel();
@@ -243,21 +340,27 @@ export class CheckoutPageComponent implements OnInit {
     if (!hotelId) {
       this.quotedFee.set(null);
       this.quoteRateDate.set(null);
+      this.quotePending.set(false);
       return Promise.resolve(false);
     }
     this.quotedFee.set(null);
     this.quoteRateDate.set(null);
+    this.quotePending.set(true);
     return firstValueFrom(this.delivery.quoteFor(hotelId, this.subtotal(), this.currency.code()))
       .then((q) => {
         if (seq !== this.quoteSequence) return false;
         this.quotedFee.set(q.fee);
         this.quoteRateDate.set(q.exchangeRateDate ?? null);
+        // The fee and the pending flag flip together: there is no moment in
+        // which the total is known but still shown as "calculating".
+        this.quotePending.set(false);
         return true;
       })
       .catch(() => {
         if (seq === this.quoteSequence) {
           this.quotedFee.set(null);
           this.quoteFailed.set(true);
+          this.quotePending.set(false);
           // The interceptor already shows the localized reason once; the inline
           // state blocks submit until a fee can be trusted again.
         }
@@ -274,7 +377,11 @@ export class CheckoutPageComponent implements OnInit {
   protected applyCoupon(): void {
     const code = this.couponControl.value.trim();
     this.couponError.set('');
-    if (!code) return;
+    if (!code) {
+      // An empty code is a mistake, not a no-op: say what is missing.
+      this.couponError.set(this.i18n.t('errors.couponRequired'));
+      return;
+    }
     if (environment.useMockApi) {
       this.couponApplied.set('');
       this.couponDiscount.set(0);
@@ -284,8 +391,36 @@ export class CheckoutPageComponent implements OnInit {
     this.validateCoupon(code, this.subtotal(), this.currency.code());
   }
 
+  /**
+   * Enter in the promo-code field applies the code. It must never reach the
+   * form's submit: the form's only submit button places the order.
+   */
+  protected onCouponEnter(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.applyCoupon();
+  }
+
+  /**
+   * Enter in a text field of this form must not place the order by accident:
+   * the order is placed with the button, on purpose. The field keeps the
+   * caret and the value; only the implicit submission is stopped.
+   */
+  protected onFieldEnter(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  /**
+   * The identity of one validation request. The basket is part of it: a
+   * product-scoped coupon depends on WHICH products are in the basket, so two
+   * baskets with the same total are not the same request.
+   */
   private couponValidationKey(code: string, subtotal: number, currencyCode: string): string {
-    return `${code.trim().toUpperCase()}|${currencyCode}|${subtotal.toFixed(2)}`;
+    const basket = this.lines()
+      .map((l) => `${l.productId}x${l.qty}`)
+      .join(',');
+    return `${code.trim().toUpperCase()}|${currencyCode}|${subtotal.toFixed(2)}|${basket}`;
   }
 
   private validateCoupon(code: string, subtotal: number, currencyCode: string): void {
@@ -302,10 +437,20 @@ export class CheckoutPageComponent implements OnInit {
     this.api
       .post<CouponValidationResponse>(
         'coupons/validate',
-        { code: normalizedCode, subtotal },
+        {
+          code: normalizedCode,
+          subtotal,
+          // The basket travels with the validation so the server applies the
+          // SAME scope rule order placement applies. Without it a
+          // product-scoped coupon answers "valid" here and then fails at
+          // submit with `coupon_not_applicable` — the customer sees it
+          // applied and the order is rejected.
+          productIds: this.lines().map((l) => l.productId),
+        },
         undefined,
         { silent: true },
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           if (sequence !== this.couponValidationSequence) return;
@@ -341,6 +486,18 @@ export class CheckoutPageComponent implements OnInit {
       });
   }
 
+  /**
+   * Removes an applied promo code. Without this the code could only be
+   * replaced by another one, and the discount stayed on the total.
+   */
+  protected removeCoupon(): void {
+    this.couponApplied.set('');
+    this.couponDiscount.set(0);
+    this.couponError.set('');
+    this.lastCouponValidationKey = '';
+    this.couponControl.setValue('');
+  }
+
   // Orderable review rows from the shared cart view (same join as the cart
   // page): unavailable lines render separately below and never enter the order.
   protected lines = computed(() =>
@@ -350,7 +507,7 @@ export class CheckoutPageComponent implements OnInit {
         : [{
             key: l.key,
             productId: l.productId,
-            name: l.product.name,
+            name: this.displayName(l.product),
             image: l.product.images[0],
             qty: l.qty,
             total: l.lineTotal,
@@ -359,6 +516,15 @@ export class CheckoutPageComponent implements OnInit {
           }],
     ),
   );
+
+  /**
+   * The product name in the visitor's language. The order stores this name, so
+   * the confirmation and the order history read in the language the customer
+   * shopped in.
+   */
+  private displayName(product: Product): string {
+    return pickLocaleText(product.names, this.i18n.currentLang()) || product.name;
+  }
 
   protected unavailableLines = computed(() => this.view.lines().filter((l) => l.unavailable));
 
@@ -371,6 +537,40 @@ export class CheckoutPageComponent implements OnInit {
   });
   protected total = computed(() => this.subtotal() - this.couponDiscount() + this.deliveryFee());
 
+  /**
+   * Loads the hotel directory and the city list (both come from the same
+   * request). A failure is shown with a retry instead of leaving two empty
+   * dropdowns.
+   */
+  private loadDirectory(reload = false): void {
+    const hotels$ = reload ? this.delivery.reloadHotels() : this.delivery.hotels();
+    hotels$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => {
+          this.hotels.set(list);
+          this.directoryFailed.set(false);
+        },
+        error: () => {
+          this.hotels.set([]);
+          this.directoryFailed.set(true);
+        },
+      });
+    this.delivery
+      .cities()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => this.cities.set(list),
+        error: () => this.cities.set([]),
+      });
+  }
+
+  /** Explicit Retry after a failed directory load. */
+  protected retryDirectory(): void {
+    this.directoryFailed.set(false);
+    this.loadDirectory(true);
+  }
+
   protected err(name: string): string | null {
     return firstErrorKey(this.form.get(name));
   }
@@ -378,22 +578,61 @@ export class CheckoutPageComponent implements OnInit {
   /**
    * Money can never be placed from a stale or half-loaded cart: the button is
    * disabled until fresh prices resolved, and the submit handler re-checks.
+   * A pending delivery quote blocks it too — the total on screen would
+   * otherwise be missing the fee that the order is charged.
    */
   protected checkoutBlocked = computed(
-    () => !this.view.ready() || this.view.failed() || this.quoteFailed() || this.connectivity.status() === 'offline',
+    () =>
+      !this.view.ready() ||
+      this.view.failed() ||
+      this.quoteFailed() ||
+      this.quotePending() ||
+      this.connectivity.status() === 'offline',
   );
 
+  /**
+   * Why the order button is disabled, in one sentence. Every reason the
+   * button knows about is explained here: the button sits in the sticky
+   * summary card, so the reason is shown right next to it.
+   */
   protected blockedReason = computed(() => {
     if (this.connectivity.status() === 'offline') return this.i18n.t('resilience.offlineBody');
     if (this.view.failed()) return this.i18n.t('resilience.cart.checkoutBlocked');
     if (this.quoteFailed()) return this.i18n.t('errors.deliveryFeeUnavailable');
+    if (this.quotePending()) return this.i18n.t('checkout.feePending');
+    if (!this.view.ready()) return this.i18n.t('checkout.cartLoading');
     return '';
+  });
+
+  /**
+   * The live status next to the order button: why the button is disabled,
+   * or that the order is on its way. Screen readers hear it without
+   * hunting for the button.
+   */
+  protected orderStatus = computed<{ kind: 'busy' | 'blocked'; text: string } | null>(() => {
+    if (this.placing()) return { kind: 'busy', text: this.i18n.t('checkout.placing') };
+    const reason = this.blockedReason();
+    return reason ? { kind: 'blocked', text: reason } : null;
   });
 
   protected copy(key: keyof SiteCheckoutContent, fallbackKey: string): string {
     const content = this.siteContent.checkout();
     return this.siteContent.text(content?.[key] as import('../../models/product.model').LocalizedText | undefined, this.i18n.currentLang()) || this.i18n.t(fallbackKey);
   }
+
+  /** The place-order button's icon (from the CMS, allow-listed). */
+  protected readonly placeOrderIcon = computed(
+    () =>
+      this.siteContent.icon(
+        this.siteContent.checkout()?.placeOrderIcon,
+        DEFAULT_PLACE_ORDER_ICON,
+      ),
+  );
+
+  /** The place-order button's visual tone (from the CMS, known values only). */
+  protected readonly placeOrderTone = computed(
+    () => this.siteContent.checkout()?.placeOrderTone || DEFAULT_PLACE_ORDER_TONE,
+  );
 
   protected go(path: string): void {
     this.router.navigate([path]);
@@ -466,6 +705,13 @@ export class CheckoutPageComponent implements OnInit {
     this.submittedKey ??= `ck-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6)}`;
     const key = this.submittedKey;
     const hotel = this.delivery.hotelById(v.hotelId);
+    // The proof of the consent text: a SHA-256 of the exact line the customer
+    // saw. It travels only when the customer actually opted in to WhatsApp,
+    // because that is the only opt-in the server records.
+    const consentHash =
+      v.contactMethod === 'whatsapp'
+        ? await consentTextHash(this.i18n.t('checkout.whatsappUpdatesHint'))
+        : null;
     const req: CreateOrderRequest = {
       customer: {
         fullName: v.fullName,
@@ -482,10 +728,13 @@ export class CheckoutPageComponent implements OnInit {
       // The contact method IS the opt-in: WhatsApp updates only when the
       // customer chose WhatsApp. There is no second control.
       whatsappOptIn: v.contactMethod === 'whatsapp',
+      consentTextHash: consentHash ?? undefined,
       items: this.lines().map((l) => ({
         productId: l.productId,
         productName: l.name,
-        image: l.image,
+        // The API's `image` is a required string: a product without a picture
+        // sends an empty one, never `undefined` (which would be a 400).
+        image: l.image ?? '',
         unitPrice: l.unit,
         qty: l.qty,
         variantLabel: l.variantLabel,
@@ -494,42 +743,45 @@ export class CheckoutPageComponent implements OnInit {
       deliveryFee: this.deliveryFee(),
       total: this.total(),
       currency: this.currency.code(),
-      paymentMethod: 'cash_on_delivery',
+      paymentMethod: CheckoutPageComponent.PAYMENT_METHOD,
       couponCode: this.couponApplied() || undefined,
       exchangeRateDate: this.rates.snapshot()?.date ?? this.quoteRateDate() ?? undefined,
     };
-    this.orders.create(req, key, this.auth.user()?.id).subscribe({
-      next: (order) => {
-        this.placing.set(false);
-        this.submittedKey = null;
-        this.cart.clear();
-        this.notify.success('checkout.orderSuccess');
-        this.router.navigate(['/checkout/confirmation', order.id]);
-      },
-      error: (err: unknown) => {
-        this.placing.set(false);
-        const resolved = this.apiError.resolve(err);
-        this.submitError.set(this.i18n.t(resolved.key, resolved.params));
-        // A coupon rejection is actionable and terminal: drop it so the next
-        // attempt can succeed, leaving the exact reason on screen.
-        if (resolved.code?.startsWith('coupon_')) {
-          this.couponApplied.set('');
-          this.couponDiscount.set(0);
+    this.orders
+      .create(req, key, this.auth.user()?.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (order) => {
+          this.placing.set(false);
           this.submittedKey = null;
-        }
-        // Stock/price moved under the visitor (or the FX quote expired):
-        // re-pull the live catalog so the quantities and prices on screen are
-        // current, and end this attempt (fresh idempotency key on retry).
-        if (
-          resolved.code === 'order_out_of_stock' ||
-          resolved.code === 'order_product_unavailable' ||
-          resolved.code === 'order_rates_changed'
-        ) {
-          this.view.refresh();
-          this.submittedKey = null;
-        }
-      },
-    });
+          this.cart.clear();
+          this.notify.success('checkout.orderSuccess');
+          this.router.navigate(['/checkout/confirmation', order.id]);
+        },
+        error: (err: unknown) => {
+          this.placing.set(false);
+          const resolved = this.apiError.resolve(err);
+          this.submitError.set(this.i18n.t(resolved.key, resolved.params));
+          // A coupon rejection is actionable and terminal: drop it so the next
+          // attempt can succeed, leaving the exact reason on screen.
+          if (resolved.code?.startsWith('coupon_')) {
+            this.couponApplied.set('');
+            this.couponDiscount.set(0);
+            this.submittedKey = null;
+          }
+          // Stock/price moved under the visitor (or the FX quote expired):
+          // re-pull the live catalog so the quantities and prices on screen are
+          // current, and end this attempt (fresh idempotency key on retry).
+          if (
+            resolved.code === 'order_out_of_stock' ||
+            resolved.code === 'order_product_unavailable' ||
+            resolved.code === 'order_rates_changed'
+          ) {
+            this.view.refresh();
+            this.submittedKey = null;
+          }
+        },
+      });
   }
 }
 

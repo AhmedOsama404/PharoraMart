@@ -10,12 +10,17 @@
     <div class="hero-ok"><i class="pi pi-check-circle"></i>
       <div><h1>{{ copy('title', 'confirmation.title') }}</h1><p>{{ copy('subtitle', 'confirmation.subtitle') }}</p></div>
     </div>
-    @if (show('showDemoNotice')) { <p-message severity="info" size="small" [text]="i18n.t('confirmation.mockNotice')" /> }
+    @if (show('showDemoNotice')) {
+      <p class="demo-note">
+        <i class="pi pi-info-circle" aria-hidden="true"></i>
+        {{ i18n.t('confirmation.mockNotice') }}
+      </p>
+    }
     <div class="layout">
       <p-card>
         <div class="kv"><span>{{ i18n.t('confirmation.orderNumber') }}</span><strong>{{ order()!.orderNumber }}</strong></div>
         <div class="kv"><span>{{ i18n.t('confirmation.orderDate') }}</span><strong>{{ dateOf(order()!.createdAt) }}</strong></div>
-        <div class="kv"><span>{{ i18n.t('confirmation.paymentMethod') }}</span><strong>{{ i18n.t('confirmation.cashOnDelivery') }}</strong></div>
+        <div class="kv"><span>{{ i18n.t('confirmation.paymentMethod') }}</span><strong>{{ paymentMethodLabel() }}</strong></div>
         <p-divider />
         <h2>{{ i18n.t('confirmation.items') }}</h2>
         <ul class="items">
@@ -43,13 +48,14 @@
             <ol><li>{{ copy('nextStepOne', 'confirmation.next1') }}</li><li>{{ copy('nextStepTwo', 'confirmation.next2') }}</li><li>{{ copy('nextStepThree', 'confirmation.next3') }}</li></ol>
           }
         </p-card>
-        <p-card>
+
+        <p-card class="actions-card">
           @if (contact.mode !== 'email' && show('showWhatsAppButton')) {
-            <p-button [label]="copy('whatsAppButtonLabel', 'confirmation.whatsappButton')" icon="pi pi-whatsapp" severity="success" [fluid]="true" (onClick)="wa()" />
+            <p-button class="action action--whatsapp" [label]="copy('whatsAppButtonLabel', 'confirmation.whatsappButton')" icon="pi pi-whatsapp" severity="success" [fluid]="true" (onClick)="wa()" />
             <small class="hint">{{ copy('whatsAppHint', 'confirmation.whatsappHint') }}</small>
           }
           @if (contact.mode !== 'whatsapp' && show('showEmailButton')) {
-            <p-button [label]="copy('emailButtonLabel', 'confirmation.emailButton')" icon="pi-envelope" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="mail()" />
+            <p-button class="action" [label]="copy('emailButtonLabel', 'confirmation.emailButton')" icon="pi pi-envelope" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="mail()" />
             <small class="hint">{{ copy('emailHint', 'confirmation.emailHint') }}</small>
           }
           @if (show('showEmailButton')) {
@@ -58,6 +64,34 @@
               <span>{{ i18n.t('confirmation.emailStatusNotice') }}</span>
             </p>
           }
+
+          <!-- The store's own channels. The customer can always reach the shop
+               the way the shop published it — the same WhatsApp number and
+               support email the admin controls in the dashboard. -->
+          @if (show('showContactDetails') && hasContactDetails()) {
+            <div class="channels">
+              <h3>{{ contactTitle() }}</h3>
+              @if (whatsappNumber()) {
+                <a class="channel channel--whatsapp" [href]="whatsAppLink()" target="_blank" rel="noopener noreferrer">
+                  <i class="pi pi-whatsapp" aria-hidden="true"></i>
+                  <span dir="ltr">{{ whatsappNumber() }}</span>
+                </a>
+              }
+              @if (supportEmail()) {
+                <a class="channel channel--email" [href]="emailLink()">
+                  <i class="pi pi-envelope" aria-hidden="true"></i>
+                  <span dir="ltr">{{ supportEmail() }}</span>
+                </a>
+              }
+              @if (businessHours()) {
+                <span class="channel channel--hours">
+                  <i class="pi pi-clock" aria-hidden="true"></i>
+                  <span>{{ businessHours() }}</span>
+                </span>
+              }
+            </div>
+          }
+
           <div class="row">
             <p-button [label]="copy('continueShoppingLabel', 'confirmation.continueShopping')" [text]="true" (onClick)="go('/products')" />
             <p-button [label]="copy('viewOrdersLabel', 'confirmation.viewOrders')" severity="secondary" [outlined]="true" (onClick)="go('/orders')" />

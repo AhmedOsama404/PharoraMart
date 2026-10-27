@@ -1,11 +1,16 @@
 export const environment = {
   production: false,
   // Local backend for live-API testing (set useMockApi:false to use it).
-  // run-api.ps1 starts the API on http://localhost:5086.
+  // run-api.ps1 starts the API on http://localhost:5086 — the same instance
+  // the admin dashboard talks to, so one API serves both frontends.
   apiBaseUrl: 'https://localhost:44389/api/v1',
   useMockApi: false,
   requestTimeoutMs: 10000,
   getRetryAttempts: 2,
+  // Ceiling for the background /health/live check. Local IIS Express answers
+  // health in 1–4 s, so a tighter ceiling made the probe fail a healthy backend
+  // and left the app cut off until a reload.
+  livenessProbeTimeoutMs: 8000,
   // Public business identity (all frontend-bundled values are public by
   // definition — never put secrets here). The future dashboard owns the real
   // values; these defaults keep the storefront coherent until then.

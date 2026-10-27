@@ -46,6 +46,8 @@ export class SafeImageDirective implements OnInit, DoCheck, OnDestroy {
   private failed = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private lastSrc = '';
+  private viewportObserver: IntersectionObserver | null = null;
+  private intersecting = false;
 
   constructor(
     private readonly el: ElementRef<HTMLImageElement>,
@@ -66,8 +68,7 @@ export class SafeImageDirective implements OnInit, DoCheck, OnDestroy {
       this.fallback();
       return;
     }
-    // Guard slow/hung image hosts: after 15 s show the typed placeholder.
-    this.timer = setTimeout(() => this.fallback(), 15_000);
+    this.armHangTimer();
   }
 
   /**
@@ -90,7 +91,45 @@ export class SafeImageDirective implements OnInit, DoCheck, OnDestroy {
       return;
     }
     this.state = 'loading';
+    this.armHangTimer();
+  }
+
+  /**
+   * Guards against a slow/hung image host: after 15 s the typed placeholder
+   * replaces the image. A lazy image that is still waiting for the viewport is
+   * NOT slow — its clock must start when it actually begins loading, otherwise
+   * every card scrolled to after 15 s would already show a placeholder.
+   */
+  private armHangTimer(): void {
+    this.clearTimer();
+    const img = this.el.nativeElement;
+    const lazy = img.getAttribute('loading') === 'lazy';
+    if (lazy && !this.intersecting && typeof IntersectionObserver !== 'undefined') {
+      this.observeViewport();
+      return;
+    }
     this.timer = setTimeout(() => this.fallback(), 15_000);
+  }
+
+  private observeViewport(): void {
+    if (this.viewportObserver) return;
+    this.viewportObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        this.intersecting = true;
+        this.disconnectViewport();
+        if (this.state === 'loading' && !this.failed) {
+          this.timer = setTimeout(() => this.fallback(), 15_000);
+        }
+      },
+      { rootMargin: '250px' },
+    );
+    this.viewportObserver.observe(this.el.nativeElement);
+  }
+
+  private disconnectViewport(): void {
+    this.viewportObserver?.disconnect();
+    this.viewportObserver = null;
   }
 
   @HostListener('load')
@@ -103,6 +142,7 @@ export class SafeImageDirective implements OnInit, DoCheck, OnDestroy {
       return;
     }
     this.clearTimer();
+    this.disconnectViewport();
     this.state = 'loaded';
   }
 
@@ -113,12 +153,14 @@ export class SafeImageDirective implements OnInit, DoCheck, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimer();
+    this.disconnectViewport();
   }
 
   private fallback(): void {
     if (this.failed) return;
     this.failed = true;
     this.clearTimer();
+    this.disconnectViewport();
     const img = this.el.nativeElement;
     this.state = 'fallback';
     this.renderer.removeAttribute(img, 'srcset');

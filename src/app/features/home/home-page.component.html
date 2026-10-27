@@ -33,6 +33,8 @@
           }
           @if (heroHeadline()) {
             <h1>{{ heroHeadline() }}</h1>
+          } @else {
+            <h1>{{ i18n.t('meta.home') }}</h1>
           }
           @if (heroDescription()) {
             <p>{{ heroDescription() }}</p>
@@ -60,7 +62,7 @@
             @if (heroSlotProducts()[0]; as hero) {
               <a [routerLink]="['/products', hero.id]" class="hero-card">
                 <img appSafeImg="product" [src]="hero.images[0] || '/hero-product-fallback.svg'" [alt]="hero.names | localized: hero.name" fetchpriority="high" />
-                <span class="hero-info"><span class="hero-name">{{ hero.names | localized: hero.name }}</span><span class="hero-price">{{ hero.salePrice ?? hero.price | resolvedMoney: hero.currency }}</span></span>
+                <span class="hero-info"><span class="hero-name">{{ hero.names | localized: hero.name }}</span><span class="hero-price">{{ hero.salePrice ?? hero.price | resolvedMoney: hero.currency }}</span><span class="hero-info-arrow" aria-hidden="true"><i class="pi pi-arrow-up-right flip-rtl"></i></span></span>
               </a>
             } @else {
               <div class="hero-card"><img appSafeImg="product" src="/hero-product-fallback.svg" alt="" fetchpriority="high" /></div>
@@ -76,7 +78,7 @@
             @if (heroProduct()) {
               <a [routerLink]="['/products', heroProduct()!.id]" class="hero-card">
                 <img appSafeImg="product" [src]="storefront.sectionSettings('hero')?.imageUrl || heroProduct()!.images[0]" [alt]="heroProduct()!.names | localized: heroProduct()!.name" fetchpriority="high" />
-                <span class="hero-info"><span class="hero-name">{{ heroProduct()!.name }}</span><span class="hero-price">{{ heroProduct()!.salePrice ?? heroProduct()!.price | resolvedMoney: heroProduct()!.currency }}</span></span>
+                <span class="hero-info"><span class="hero-name">{{ heroProduct()!.name }}</span><span class="hero-price">{{ heroProduct()!.salePrice ?? heroProduct()!.price | resolvedMoney: heroProduct()!.currency }}</span><span class="hero-info-arrow" aria-hidden="true"><i class="pi pi-arrow-up-right flip-rtl"></i></span></span>
               </a>
             }
             <div class="hero-tiles">
@@ -155,8 +157,8 @@
           <div>
             <h2>{{ blockTitle(b) }}</h2>
             <p>{{ blockBody(b) }}</p>
-            @if (b.linkUrl) {
-              <a [href]="b.linkUrl"><p-button [label]="i18n.t('home.learnMore')" severity="contrast" /></a>
+            @if (siteContent.safeUrl(b.linkUrl); as link) {
+              <p-button [label]="i18n.t('home.learnMore')" severity="contrast" (onClick)="goTo(link)" />
             }
           </div>
           @if (b.imageUrl) {
@@ -188,8 +190,7 @@
                   <div id="new-arrivals-track" #arrivalsTrack class="arrivals-carousel" role="region" tabindex="0"
                     aria-roledescription="carousel" [attr.aria-label]="sectionTitle('newArrivals')">
                     @for (p of newArrivals(); track p.id) {
-                      <div class="car-item" role="group" aria-roledescription="slide"
-                        (mouseenter)="pauseArrivalsOnHover()" (mouseleave)="resumeArrivalsAfterHover()">
+                      <div class="car-item" role="group" aria-roledescription="slide">
                         <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
                       </div>
                     }

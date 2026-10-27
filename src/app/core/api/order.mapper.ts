@@ -1,4 +1,4 @@
-import type { Order, OrderStatus } from '../../models/order.model';
+import type { ContactMethod, Order, OrderStatus } from '../../models/order.model';
 
 /** Single typed boundary for order DTOs (API_CONTRACT.md §5). */
 
@@ -58,7 +58,7 @@ export function toOrder(o: BackendOrder): Order {
       hotelName: o.customer.hotelName,
       room: o.customer.room ?? undefined,
       notes: o.customer.notes ?? undefined,
-      contactMethod: o.customer.contactMethod as 'phone' | 'whatsapp' | 'email',
+      contactMethod: toContactMethod(o.customer.contactMethod),
     },
     items: o.items.map((i) => ({
       productId: i.productId,
@@ -83,4 +83,15 @@ export function toOrder(o: BackendOrder): Order {
     exchangeRateDate: o.exchangeRateDate ?? undefined,
     exchangeRateSource: o.exchangeRateSource ?? undefined,
   };
+}
+
+/**
+ * The contact method the server recorded.
+ *
+ * The API accepts exactly `whatsapp` and `email`. An unknown value is not
+ * passed on as if it were valid: the order falls back to `email`, the one
+ * method the server always understands.
+ */
+function toContactMethod(value: string | null | undefined): ContactMethod {
+  return value === 'whatsapp' ? 'whatsapp' : 'email';
 }

@@ -43,6 +43,8 @@
     type="tel"
     inputmode="tel"
     [id]="inputId()"
+    [attr.aria-describedby]="describedBy()"
+    [attr.aria-invalid]="describedBy() ? true : null"
     [value]="display()"
     (input)="onInput($event)"
     (blur)="onBlur()"

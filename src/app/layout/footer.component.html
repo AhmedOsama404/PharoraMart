@@ -1,31 +1,27 @@
 <footer class="footer">
   <div class="container grid">
-    @if (footer(); as f) {
     <div class="brand">
       <div class="logo">
         @if (logoUrl(); as logo) { <img appSafeImg="logo" class="footer-logo" [src]="logo" [alt]="brandName()" /> } @else { <app-brand-logo /> }
         <span>{{ brandName() }}</span>
       </div>
       @if (tagline()) { <p>{{ tagline() }}</p> }
-      @if (f.contacts.length) {
+      @if (contactRows().length) {
       <div class="contact">
-        @for (c of f.contacts; track $index) {
-          @if (siteContent.text(c.text, i18n.currentLang()); as text) {
-            @if (contactHref(c.icon, text); as href) {
-              <a [href]="href" [target]="siteContent.externalLink(href) ? '_blank' : null" [rel]="siteContent.externalLink(href) ? 'noopener' : null"><i [class]="siteContent.icon(c.icon)"></i> {{ text }}</a>
-            } @else {
-              <span><i [class]="siteContent.icon(c.icon)"></i> {{ text }}</span>
-            }
+        @for (c of contactRows(); track $index) {
+          @if (contactHref(c.icon, c.text); as href) {
+            <a [href]="href" [target]="siteContent.externalLink(href) ? '_blank' : null" [rel]="siteContent.externalLink(href) ? 'noopener' : null"><i [class]="c.icon"></i> {{ c.text }}</a>
+          } @else {
+            <span><i [class]="c.icon"></i> {{ c.text }}</span>
           }
         }
       </div>
       }
     </div>
-    }
     @for (column of footer()?.columns ?? []; track $index) {
       @if (siteContent.text(column.header, i18n.currentLang()); as header) {
         <nav [attr.aria-label]="header">
-          <h4>{{ header }}</h4>
+          <h2 class="footer-heading">{{ header }}</h2>
           @for (link of column.links; track $index) {
             @if (siteContent.text(link.text, i18n.currentLang()); as text) {
               @if (siteContent.safeUrl(link.url); as url) {
@@ -41,9 +37,10 @@
       }
     }
     <div class="prefs">
-      <h4>{{ i18n.t('footer.contact') }}</h4>
+      <h2 class="footer-heading">{{ i18n.t('footer.contact') }}</h2>
       <label>{{ i18n.t('footer.currencyLabel') }}</label>
       <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true"
+        [ariaLabel]="i18n.t('footer.currencyLabel')"
         appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
     </div>
   </div>

@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal, type OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -23,8 +24,11 @@ export class ForgotPageComponent implements OnInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private scroll = inject(ScrollService);
+  private readonly destroyRef = inject(DestroyRef);
   protected busy = signal(false);
   protected sent = signal(false);
+  /** A failed request must say so — a silent failure looks like success. */
+  protected serverError = signal('');
   protected form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
 
   ngOnInit(): void {
@@ -42,13 +46,22 @@ export class ForgotPageComponent implements OnInit {
       return;
     }
     this.busy.set(true);
-    // Demo only: resolves without sending any email (see the template notice).
-    this.auth.requestPasswordReset(this.form.getRawValue().email).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this.sent.set(true);
-      },
-      error: () => this.busy.set(false),
-    });
+    this.serverError.set('');
+    // The request goes to the API, which validates the address and answers
+    // without disclosing whether an account exists. (The API's reset
+    // delivery is still a stub, so no email leaves the server yet.)
+    this.auth
+      .requestPasswordReset(this.form.getRawValue().email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.busy.set(false);
+          this.sent.set(true);
+        },
+        error: () => {
+          this.busy.set(false);
+          this.serverError.set(this.i18n.t('auth.resetFailed'));
+        },
+      });
   }
 }

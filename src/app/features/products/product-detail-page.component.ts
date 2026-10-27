@@ -3,6 +3,7 @@ import { LocalizedPipe } from '../../shared/pipes/localized.pipe';
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Meta } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { map, distinctUntilChanged, switchMap, catchError, startWith, of, type Observable } from 'rxjs';
 import { Breadcrumb } from 'primeng/breadcrumb';
@@ -13,6 +14,7 @@ import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
 import type { MenuItem } from 'primeng/api';
 import { I18nService } from '../../core/services/i18n.service';
+import { CurrencyService } from '../../core/services/currency.service';
 import { ProductService } from '../../core/services/product.service';
 import { CartStore } from '../../core/services/cart.store';
 import { FavoritesStore } from '../../core/services/favorites.store';
@@ -28,7 +30,6 @@ import { MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
-import { handleImgError } from '../../shared/utils/image-fallback.utils';
 import { pickLocaleText } from '../../shared/utils/localized.utils';
 import type { ProductVariant } from '../../models/product.model';
 
@@ -69,6 +70,8 @@ const LOADING_STATE: ProductDetailState = { status: 'loading', product: null, re
 })
 export class ProductDetailPageComponent implements OnDestroy {
   protected i18n = inject(I18nService);
+  private currency = inject(CurrencyService);
+  private meta = inject(Meta);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private products = inject(ProductService);
@@ -144,11 +147,26 @@ export class ProductDetailPageComponent implements OnDestroy {
   protected crumbs = computed<MenuItem[]>(() => [
     { label: this.i18n.t('product.breadcrumbsHome'), routerLink: '/', routerLinkActiveOptions: CRUMB_MATCH_EXACT },
     { label: this.i18n.t('product.breadcrumbsCatalog'), routerLink: '/products', routerLinkActiveOptions: CRUMB_MATCH_PREFIX },
-    { label: this.product()?.name ?? '' },
+    { label: this.localizedName() },
   ]);
+
+  /** The product name in the visitor's language (English fallback). */
+  protected localizedName = computed(() => {
+    const p = this.product();
+    return p ? pickLocaleText(p.names, this.i18n.currentLang()) || p.name : '';
+  });
 
   protected images = computed(() => this.product()?.images ?? []);
   protected effective = computed(() => (this.product() ? effectivePrice(this.product()!) : 0));
+
+  /**
+   * The currency the stored price is expressed in. Records without a currency
+   * are already in the visitor's currency, so the price must never render
+   * blank.
+   */
+  protected priceCurrency(): string {
+    return this.product()?.currency ?? this.currency.code();
+  }
   protected discount = computed(() => (this.product() ? discountPercent(this.product()!) : 0));
   protected availability = computed(() =>
     this.product() ? availabilityOf(this.product()!) : 'out_of_stock',
@@ -186,11 +204,20 @@ export class ProductDetailPageComponent implements OnDestroy {
     // Side effects that belong to a successful load only.
     effect(() => {
       const state = this.page();
+      // The document title follows the visitor's language, like every other
+      // title: the product name is the localized one, not the raw English.
+      const lang = this.i18n.currentLang();
       if (state.status === 'ready' && state.product) {
         this.autoRetried = false;
         const product = state.product;
         untracked(() => {
-          document.title = `${product.name} — Pharora`;
+          const name = pickLocaleText(product.names, lang) || product.name;
+          const description = pickLocaleText(product.descriptions, lang) || product.description;
+          document.title = `${name} — Pharora`;
+          // A shared product link must describe the product, not the shop.
+          this.meta.updateTag({ name: 'description', content: description.slice(0, 180) });
+          this.meta.updateTag({ property: 'og:title', content: `${name} — Pharora` });
+          this.meta.updateTag({ property: 'og:description', content: description.slice(0, 180) });
           this.recent.push(product.id);
         });
       }
@@ -338,10 +365,5 @@ export class ProductDetailPageComponent implements OnDestroy {
 
   protected goHome(): void {
     this.router.navigate(['/']);
-  }
-
-  protected fbImg(ev: Event, seed = 'novamart-detail'): void {
-    // Shared two-stage recovery (picsum attempt, then framed placeholder).
-    handleImgError(ev, seed);
   }
 }

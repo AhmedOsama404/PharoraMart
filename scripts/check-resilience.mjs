@@ -5,6 +5,10 @@
  * 1. HttpClient may only be imported by the central API client, the health
  *    probe, and app.config (provider wiring). Feature code must use
  *    ApiClientService so timeouts/retries/classification cannot be bypassed.
+ *    The one exception is the self-hosted translation sidecar: it is a
+ *    DIFFERENT origin with its own contract (no storefront session, no
+ *    circuit breaker, graceful fallback to the original text), so it cannot
+ *    share the storefront API boundary — see TRANSLATION_SETUP.md.
  * 2. Every `<img>` must carry the SafeImage guard.
  * 3. Templates must not use CSS background images (they bypass SafeImage).
  *
@@ -18,8 +22,9 @@ const appDir = join(root, 'src', 'app');
 
 const HTTP_CLIENT_ALLOWLIST = new Set([
   'src/app/core/api/api-client.service.ts',
-  'src/app/core/api/health.service.ts',
   'src/app/app.config.ts',
+  // Separate origin, separate contract (see the note above).
+  'src/app/core/services/libre-translate.service.ts',
 ]);
 
 function walk(dir, out = []) {

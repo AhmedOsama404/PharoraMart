@@ -22,6 +22,13 @@
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+/* In Arabic the overlay is shifted back onto the trigger by the trigger's own
+   width (styles.scss), so that width has to be exact. A minmax() track would
+   shrink inside a narrow checkout column and leave the panel off the control. */
+.phone[dir='rtl'] {
+  grid-template-columns: var(--rs-rtl-country-w) minmax(0, 1fr);
+}
+
 .phone__country:hover,
 .phone__number:hover {
   border-color: color-mix(in srgb, var(--primary) 42%, var(--surface-border));
@@ -77,6 +84,9 @@
   .phone {
     grid-template-columns: minmax(6.75rem, 8.25rem) minmax(0, 1fr);
     gap: 0.45rem;
+  }
+  .phone[dir='rtl'] {
+    grid-template-columns: var(--rs-rtl-country-w-sm) minmax(0, 1fr);
   }
 }
 

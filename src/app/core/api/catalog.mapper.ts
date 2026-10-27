@@ -70,6 +70,16 @@ export interface BackendSuggest {
   image: string;
 }
 
+/**
+ * The active catalogue's price range, in the store's price contract
+ * currency (USD). `GET /products/price-range`.
+ */
+export interface BackendPriceRange {
+  minPrice: number;
+  maxPrice: number;
+  currency: string;
+}
+
 /** Null-tolerant array so malformed/partial payloads never crash the UI. */
 function arr<T>(v: T[] | null | undefined): T[] {
   return Array.isArray(v) ? v : [];
@@ -141,6 +151,20 @@ export function suggestToProduct(s: BackendSuggest): Product {
 }
 
 /**
+ * The sort keys the API accepts. The list is closed on the server: an unknown
+ * key is a 422, not a silent fallback. The storefront mirrors it so a key the
+ * server does not know is never sent.
+ */
+const API_SORT_KEYS: readonly string[] = [
+  'recommended',
+  'newest',
+  'price_asc',
+  'price_desc',
+  'name_asc',
+  'bestselling',
+];
+
+/**
  * Frontend CatalogQuery → backend query params. Differences vs mock:
  * `search→q`, `onSaleOnly→onSale`, availability passes through (minus 'all'),
  * tags as a repeated array. `inStockOnly` has no server param (the catalog UI
@@ -156,7 +180,8 @@ export function toProductQueryParams(q: CatalogQuery): Record<string, string | n
   if (q.availability && q.availability !== 'all') params['availability'] = q.availability;
   if (q.onSaleOnly) params['onSale'] = true;
   if (q.tags && q.tags.length) params['tags'] = q.tags;
-  if (q.sort) params['sort'] = q.sort;
+  // The server's sort list is closed, so only a key it knows is sent.
+  if (q.sort && API_SORT_KEYS.includes(q.sort)) params['sort'] = q.sort;
   if (q.page != null) params['page'] = q.page;
   if (q.pageSize != null) params['pageSize'] = q.pageSize;
   return params;

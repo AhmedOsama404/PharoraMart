@@ -1,33 +1,591 @@
-.topbar { position: sticky; top: 0; z-index: 50; background: var(--surface-card); border-bottom: 1px solid var(--surface-border); }
-.announce { background: var(--primary); color: #fff; text-align: center; font-size: 0.78rem; padding: 0.32rem 1rem; font-weight: 600; }
-.bar { display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 1rem; }
-.logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 850; font-size: 1.25rem; color: var(--text-primary); }
-.logo img { width: 2.25rem; height: 2.25rem; object-fit: contain; }
-.links { display: flex; gap: 1rem; }
-.links a { text-decoration: none; color: var(--text-secondary); font-weight: 600; }
-.links a.active, .links a:hover { color: var(--primary); }
-.search { flex: 1; position: relative; max-width: 34rem; margin-inline-start: auto; }
-.search input { width: 100%; padding-inline-end: 2rem; }
-.clear-search { position: absolute; inset-inline-end: 0.4rem; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; color: var(--text-secondary); }
-.suggest { position: absolute; top: calc(100% + 6px); inset-inline: 0; background: var(--surface-card); border: 1px solid var(--surface-border); border-radius: 0.8rem; box-shadow: var(--shadow-md); overflow: hidden; z-index: 60; }
-.suggest a { display: flex; gap: 0.6rem; align-items: center; padding: 0.5rem 0.7rem; text-decoration: none; color: var(--text-primary); }
-.suggest a:hover { background: var(--surface-ground); }
-.suggest img { width: 2.4rem; height: 2.4rem; object-fit: cover; border-radius: 0.5rem; }
-.no-suggest { display: block; padding: 0.7rem; color: var(--text-secondary); font-size: 0.85rem; }
-.actions { display: flex; align-items: center; gap: 0.5rem; }
-.icon-btn { position: relative; display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 999px; border: 1px solid var(--surface-border); background: var(--surface-card); color: var(--text-primary); cursor: pointer; text-decoration: none; }
-.icon-btn:hover { border-color: var(--primary); color: var(--primary); }
-.icon-btn p-badge { position: absolute; top: -6px; inset-inline-end: -6px; }
-.login-link { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; color: var(--primary); text-decoration: none; padding: 0.5rem 0.8rem; border-radius: 999px; border: 1px solid var(--surface-border); }
-.menu-btn { display: none; border: 1px solid var(--surface-border); background: var(--surface-card); }
-.mobile-search { display: none; }
-.mobile-nav { display: flex; flex-direction: column; gap: 0.2rem; }
-.mobile-nav a, .linklike { padding: 0.7rem 0.4rem; border-bottom: 1px solid var(--surface-border); text-decoration: none; color: var(--text-primary); font-weight: 600; background: none; border-inline: 0; border-top: 0; text-align: start; cursor: pointer; font-size: 1rem; }
-.mobile-prefs { display: grid; gap: 0.6rem; margin-top: 1rem; }
-.lang-select, .cur-select { max-width: 9rem; }
-@media (max-width: 1024px) { .links { display: none; } .menu-btn { display: inline-grid; } }
+/* ==========================================================================
+   The storefront header: the announcement bar and the main bar.
+
+   Two layers, one rhythm:
+   - the announcement is a deep botanical band with a gold seal;
+   - the main bar is a soft, translucent surface that gains a shadow the
+     moment the page scrolls.
+   ========================================================================== */
+
+/* The connection banner is sticky too and publishes its height as
+   --rs-banner-h, so the header parks right below it instead of covering it. */
+.topbar {
+  position: sticky;
+  top: var(--rs-banner-h, 0px);
+  z-index: 50;
+  /* Opaque, and still no backdrop blur: a blurred sticky bar re-samples the
+     page under it on every scroll frame, which is the main source of jank. The
+     previous 97%-alpha white was cheap to paint but not actually a barrier —
+     a section title scrolling underneath showed through as a ghost of itself. */
+  background: color-mix(in srgb, var(--surface-card) 94%, var(--surface-ground));
+  border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 72%, transparent);
+  transition:
+    border-color 220ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.topbar.is-scrolled {
+  border-bottom-color: color-mix(in srgb, var(--surface-border) 96%, transparent);
+  background: color-mix(in srgb, var(--surface-card) 94%, var(--surface-ground));
+  box-shadow:
+    0 0.9rem 2rem -1.35rem rgb(16 41 31 / 30%),
+    0 1px 0 rgb(255 255 255 / 70%) inset;
+}
+
+/* ---- the announcement band ---- */
+
+.announce {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgb(226 199 127 / 24%), transparent 46%),
+    radial-gradient(ellipse at 88% 120%, rgb(66 139 94 / 30%), transparent 52%),
+    linear-gradient(112deg, var(--brand-deep) 0%, var(--brand-mid) 62%, var(--brand-soft) 100%);
+  color: #fdfaf0;
+  box-shadow: inset 0 -1px 0 rgb(232 210 144 / 20%);
+}
+
+.announce--reserved {
+  /* .announce__inner is `min-height: 2.4rem` + `padding-block: .35rem`. */
+  min-height: 3.1rem;
+}
+
+.announce::before {
+  position: absolute;
+  inset-inline: 12%;
+  bottom: 0;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, transparent, rgb(232 210 144 / 62%), transparent);
+  pointer-events: none;
+}
+
+.announce::after {
+  position: absolute;
+  inset-inline-end: -4rem;
+  top: -6rem;
+  width: 14rem;
+  height: 14rem;
+  border: 1px solid rgb(232 210 144 / 12%);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+.announce__inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 2.4rem;
+  padding-block: 0.35rem;
+}
+
+.announce__seal {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: none;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #f0d791, #c9a227);
+  box-shadow:
+    0 0.2rem 0.55rem rgb(9 30 20 / 36%),
+    inset 0 1px 0 rgb(255 255 255 / 52%);
+  color: #16301f;
+  font-size: 0.6rem;
+}
+
+.announce__text {
+  min-width: 0;
+  font-size: 0.79rem;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: balance;
+}
+
+:host-context([dir='rtl']) .announce__text { letter-spacing: 0; }
+
+/* ---- the main bar ---- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.55rem, 1.4vw, 1.1rem);
+  min-height: 4.55rem;
+  padding-block: 0.55rem;
+}
+
+/* The brand lockup: the mark and the word sit on one optical line.
+   Shrinkable: at 320–360px the menu button, the brand and three action circles
+   are all real width, and a `flex: none` lockup pushed the actions off the
+   right edge. The word now truncates before the bar overflows. */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  flex: 0 1 auto;
+  min-width: 0;
+  text-decoration: none;
+  font-weight: 850;
+  font-size: 1.38rem;
+  letter-spacing: -0.028em;
+  color: var(--text-primary);
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.logo:hover {
+  transform: translateY(-1px);
+}
+
+.logo img {
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  object-fit: contain;
+}
+
+.logo-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+/* The primary navigation reads as one quiet rail; the current page is the
+   only filled element, in the same deep green as the store's actions. */
+.links {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-inline-start: 0.4rem;
+  padding: 0.22rem;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 88%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-ground) 58%, var(--surface-card));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%);
+}
+
+.links a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.48rem 0.92rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #55655b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: 200ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.links a:hover {
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  color: var(--primary);
+}
+
+.links a:active {
+  transform: scale(0.96);
+}
+
+.links a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.links a.active {
+  background: linear-gradient(180deg, #2f7f54 0%, #245f3d 100%);
+  color: #fffdf5;
+  box-shadow:
+    0 0.35rem 0.8rem -0.45rem rgb(16 56 38 / 70%),
+    inset 0 1px 0 rgb(255 255 255 / 18%);
+}
+
+/* The search field: a soft ivory pill that turns pure white on focus. */
+.search {
+  flex: 1;
+  position: relative;
+  max-width: 30rem;
+  margin-inline-start: auto;
+}
+
+.search :where(.p-iconfield) {
+  width: 100%;
+}
+
+.search :where(.p-inputtext),
+.mobile-search :where(.p-inputtext) {
+  width: 100%;
+  min-height: 2.9rem;
+  padding-inline-start: 2.85rem;
+  padding-inline-end: 2.6rem;
+  border-radius: 999px;
+  border-color: color-mix(in srgb, var(--surface-border) 92%, transparent);
+  background: color-mix(in srgb, var(--surface-ground) 62%, var(--surface-card));
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 65%);
+  transition: 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.search :where(.p-inputtext):hover {
+  border-color: color-mix(in srgb, var(--primary) 26%, var(--surface-border));
+}
+
+.search :where(.p-inputtext):focus,
+.mobile-search :where(.p-inputtext):focus {
+  border-color: color-mix(in srgb, var(--primary) 62%, var(--surface-border));
+  background: var(--surface-card);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent),
+    0 0.4rem 1rem -0.7rem rgb(16 41 31 / 26%);
+}
+
+.search :where(.p-inputicon),
+.mobile-search :where(.p-inputicon) {
+  color: #7b8a7f;
+}
+
+.clear-search {
+  position: absolute;
+  inset-inline-end: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.clear-search:hover {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.suggest {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  inset-inline: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  z-index: 60;
+  animation: suggest-in 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes suggest-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
+}
+
+.suggest a {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 600;
+  transition: background-color 140ms ease;
+}
+
+/* The keyboard cursor and the pointer hover read identically, so a shopper
+   can see the same highlight whichever way they move through the list. */
+.suggest a:hover,
+.suggest a.is-active {
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface-ground));
+}
+
+.suggest a.is-active {
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+
+/* box-shadow has no logical axis, so the marker is mirrored by hand. */
+:host-context([dir='rtl']) .suggest a.is-active {
+  box-shadow: inset -2px 0 0 var(--primary);
+}
+
+.suggest img {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.6rem;
+  background: var(--surface-ground);
+}
+
+.no-suggest {
+  display: block;
+  padding: 0.8rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* The action cluster: compact preferences, one gold-lit bag, and two quiet
+   circles — a deliberate focal point instead of four equal bubbles. */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+}
+
+/* The language and currency triggers are styled globally with the rest of
+   the PrimeNG theme bridges (styles.scss → header select triggers). */
+.lang-select,
+.cur-select {
+  flex: none;
+}
+
+.actions-divider {
+  width: 1px;
+  height: 1.4rem;
+  flex: none;
+  margin-inline: 0.15rem;
+  background: linear-gradient(180deg, transparent, #dcd4c0 34%, #dcd4c0 66%, transparent);
+}
+
+.icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 88%, transparent);
+  background: color-mix(in srgb, var(--surface-ground) 46%, var(--surface-card));
+  color: #46564c;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 72%);
+  transition: 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--surface-border));
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface-card));
+  color: var(--primary);
+  box-shadow: 0 0.45rem 1rem -0.55rem rgb(16 41 31 / 32%);
+}
+
+.icon-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Keeps the visual circles compact while the touch target stays above 44px. */
+.icon-btn::after {
+  position: absolute;
+  inset: -0.18rem;
+  border-radius: inherit;
+  content: '';
+}
+
+/* The bag is the one filled action in the bar. */
+.bag-btn {
+  border-color: transparent;
+  background: linear-gradient(160deg, #2f8558 0%, #215f3d 100%);
+  color: #fffdf5;
+  box-shadow:
+    0 0.55rem 1.1rem -0.6rem rgb(16 56 38 / 65%),
+    inset 0 1px 0 rgb(255 255 255 / 20%);
+}
+
+.bag-btn:hover {
+  border-color: transparent;
+  background: linear-gradient(160deg, #32905f 0%, #1f5b3a 100%);
+  color: #fffdf5;
+}
+
+/* Counts are themed globally so they share one crisp ring and type scale. */
+
+.login-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.65rem;
+  padding: 0 1.05rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--primary) 34%, var(--surface-border));
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface-card));
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--primary);
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
+  transition: 180ms ease;
+}
+
+.login-link:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 52%, var(--surface-border));
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface-card));
+  box-shadow: 0 0.45rem 1rem -0.55rem rgb(16 41 31 / 30%);
+}
+
+.login-link:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.menu-btn {
+  display: none;
+}
+
+.mobile-search {
+  display: none;
+}
+
+.mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.mobile-nav a,
+.linklike {
+  padding: 0.75rem 0.45rem;
+  border-bottom: 1px solid var(--surface-border);
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 600;
+  background: none;
+  border-inline: 0;
+  border-top: 0;
+  text-align: start;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.mobile-prefs {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .links {
+    display: none;
+  }
+
+  .menu-btn {
+    display: inline-grid;
+  }
+
+  .actions-divider {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
-  .search { display: none; } .mobile-search { display: flex; }
-  .login-link span { display: none; }
-  .lang-select, .cur-select { display: none; }
+  .search {
+    display: none;
+  }
+
+  .mobile-search {
+    display: flex;
+    padding-bottom: 0.65rem;
+  }
+
+  .login-link span {
+    display: none;
+  }
+
+  .login-link {
+    width: 2.5rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .lang-select,
+  .cur-select {
+    display: none;
+  }
+
+  .bar {
+    min-height: 4rem;
+    gap: 0.35rem;
+  }
+
+  .actions {
+    gap: 0.3rem;
+  }
+
+  .logo {
+    font-size: 1.24rem;
+    gap: 0.5rem;
+  }
+
+  .logo img {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* 420px is the storefront's existing small-screen break (used by the phone
+   input and the RTL overlays). Below it the bar carried no slack at all: the
+   mark plus three action circles plus a 1.24rem wordmark overflowed a 320px
+   viewport and pushed the bag off the right edge. The rhythm tightens so the
+   brand word keeps real room — the action circles stay at 40px, because a
+   thumb target is not the thing to trade away for a longer wordmark. */
+@media (max-width: 420px) {
+  .bar {
+    gap: 0.3rem;
+  }
+
+  .actions {
+    gap: 0.25rem;
+  }
+
+  .logo {
+    gap: 0.4rem;
+    font-size: 1.05rem;
+  }
+
+  .logo img {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .logo,
+  .links a,
+  .icon-btn,
+  .login-link,
+  .suggest {
+    transition: none;
+  }
+
+  .links a:active,
+  .icon-btn:active,
+  .login-link:active {
+    transform: none;
+  }
 }

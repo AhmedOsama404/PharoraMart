@@ -1,2 +1,9 @@
 .qty { display: inline-flex; align-items: center; gap: 0.15rem; border: 1px solid var(--surface-border); border-radius: 999px; padding: 0.15rem 0.3rem; }
 .val { min-width: 2rem; text-align: center; font-weight: 750; }
+
+/* The stepper buttons are small; the invisible overlay grows their touch
+   target to 44px without changing the visual size of the control. */
+:host ::ng-deep .p-button { position: relative; cursor: pointer; }
+:host ::ng-deep .p-button:disabled,
+:host ::ng-deep .p-button.p-disabled { cursor: not-allowed; }
+:host ::ng-deep .p-button::after { content: ''; position: absolute; inset: -0.4rem; }

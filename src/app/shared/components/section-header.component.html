@@ -3,7 +3,11 @@
     <h2>{{ title }}</h2>
     @if (subtitle) { <p>{{ subtitle }}</p> }
   </div>
-  @if (link && linkLabel) {
-    <a [routerLink]="link" class="view-all">{{ linkLabel }} <i class="pi pi-arrow-right flip-rtl"></i></a>
+  @if (link) {
+    @if (external()) {
+      <a [href]="link" target="_blank" rel="noopener noreferrer" class="view-all">{{ label() }} <i class="pi pi-arrow-right flip-rtl" aria-hidden="true"></i></a>
+    } @else {
+      <a [routerLink]="link" class="view-all">{{ label() }} <i class="pi pi-arrow-right flip-rtl" aria-hidden="true"></i></a>
+    }
   }
 </div>

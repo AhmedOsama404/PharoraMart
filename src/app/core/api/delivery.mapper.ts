@@ -8,6 +8,8 @@ export interface BackendHotel {
   name: string;
   names?: BackendLocalizedText | null;
   city: string;
+  /** The stable city id (the real relation); the name above is a display value. */
+  cityId?: string | null;
   area?: string | null;
   isActive: boolean;
   sortOrder: number;
@@ -24,6 +26,7 @@ export interface BackendDeliveryQuote {
   currency: string;
   source: string;
   exchangeRateDate?: string | null;
+  exchangeRateSource?: string | null;
 }
 
 export function toHotel(h: BackendHotel): Hotel {
@@ -32,6 +35,7 @@ export function toHotel(h: BackendHotel): Hotel {
     name: h.name,
     names: h.names ?? undefined,
     city: h.city,
+    cityId: h.cityId ?? undefined,
     area: h.area ?? undefined,
     isActive: h.isActive,
     sortOrder: h.sortOrder,

@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, untracked } from '@angular/core';
 import { ApiClientService } from '../api/api-client.service';
 
 export interface ExchangeRateSnapshot {
@@ -20,9 +20,22 @@ export class ExchangeRatesService {
 
   constructor(private api: ApiClientService) {}
 
+  /**
+   * Starts the rate load once, if it is not already running or already
+   * settled.
+   *
+   * The transient `loading` / `failed` flags are read UNTRACKED on purpose:
+   * this method is called from inside price `computed()`s (the catalog price
+   * filter, the money pipes), and a tracked read would make every one of
+   * those computations depend on the loading state — so each rate arrival
+   * would invalidate and recompute the whole price graph several times.
+   * `snapshot()` stays the one real dependency of a price computation.
+   */
   ensureLoaded(): void {
-    if (this.loading() || this.scheduled || (this.requested && !this.failed())) return;
-    if (this.failed() && Date.now() < this.retryAfter) return;
+    const busy = untracked(() => this.loading());
+    const failed = untracked(() => this.failed());
+    if (busy || this.scheduled || (this.requested && !failed)) return;
+    if (failed && Date.now() < this.retryAfter) return;
     // Price pipes can call this while Angular is rendering. Defer signal writes
     // and the HTTP request until that render pass has finished (NG0600).
     this.scheduled = true;

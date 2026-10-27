@@ -12,7 +12,7 @@ function baseRequest(): CreateOrderRequest {
       city: 'Hurghada',
       hotelId: 'desert-rose',
       hotelName: 'Desert Rose Resort',
-      contactMethod: 'phone',
+      contactMethod: 'whatsapp',
     },
     items: [{ productId: 'p1', productName: 'Test', image: 'x', unitPrice: 10, qty: 2 }],
     subtotal: 20,

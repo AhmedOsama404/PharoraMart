@@ -1,4 +1,33 @@
-.page { min-height: 60vh; padding-top: clamp(1.5rem, 3vw, 2.75rem); padding-bottom: clamp(3rem, 6vw, 5rem); }
+/* Angular components default to `display: inline`, which makes this root an
+   inline box — and a sticky descendant is measured against its containing
+   block, so the connection banner had nothing to stick inside. The layout root
+   is a block by intent. */
+:host {
+  display: block;
+}
+
+/* A full viewport keeps the footer below the fold while a routed page is still
+   a short skeleton, so it never jumps up and back down during a load. */
+.page { min-height: 100vh; min-height: 100dvh; padding-top: clamp(1.5rem, 3vw, 2.75rem); padding-bottom: clamp(3rem, 6vw, 5rem); }
+/* The main region is a focus target for the skip link. */
+.page:focus { outline: none; }
+
+/* Skip link: the first thing a keyboard user reaches, invisible until it is
+   focused, then pinned to the top-left corner. */
+.skip-link {
+  position: absolute;
+  inset-inline-start: 0.75rem;
+  top: -6rem;
+  z-index: 1200;
+  padding: 0.7rem 1.1rem;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 160ms ease;
+}
+.skip-link:focus { top: 0; }
 
 .announcements {
   background: var(--store-primary, #2e7d52);

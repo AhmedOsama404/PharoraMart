@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ApiClientService } from '../api/api-client.service';
+import { resolveMediaUrl } from '../../shared/utils/media-url.utils';
 
 export interface ContentBlock {
   key: string;
@@ -26,6 +28,12 @@ export class ContentService {
 
   published(): Observable<ContentBlock[]> {
     if (environment.useMockApi) return of([]);
-    return this.api.get<ContentBlock[]>('content');
+    // Banner media comes back as an API-relative path; resolve it here so a
+    // block image is not fetched from the storefront origin and 404'd.
+    return this.api.get<ContentBlock[]>('content').pipe(
+      map((blocks) =>
+        blocks.map((block) => ({ ...block, imageUrl: resolveMediaUrl(block.imageUrl) })),
+      ),
+    );
   }
 }

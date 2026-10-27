@@ -36,6 +36,27 @@ export class CurrencyService {
     }
 
   }
+
+  /**
+   * The currency the store prices in (`GET store/settings` → `defaultCurrency`).
+   *
+   * It is applied only when the visitor has NOT chosen a currency yet: a
+   * stored choice is the visitor's own and always wins. An unsupported code
+   * is ignored — the storefront never shows a currency it cannot format.
+   */
+  applyStoreDefault(code: string): void {
+    const normalized = code.trim().toUpperCase();
+    if (!this.options().some((currency) => currency.code === normalized)) return;
+    let hasChoice = false;
+    try {
+      hasChoice = !!localStorage.getItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (hasChoice) return;
+    this.code.set(normalized);
+  }
+
   setCurrency(code: string): void {
     const normalized = code.toUpperCase();
     if (!this.options().some((currency) => currency.code === normalized)) return;
@@ -51,6 +72,10 @@ export class CurrencyService {
   // change-detection cycle (impure pipe over product grids), so one formatter
   // is built per locale+currency and reused for the app lifetime.
   private formatterCache = new Map<string, Intl.NumberFormat>();
+  private dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+  /** Fast membership/decimal lookup instead of scanning the option array. */
+  private readonly codes = computed(() => new Set(this.options().map((c) => c.code)));
+  private readonly decimals = computed(() => new Map(this.options().map((c) => [c.code, c.decimalPlaces])));
 
   private formatter(locale: string, code: string): Intl.NumberFormat {
     const key = `${locale}|${code}`;
@@ -59,9 +84,21 @@ export class CurrencyService {
       f = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: code,
-        maximumFractionDigits: this.options().find((currency) => currency.code === code)?.decimalPlaces ?? 2,
+        maximumFractionDigits: this.decimals().get(code) ?? 2,
       });
       this.formatterCache.set(key, f);
+    }
+    return f;
+  }
+
+  private dateFormatter(locale: string): Intl.DateTimeFormat {
+    let f = this.dateFormatterCache.get(locale);
+    if (!f) {
+      f = new Intl.DateTimeFormat(locale, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+      this.dateFormatterCache.set(locale, f);
     }
     return f;
   }
@@ -71,7 +108,7 @@ export class CurrencyService {
     const locale = LANG_LOCALES[lang];
     const normalizedCode = currencyCode?.toUpperCase();
     const code = normalizedCode
-      ? this.options().some((currency) => currency.code === normalizedCode) ? normalizedCode : null
+      ? this.codes().has(normalizedCode) ? normalizedCode : null
       : this.current().code;
     if (!code) return `${amount.toFixed(2)} ${normalizedCode}`;
     try {
@@ -81,15 +118,37 @@ export class CurrencyService {
     }
   }
 
+  /**
+   * How the visitor's locale writes a currency: its symbol and whether that
+   * symbol precedes the amount ("$0.00" in English, "0,00 €" in German and
+   * "٣٠٠٫٠٠ ج.م." in Arabic). Control marks are stripped: this sits beside a
+   * number in a field, not mid-sentence, where a bidi mark would flip what
+   * surrounds it.
+   */
+  symbolPlacement(code?: string): { symbol: string; before: boolean } {
+    const normalized = (code ?? this.current().code).toUpperCase();
+    if (!this.codes().has(normalized)) return { symbol: normalized, before: true };
+    const locale = LANG_LOCALES[this.i18n.currentLang()];
+    try {
+      const parts = this.formatter(locale, normalized).formatToParts(0);
+      const at = parts.findIndex((p) => p.type === 'currency');
+      const amountAt = parts.findIndex((p) => p.type === 'integer');
+      const value = parts[at]?.value ?? normalized;
+      return {
+        symbol: value.replace(/[\u200E\u200F\u061C]/g, '').trim(),
+        before: at !== -1 && at < amountAt,
+      };
+    } catch {
+      return { symbol: normalized, before: true };
+    }
+  }
+
   formatDate(iso: string): string {
     const lang: SupportedLang = this.i18n.currentLang();
     // Read the version signal so template calls re-format on language switch.
     this.i18n.version();
     try {
-      return new Intl.DateTimeFormat(LANG_LOCALES[lang], {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(new Date(iso));
+      return this.dateFormatter(LANG_LOCALES[lang]).format(new Date(iso));
     } catch {
       return iso;
     }

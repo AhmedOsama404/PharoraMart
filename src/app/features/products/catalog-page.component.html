@@ -7,7 +7,7 @@
     <h1>{{ i18n.t('catalog.title') }}</h1>
     <p>{{ i18n.t('catalog.subtitle') }}</p>
   </div>
-  <p-button class="filters-btn" icon="pi pi-sliders-h" [label]="i18n.t('catalog.activeFilters')" [outlined]="true" (onClick)="drawer.set(true)" />
+  <p-button class="filters-btn" icon="pi pi-sliders-h" [label]="i18n.t('catalog.filters')" [outlined]="true" (onClick)="drawer.set(true)" />
 </div>
 
 <div class="toolbar">
@@ -17,7 +17,7 @@
       [placeholder]="i18n.t('catalog.searchPlaceholder')" [attr.aria-label]="i18n.t('catalog.searchLabel')" />
   </p-iconField>
   <p-select [options]="sortOptions()" [ngModel]="draft.sort()" (onChange)="setSort($event.value)"
-    optionLabel="label" optionValue="value" [attr.aria-label]="i18n.t('catalog.sortLabel')" class="t-sort"
+    optionLabel="label" optionValue="value" [ariaLabel]="i18n.t('catalog.sortLabel')" class="t-sort"
     appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
 </div>
 
@@ -33,17 +33,21 @@
 
 <div class="layout">
   <aside class="filters" [attr.aria-label]="i18n.t('aria.filters')">
-    <ng-container *ngTemplateOutlet="filterBody" />
+    <ng-container *ngTemplateOutlet="filterBody; context: { scope: 'panel' }" />
   </aside>
-  <section class="results" aria-live="polite" [attr.aria-busy]="state() === 'loading' || priceInputPending()">
-    <p class="count">
-      @if (state() === 'loading' || priceInputPending()) {
-        <p-skeleton width="5.5rem" height="1rem" borderRadius="999px" />
-      } @else {
-        {{ i18n.t('catalog.results', { count: total() }) }}
-      }
-    </p>
-    @if (slow()) {
+  <section class="results" [attr.aria-busy]="state() === 'loading' || priceInputPending()">
+    @if (state() !== 'error') {
+      <!-- A failed load has no trustworthy count: the error card below is the
+           honest statement, not "0 products". -->
+      <p class="count" aria-live="polite">
+        @if (state() === 'loading' && !items().length) {
+          <p-skeleton width="5.5rem" height="1rem" borderRadius="999px" />
+        } @else {
+          {{ i18n.t('catalog.results', { count: total() }) }}
+        }
+      </p>
+    }
+    @if (slow() && !items().length) {
       <div class="rs-slow" role="status">
         <i class="pi pi-clock" aria-hidden="true"></i>
         <div>
@@ -53,8 +57,14 @@
         <p-button [label]="i18n.t('resilience.retry')" icon="pi pi-refresh" severity="secondary" [text]="true" (onClick)="retry()" />
       </div>
     }
-    @if (state() === 'loading' || priceInputPending()) {
-      <div class="grid skeleton-grid" [attr.aria-label]="i18n.t('aria.loadingProducts')">
+    @if (refreshing()) {
+      <!-- Existing results stay on screen while the refined query loads; this
+           thin bar is the only "busy" cue, so filtering never blanks the page
+           or triggers the slow-load hint. -->
+      <div class="refresh-bar" aria-hidden="true"></div>
+    }
+    @if (state() === 'loading' && !items().length) {
+      <div class="grid skeleton-grid" role="status" [attr.aria-label]="i18n.t('aria.loadingProducts')">
         @for (i of [1,2,3,4,5,6]; track i) {
           <article class="product-skeleton" aria-hidden="true">
             <p-skeleton class="skeleton-media" height="auto" borderRadius="0" />
@@ -79,46 +89,109 @@
           <app-product-card [product]="p" (add)="addToCart($event)" (favToggle)="toggleFav($event)" />
         }
       </div>
-      <p-paginator [rows]="pageSize" [totalRecords]="total()" [first]="(page() - 1) * pageSize"
+      <p-paginator [rows]="pageSize()" [totalRecords]="total()" [first]="(page() - 1) * pageSize()"
         [rowsPerPageOptions]="[8, 12, 24]" (onPageChange)="onPage($event)" />
     }
   </section>
 </div>
 
-<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.activeFilters')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
-  <ng-container *ngTemplateOutlet="filterBody" />
-  <p-button [label]="i18n.t('catalog.clearAll')" [text]="true" (onClick)="clearAll()" />
+<p-drawer [(visible)]="drawer" [header]="i18n.t('catalog.filters')" [position]="i18n.dir() === 'rtl' ? 'right' : 'left'">
+  <ng-container *ngTemplateOutlet="filterBody; context: { scope: 'drawer' }" />
 </p-drawer>
 
-<ng-template #filterBody>
+<ng-template #filterBody let-scope="scope">
   <div class="f-group">
     <label>{{ i18n.t('catalog.categoryLabel') }}</label>
     <p-select [options]="categoryOptions()" [ngModel]="draft.category()" (onChange)="setCategory($event.value)"
-      optionLabel="label" optionValue="value" [fluid]="true" appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
+      optionLabel="label" optionValue="value" [fluid]="true" [ariaLabel]="i18n.t('catalog.categoryLabel')"
+      appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
   </div>
-  <div class="f-group">
-    <label>{{ i18n.t('catalog.priceRange') }}: {{ i18n.t('catalog.maxPrice') }} {{ currency.format(displayPriceLimit(), filterCurrency()) }}</label>
-    <p-slider [ngModel]="draft.maxPrice() ?? displayPriceLimit()" (onChange)="setMaxPrice($event.value)" [min]="0"
-      [max]="displayPriceLimit()" [step]="displayPriceStep()" [disabled]="!priceConversionAvailable()" />
-    <div class="price-inputs">
-      <input pInputText type="number" step="0.01" [ngModel]="minPriceInput()" (ngModelChange)="onPriceInput('min', $event)"
-        (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.minPrice')"
-        [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
-      <span>–</span>
-      <input pInputText type="number" step="0.01" [ngModel]="maxPriceInput()" (ngModelChange)="onPriceInput('max', $event)"
-        (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()" [attr.aria-label]="i18n.t('catalog.maxPrice')"
-        [min]="0" [max]="displayPriceLimit()" [disabled]="!priceConversionAvailable()" />
+  <div class="f-group price-group">
+    <span class="f-label" [id]="priceId('label', scope)">{{ i18n.t('catalog.priceRange') }}</span>
+    <!-- Two fields only: the bound is typed in the visitor's currency and
+         applied on Enter, blur or a short pause. They are text inputs with a
+         decimal keypad rather than `type=number`, because a number input
+         reports a half-typed "0." as an empty value and the value accessor
+         wrote "0" back over the caret — a fraction could never be entered.
+         Neither field caps what may be typed: the API filters on any bound.
+         The ids are scoped because the very same template serves the sidebar
+         and the mobile drawer, and an open drawer would otherwise double every
+         id. -->
+    <div class="price-inputs" role="group" [attr.aria-labelledby]="priceId('label', scope)">
+      @if (priceRailMax(); as ceiling) {
+        <!-- A shortcut over the same two bounds, never a third opinion about
+             them: the axis spans the catalogue's priciest product rounded up to
+             a legible number, grows to fit a bound typed above it, and its last
+             stop means "no maximum" exactly as an emptied field does. Typing
+             stays free — the rail cannot cap what the API will honour. -->
+        <div class="price-rail">
+          <!-- `[ngModel]`, not `[value]`: the handle geometry only re-runs when
+               the value reaches the component through its value accessor, and
+               `value` is not an input. A drag leaves this signal alone, so the
+               model can never snap the handle back under the pointer. -->
+          <p-slider [range]="true" [min]="0" [max]="ceiling" [step]="priceRailStep()"
+            [ngModel]="priceRailValue()" [disabled]="!priceConversionAvailable()" [pt]="priceRailPt()"
+            (onChange)="onRailChange($event)" (onSlideEnd)="onRailSlideEnd($event)" />
+          <div class="rail-ends" aria-hidden="true">
+            <span class="rail-end">{{ priceRailMinLabel() }}</span>
+            <span class="rail-end">{{ priceRailMaxLabel() }}</span>
+          </div>
+        </div>
+      }
+      <label class="price-field" [attr.for]="priceId('min', scope)">
+        <span class="price-field-label">{{ i18n.t('catalog.minPriceLabel') }}</span>
+        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()" [class.symbol-first]="priceCurrency().before">
+          <input [id]="priceId('min', scope)" pInputText type="text" inputmode="decimal" autocomplete="off"
+            [value]="minPriceInput()" (input)="onPriceInput('min', $any($event.target).value)"
+            (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()"
+            [placeholder]="i18n.t('catalog.minPricePlaceholder')"
+            [attr.aria-label]="i18n.t('catalog.minPriceLabel')"
+            [attr.aria-invalid]="priceRangeError() ? 'true' : null"
+            [attr.aria-describedby]="priceRangeError() && priceConversionAvailable() ? priceId('msg', scope) : priceId('hint', scope)"
+            [disabled]="!priceConversionAvailable()" />
+          <!-- The locale's own notation: "$" leads in English, "ج.م." and "€"
+               trail in Arabic and in the European locales. -->
+          <span class="price-currency" aria-hidden="true">{{ priceCurrency().symbol }}</span>
+        </span>
+      </label>
+      <label class="price-field" [attr.for]="priceId('max', scope)">
+        <span class="price-field-label">{{ i18n.t('catalog.maxPriceLabel') }}</span>
+        <span class="price-field-box" [class.is-disabled]="!priceConversionAvailable()" [class.symbol-first]="priceCurrency().before">
+          <input [id]="priceId('max', scope)" pInputText type="text" inputmode="decimal" autocomplete="off"
+            [value]="maxPriceInput()" (input)="onPriceInput('max', $any($event.target).value)"
+            (blur)="applyPriceRange()" (keydown.enter)="applyPriceRange()"
+            [placeholder]="i18n.t('catalog.noMaxPrice')"
+            [attr.aria-label]="i18n.t('catalog.maxPriceLabel')"
+            [attr.aria-invalid]="priceRangeError() ? 'true' : null"
+            [attr.aria-describedby]="priceRangeError() && priceConversionAvailable() ? priceId('msg', scope) : priceId('hint', scope)"
+            [disabled]="!priceConversionAvailable()" />
+          <span class="price-currency" aria-hidden="true">{{ priceCurrency().symbol }}</span>
+        </span>
+      </label>
     </div>
-    @if (!priceConversionAvailable()) { <small class="conversion-hint">{{ i18n.t('currency.conversionUnavailable') }}</small> }
+    @if (!priceConversionAvailable()) {
+      <small class="conversion-hint" [id]="priceId('hint', scope)">{{ i18n.t('currency.conversionUnavailable') }}</small>
+    } @else if (priceErrorText(); as message) {
+      <!-- Tied to both fields through aria-describedby and announced politely
+           while the shopper is still in the field that made the pair invalid. -->
+      <small class="price-msg is-error" [id]="priceId('msg', scope)" role="status">{{ message }}</small>
+    } @else {
+      <!-- The one place the accepted format is stated: a bound may be a
+           fraction, and an empty field is a bound the visitor chose not to set. -->
+      <small class="price-msg" [id]="priceId('hint', scope)">{{ i18n.t('catalog.priceHint') }}</small>
+    }
   </div>
   <div class="f-group">
     <label>{{ i18n.t('catalog.availabilityLabel') }}</label>
     <p-select [options]="availOptions()" [ngModel]="draft.availability()" (onChange)="setAvail($event.value)"
-      optionLabel="label" optionValue="value" [fluid]="true" appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
+      optionLabel="label" optionValue="value" [fluid]="true" [ariaLabel]="i18n.t('catalog.availabilityLabel')"
+      appendTo="body" panelStyleClass="premium-select-panel" scrollHeight="16rem" />
   </div>
   <div class="f-group check">
-    <p-checkbox [binary]="true" [ngModel]="draft.sale()" (onChange)="setSale($event.checked)" inputId="saleOnly" />
-    <label for="saleOnly">{{ i18n.t('catalog.onSaleOnly') }}</label>
+    <label class="check-label">
+      <p-checkbox [binary]="true" [ngModel]="draft.sale()" (onChange)="setSale($event.checked)" />
+      <span>{{ i18n.t('catalog.onSaleOnly') }}</span>
+    </label>
   </div>
   <p-button [label]="i18n.t('catalog.clearAll')" severity="secondary" [outlined]="true" [fluid]="true" (onClick)="clearAll()" />
 </ng-template>

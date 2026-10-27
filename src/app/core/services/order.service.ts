@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { delay, map, Observable, of, throwError } from 'rxjs';
 import type { CreateOrderRequest, Order } from '../../models/order.model';
 import { environment } from '../../../environments/environment';
@@ -32,9 +32,6 @@ function writeOrders(orders: Order[]): void {
  */
 @Injectable({ providedIn: 'root' })
 export class OrderService {
-  /** Simulated network state for QA of loading/duplicate guards. */
-  readonly placing = signal(false);
-
   constructor(private api: ApiClientService) {}
 
   list(): Observable<Order[]> {
