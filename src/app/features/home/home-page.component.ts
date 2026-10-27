@@ -25,7 +25,7 @@ import type { Category, Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { SectionHeaderComponent } from '../../shared/components/section-header.component';
 import { ResolvedMoneyPipe } from '../../shared/pipes/resolved-money.pipe';
-import { catchError, of, retry, throwError, timer, type Observable } from 'rxjs';
+import { catchError, of, retry, throwError, timer, type Observable, type Subscription } from 'rxjs';
 
 type HomeDataSection = 'categories' | 'featured' | 'newArrivals' | 'popular' | 'content';
 
@@ -71,10 +71,11 @@ export class HomePageComponent implements OnInit {
   protected siteContent = inject(SiteContentService);
   private recent = inject(RecentlyViewedService);
   private router = inject(Router);
+  private heroProductsSub: Subscription | null = null;
 
   constructor() {
     let resolvedSlotKey = '';
-    effect((onCleanup) => {
+    effect(() => {
       if (!this.siteContent.ready()) return;
       const siteProductIds = this.siteContent.hero()?.productIds;
       // Website Content is the single source of truth for hero products.
@@ -94,12 +95,19 @@ export class HomePageComponent implements OnInit {
         return typeof id === 'string' && id.trim() ? id.trim() : null;
       });
       const slotKey = JSON.stringify(ids);
+      // A content refresh re-runs this effect with the SAME selection several
+      // times while the first request is still on the wire. Returning early is
+      // right — but the request must keep its subscription, otherwise it is
+      // cancelled and `heroProductsLoading` stays true for good: the hero showed
+      // its skeleton until a reload. The subscription therefore belongs to the
+      // component, not to the effect's cleanup.
       if (slotKey === resolvedSlotKey) return;
       resolvedSlotKey = slotKey;
 
       const selectedIds = ids.filter((id): id is string => id !== null);
       this.heroProductsLoading.set(true);
-      const subscription = this.products.getByIds(selectedIds, { silent: true }).pipe(
+      this.heroProductsSub?.unsubscribe();
+      this.heroProductsSub = this.products.getByIds(selectedIds, { silent: true }).pipe(
         retry({
           count: 2,
           delay: (error, retryCount) => {
@@ -122,8 +130,8 @@ export class HomePageComponent implements OnInit {
         this.heroSlotProducts.set(ids.map((id) => id ? byId.get(id) ?? null : null));
         this.heroProductsLoading.set(false);
       });
-      onCleanup(() => subscription.unsubscribe());
     });
+    this.destroyRef.onDestroy(() => this.heroProductsSub?.unsubscribe());
   }
 
   // Employee-editable hero copy (empty until loaded / when cleared).
@@ -608,11 +616,21 @@ export class HomePageComponent implements OnInit {
   }
   // Dashboard-managed names/descriptions in the visitor's language.
   protected blockTitle(b: ContentBlock): string {
-    return b.titles?.[this.i18n.currentLang()] ?? b.title;
+    return this.blockText(b.titles, b.title);
   }
 
   protected blockBody(b: ContentBlock): string {
-    return b.bodies?.[this.i18n.currentLang()] ?? b.body;
+    return this.blockText(b.bodies, b.body);
+  }
+
+  /** Active language, then English, then the block's base text — never empty
+   *  just because the active language was saved as an empty string. */
+  private blockText(values: Record<string, string> | null | undefined, base: string): string {
+    return (
+      values?.[this.i18n.currentLang()]?.trim() ||
+      values?.['en']?.trim() ||
+      base
+    );
   }
   protected categoryName(c: Category): string {
     // Use the live category object directly so the card reflects dashboard

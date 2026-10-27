@@ -179,10 +179,9 @@ export const ar: TranslationDict = {
     resetFailed: 'تعذّر إرسال رابط إعادة التعيين. يرجى المحاولة مرة أخرى.',
   },
   checkout: {
-    contactMethodHint: "أخبرنا كيف تريد أن نُبلغك بهذا الطلب.",
     contactLanguage: "لغة التواصل",
     contactLanguageHint: "سنكتب إليك بهذه اللغة بخصوص طلبك.",
-    emailUpdatesHint: "تحديثات الطلب عبر البريد الإلكتروني جزء من طلبك، لذلك نرسلها دائمًا.",
+    emailUpdatesHint: "سنرسل لك حالة الطلب وتحديثات التسليم عبر البريد الإلكتروني.",
     hotel: 'الفندق',
     room: 'رقم الغرفة (اختياري)',
     selectHotel: 'اختر فندقك',

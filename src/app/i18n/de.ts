@@ -179,10 +179,9 @@ export const de: TranslationDict = {
     resetFailed: 'Der Link zum Zurücksetzen konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   },
   checkout: {
-    contactMethodHint: "Sagen Sie uns, wie Sie über diese Bestellung informiert werden möchten.",
     contactLanguage: "Kontaktsprache",
     contactLanguageHint: "Wir schreiben Ihnen in dieser Sprache über Ihre Bestellung.",
-    emailUpdatesHint: "Bestellupdates per E-Mail sind Teil Ihrer Bestellung und werden deshalb immer gesendet.",
+    emailUpdatesHint: "Wir senden Ihnen den Bestellstatus und Lieferupdates per E-Mail.",
     hotel: 'Hotel',
     room: 'Zimmernummer (optional)',
     selectHotel: 'Wählen Sie Ihr Hotel',

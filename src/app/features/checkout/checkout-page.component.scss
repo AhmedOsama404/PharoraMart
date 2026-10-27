@@ -66,8 +66,6 @@ h1 { margin: 0; font-size: clamp(1.8rem, 2.7vw, 2.2rem); line-height: 1.25; lett
 .field.full { grid-column: 1 / -1; }
 .err { display: block; margin-top: 0.35rem; color: var(--danger); font-size: 0.75rem; }
 .hint { display: block; margin-top: 0.3rem; font-size: 0.75rem; color: var(--text-secondary); }
-/* The line that says what the chosen contact method changes. */
-.hint--contact { font-size: var(--font-size-sm); color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary)); }
 
 /* The contact detail the chosen method uses is marked, so the customer sees
    where the order will be sent. */
@@ -131,9 +129,6 @@ h1 { margin: 0; font-size: clamp(1.8rem, 2.7vw, 2.2rem); line-height: 1.25; lett
 /* A failed directory load says so and offers a retry. */
 .directory-error { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 
-.grand { margin-top: 0.3rem; padding: 0.75rem 0.9rem; border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--surface-border)); border-radius: 0.85rem; background: linear-gradient(110deg, #eef6ef, #fff 90%); font-size: 1.1rem; color: var(--primary); }
-.grand strong { color: var(--primary); font-size: 1.25rem; font-weight: 800; }
-
 .summary-actions {
   position: sticky;
   bottom: 0;
@@ -177,25 +172,33 @@ h1 { margin: 0; font-size: clamp(1.8rem, 2.7vw, 2.2rem); line-height: 1.25; lett
   gap: 0.6rem;
 }
 
+/* The one Total on the page: the amount the button charges. It sits in the
+   pinned action area, so the customer never scrolls away from it. */
 .place-order__total {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.6rem 0.85rem;
-  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--surface-border));
-  border-radius: 0.85rem;
-  background: linear-gradient(110deg, #eef6ef, #fff 92%);
+  padding: 0 0.15rem;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .place-order__total strong {
   color: var(--primary);
-  font-size: 1.3rem;
+  font-size: 1.55rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   white-space: nowrap;
+}
+
+/* The fee is not known yet: the words must not wear the price's type size. */
+.place-order__total strong.is-pending {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 :host ::ng-deep .place-order__button .p-button {
@@ -235,14 +238,18 @@ h1 { margin: 0; font-size: clamp(1.8rem, 2.7vw, 2.2rem); line-height: 1.25; lett
 
 :host ::ng-deep .summary .p-card-body { padding: 1.1rem 1.1rem 0; }
 
-/* One warm line about the order status and the email. */
-.cm-notice {
-  display: flex; align-items: center; gap: 0.5rem; margin-top: 0.9rem; padding: 0.65rem 0.85rem;
-  border: 1px solid var(--surface-border); border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--surface-ground) 55%, white);
-  color: var(--text-secondary); font-size: 0.82rem;
+/* One line under the contact pills: what the chosen channel will actually
+   send. It replaces the old support-address line and the duplicate notice. */
+.update-note {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  margin: 0.6rem 0 0; padding: 0.55rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--surface-border));
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--primary) 5%, white);
+  color: color-mix(in srgb, var(--text-primary) 82%, var(--text-secondary));
+  font-size: 0.82rem; line-height: 1.5;
 }
-.cm-notice i { color: var(--primary); font-size: 0.9rem; }
+.update-note i { color: var(--primary); font-size: 0.95rem; margin-top: 0.12rem; }
 /* The preferred contact method uses the shared pill choice group
    (see .pill-group in styles.scss). */
 

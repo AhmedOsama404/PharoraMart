@@ -59,6 +59,11 @@ export class MainLayoutComponent implements OnInit {
         // keep the user's working position as they search and filter.
         if (restoreTo !== null) this.restoreScroll(restoreTo);
         else if (nextPath !== currentPath) this.scroll.scrollToTop();
+        // A route change is a natural checkpoint for CMS content: a publish
+        // made while the tab stayed open is picked up without a reload. The
+        // service throttles (2s) and coalesces, so this is not a request per
+        // navigation.
+        if (nextPath !== currentPath) this.siteContent.load(true);
         currentPath = nextPath;
       });
   }

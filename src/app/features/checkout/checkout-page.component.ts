@@ -7,7 +7,6 @@ import { firstValueFrom } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
-import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
@@ -53,7 +52,7 @@ type ContactMethod = 'whatsapp' | 'email';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafeImageDirective,
-    ReactiveFormsModule, Button, Card, Divider, InputText, Message,
+    ReactiveFormsModule, Button, Card, InputText, Message,
     Select, Textarea, Skeleton, EmptyStateComponent, MoneyPipe, PhoneInputComponent,
   ],
   templateUrl: './checkout-page.component.html',
@@ -634,18 +633,6 @@ export class CheckoutPageComponent implements OnInit {
   protected readonly placeOrderTone = computed(
     () => this.siteContent.checkout()?.placeOrderTone || DEFAULT_PLACE_ORDER_TONE,
   );
-
-  /**
-   * The channel the customer picked, described in words: the WhatsApp number
-   * or the support email the order will be sent to. It tells the customer
-   * exactly where their order goes.
-   */
-  protected readonly contactTarget = computed(() => {
-    const method = this.selectedContact();
-    if (method === 'whatsapp') return this.contact.whatsappNumber;
-    if (method === 'email') return this.contact.supportEmail;
-    return '';
-  });
 
   protected go(path: string): void {
     this.router.navigate([path]);

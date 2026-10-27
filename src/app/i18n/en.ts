@@ -181,10 +181,9 @@ export const en: TranslationDict = {
     resetFailed: 'We could not send the reset link. Please try again.',
   },
   checkout: {
-    contactMethodHint: "Tell us how you want to hear about this order.",
     contactLanguage: "Contact language",
     contactLanguageHint: "We will write to you in this language about your order.",
-    emailUpdatesHint: "Order updates by email are part of your order, so we always send them.",
+    emailUpdatesHint: "We'll email you your order status and delivery updates.",
     hotel: 'Hotel',
     room: 'Room number (optional)',
     selectHotel: 'Select your hotel',

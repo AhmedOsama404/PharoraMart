@@ -179,10 +179,9 @@ export const sk: TranslationDict = {
     resetFailed: 'Odkaz na obnovenie sa nepodarilo odoslať. Skúste to prosím znova.',
   },
   checkout: {
-    contactMethodHint: "Povedzte nám, ako chcete byť informovaní o tejto objednávke.",
     contactLanguage: "Jazyk komunikácie",
     contactLanguageHint: "Píšeme vám v tomto jazyku o vašej objednávke.",
-    emailUpdatesHint: "Aktualizácie objednávky e-mailom sú súčasťou vašej objednávky, preto ich posielame vždy.",
+    emailUpdatesHint: "Stav objednávky a aktualizácie doručenia vám pošleme e-mailom.",
     hotel: 'Hotel',
     room: 'Číslo izby (nepovinné)',
     selectHotel: 'Vyberte svoj hotel',

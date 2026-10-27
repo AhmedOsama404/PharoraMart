@@ -179,10 +179,9 @@ export const it: TranslationDict = {
     resetFailed: 'Non è stato possibile inviare il link di reimpostazione. Riprova.',
   },
   checkout: {
-    contactMethodHint: "Dicci come vuoi ricevere le informazioni su questo ordine.",
     contactLanguage: "Lingua di contatto",
     contactLanguageHint: "Ti scriveremo in questa lingua riguardo al tuo ordine.",
-    emailUpdatesHint: "Gli aggiornamenti via email fanno parte del tuo ordine, quindi li inviamo sempre.",
+    emailUpdatesHint: "Ti invieremo lo stato dell'ordine e gli aggiornamenti sulla consegna via email.",
     hotel: 'Hotel',
     room: 'Numero di camera (facoltativo)',
     selectHotel: 'Seleziona il tuo hotel',

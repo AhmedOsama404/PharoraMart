@@ -126,8 +126,28 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     expect(text).toContain('6');
   });
 
-  it('offers the contact methods the store supports and sends the chosen one', () => {
-    // The store supports both channels: WhatsApp and email are offered.
+  it('states the total once and never prints the support address', async () => {
+    cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
+    fillContact();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const summary = el.querySelector('.summary') as HTMLElement;
+    // The amount lives in the pinned action area only: one Total, no second
+    // "Total" row in the breakdown above it.
+    expect((summary.textContent?.match(/Total/g) ?? []).length).toBe(1);
+    expect(el.querySelector('.grand')).toBeNull();
+    // The contact card says what will be sent; the store's support address
+    // belongs to the footer, not here.
+    const contactCard = el.querySelectorAll('p-card')[0] as HTMLElement;
+    expect(contactCard.textContent).not.toContain('@');
+    expect(el.querySelector('.update-note')?.textContent).toContain('order status');
+  });
+
+  it('offers the contact methods the store supports and sends the chosen one', () => {    // The store supports both channels: WhatsApp and email are offered.
     expect(x(comp).contactOptions().map((o) => o.value)).toEqual(['whatsapp', 'email']);
 
     // Email is the default: order updates by email are part of the order.

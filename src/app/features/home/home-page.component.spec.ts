@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { DeferBlockBehavior, DeferBlockState, type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { HomePageComponent } from './home-page.component';
 import { ProductService } from '../../core/services/product.service';
+import { SiteContentService } from '../../core/services/site-content.service';
 import { ContentService } from '../../core/services/content.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { MOCK_PRODUCTS } from '../../data-access/mock-data';
@@ -233,5 +235,86 @@ describe('HomePageComponent (New Arrivals carousel)', () => {
     } finally {
       jasmine.clock().uninstall();
     }
+  });
+});
+
+describe('HomePageComponent (hero products)', () => {
+  const ids = [MOCK_PRODUCTS[0].id, MOCK_PRODUCTS[1].id];
+  let hero = signal<{ productIds: (string | null)[] } | null>({ productIds: ids });
+  let ready = signal(true);
+  let heroRequest: Subject<(typeof MOCK_PRODUCTS)[number][]>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    hero = signal<{ productIds: (string | null)[] } | null>({ productIds: ids });
+    ready = signal(true);
+    heroRequest = new Subject<(typeof MOCK_PRODUCTS)[number][]>();
+    TestBed.configureTestingModule({
+      providers: [
+        ...hermeticApi(),
+        provideRouter([]),
+        {
+          provide: SiteContentService,
+          useValue: {
+            ready: ready.asReadonly(),
+            hero: hero.asReadonly(),
+            categoriesSection: signal(null).asReadonly(),
+            homeSection: () => null,
+            homeSectionVisible: () => true,
+            text: (value: Record<string, string> | null | undefined, locale: string) =>
+              value?.[locale] ?? value?.['en'] ?? '',
+            icon: (_value: string, fallback = 'pi pi-tag') => fallback,
+            safeUrl: () => '',
+          },
+        },
+        {
+          provide: ProductService,
+          useValue: {
+            categories: () => of([]),
+            featured: () => of([]),
+            newArrivals: () => of([]),
+            popular: () => of([]),
+            getById: () => of(null),
+            getByIds: () => heroRequest.asObservable(),
+            getByIdsMany: () => of([]),
+            categoryLabel: () => '',
+            categoryDescription: () => '',
+          },
+        },
+        { provide: ContentService, useValue: { published: () => of([]) } },
+        { provide: NotificationService, useValue: { success: () => undefined, error: () => undefined, info: () => undefined } },
+      ],
+    });
+  });
+
+  /**
+   * A content refresh (an employee edit, or the tab-focus reload) re-runs the
+   * hero effect while the by-ids request is still on the wire. The effect
+   * returns early because the selection did not change — and the request must
+   * survive that: cancelling it left `heroProductsLoading` true, so the hero
+   * showed its skeleton until the page was reloaded.
+   */
+  it('finishes the hero request even when content refreshes mid-flight', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    const page = fixture.debugElement.query(By.directive(HomePageComponent))
+      .componentInstance as HomePageComponent & { heroProductsLoading: () => boolean };
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(page.heroProductsLoading()).toBeTrue();
+    expect(host.querySelector('.hero-skeleton-copy')).not.toBeNull();
+
+    hero.set({ productIds: ids });
+    fixture.detectChanges();
+
+    heroRequest.next(MOCK_PRODUCTS.slice(0, 2));
+    heroRequest.complete();
+    fixture.detectChanges();
+
+    expect(page.heroProductsLoading()).toBeFalse();
+    expect(host.querySelector('.hero-skeleton-copy')).toBeNull();
+    expect(host.querySelector('.hero-card')).not.toBeNull();
+
+    fixture.destroy();
   });
 });
