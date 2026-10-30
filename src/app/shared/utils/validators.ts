@@ -32,6 +32,8 @@ export function firstErrorKey(control: AbstractControl | null | undefined): stri
   if (control.errors['email']) return 'validation.email';
   if (control.errors['minlength'])
     return 'validation.minLength';
+  if (control.errors['maxlength'])
+    return 'validation.maxLength';
   if (control.errors['phone']) return 'validation.phone';
   if (control.errors['passwordMismatch']) return 'validation.passwordMismatch';
   return 'validation.required';

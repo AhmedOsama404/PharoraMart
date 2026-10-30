@@ -1,0 +1,5 @@
+.contact-wrap { display: grid; place-items: center; padding: 1.5rem 0 2.5rem; }
+.contact-card { width: min(34rem, 100%); display: block; }
+h1 { margin: 0; font-size: 1.5rem; } .sub { color: var(--text-secondary); margin: 0.3rem 0 0.8rem; }
+form { display: grid; gap: 0.9rem; margin-top: 1rem; }
+/* .field, label and .err come from the shared form pattern in styles.scss. */

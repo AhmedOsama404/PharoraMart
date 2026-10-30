@@ -8,6 +8,8 @@ nav a:hover { color: #fff; }
 .contact { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 1rem; }
 .contact a, .contact span { color: #cfd8cc; text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
 .prefs { display: flex; flex-direction: column; gap: 0.5rem; }
+.prefs .contact-link { color: #cfd8cc; text-decoration: none; font-weight: 600; }
+.prefs .contact-link:hover { color: #fff; }
 .bottom { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; border-top: 1px solid #274434; padding: 1rem; font-size: 0.82rem; }
 .mock-note { opacity: 0.7; }
 .footer-logo { width: 2.2rem; height: 2.2rem; object-fit: contain; }
