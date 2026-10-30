@@ -17,6 +17,7 @@ export const routes: Routes = [
       { path: 'auth', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES) },
       { path: 'checkout', loadChildren: () => import('./features/checkout/checkout.routes').then((m) => m.CHECKOUT_ROUTES) },
       { path: 'orders', loadChildren: () => import('./features/orders/orders.routes').then((m) => m.ORDERS_ROUTES) },
+      { path: 'contact', loadComponent: () => import('./features/contact/contact-page.component').then((m) => m.ContactPageComponent), data: { titleKey: 'meta.contact' } },
       { path: 'not-found', loadComponent: () => import('./features/static/not-found-page.component').then((m) => m.NotFoundPageComponent), data: { titleKey: 'meta.notFound' } },
     ],
   },

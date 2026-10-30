@@ -1,12 +1,13 @@
 import { SafeImageDirective } from '../resilience/safe-image.directive';
 import { LocalizedPipe } from '../pipes/localized.pipe';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { I18nService } from '../../core/services/i18n.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { FavoritesStore } from '../../core/services/favorites.store';
+import { PromotionService } from '../../core/services/promotion.service';
 import { MAX_QTY_PER_LINE } from '../../core/services/cart.store';
 import { LANG_LOCALES } from '../../core/config/i18n.config';
 import { discountPercent, effectivePrice, type Product } from '../../models/product.model';
@@ -36,7 +37,11 @@ export class ProductCardComponent {
   protected i18n = inject(I18nService);
   protected favorites = inject(FavoritesStore);
   private currency = inject(CurrencyService);
+  private promotion = inject(PromotionService);
   protected quantity = signal(1);
+
+  /** Active campaign badge for this product (authored text or coupon rate). */
+  protected campaignBadge = computed(() => this.promotion.badgeFor(this.product.id, this.product.categoryId));
 
   protected effective(): number {
     return effectivePrice(this.product);

@@ -168,10 +168,9 @@ export class AuthService {
   /**
    * Ask the server to start a password reset.
    *
-   * The API answers 200 for every well-formed email (no account
-   * disclosure), so the screen can say "if that address exists, we sent a
-   * link" without leaking whether it does. This used to be a demo that
-   * resolved locally and sent nothing at all.
+   * Reset delivery is not enabled yet, so the API answers honestly
+   * (422 password_reset_unavailable) and the screen shows that message
+   * instead of faking success.
    */
   requestPasswordReset(email: string): Observable<{ ok: true }> {
     if (!environment.useMockApi) {
@@ -182,7 +181,11 @@ export class AuthService {
         { silent: true },
       );
     }
-    // Mock mode: the same answer the live API gives, without an account.
-    return of({ ok: true as const }).pipe(delay(700));
+    // Mock mode mirrors the honest live answer.
+    return throwError(() => ({
+      status: 422,
+      code: 'password_reset_unavailable',
+      detail: 'Mock: password reset is not available.',
+    })).pipe(delay(700));
   }
 }

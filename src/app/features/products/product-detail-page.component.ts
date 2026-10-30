@@ -23,6 +23,8 @@ import { PendingActionService } from '../../core/services/pending-action.service
 import { RecentlyViewedService } from '../../core/services/recently-viewed.service';
 import { ScrollService } from '../../core/services/scroll.service';
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
+import { SiteContentService } from '../../core/services/site-content.service';
+import { PromotionService } from '../../core/services/promotion.service';
 import { availabilityOf, discountPercent, effectivePrice, type Product } from '../../models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card.component';
 import { QtySelectorComponent } from '../../shared/components/qty-selector.component';
@@ -82,6 +84,8 @@ export class ProductDetailPageComponent implements OnDestroy {
   private recent = inject(RecentlyViewedService);
   private scroll = inject(ScrollService);
   private connectivity = inject(ConnectivityService);
+  private siteContent = inject(SiteContentService);
+  private promotion = inject(PromotionService);
 
   // Route id as an observable (for the cancellable loader) and as a signal
   // (for UI resets and memoized view data) so in-place navigation — e.g.
@@ -175,6 +179,25 @@ export class ProductDetailPageComponent implements OnDestroy {
     this.product() ? this.products.categoryName(this.product()!.categoryId) : '',
   );
 
+  /** Active campaign banner for this product (badge/headline/code/image). */
+  protected campaign = computed(() => {
+    const p = this.product();
+    if (!p) return null;
+    const c = this.promotion.bannerFor(p.id, p.categoryId);
+    if (!c) return null;
+    const lang = this.i18n.currentLang();
+    return {
+      badge: this.promotion.text(c.badgeText, lang),
+      headline: this.promotion.text(c.headline, lang),
+      subtext: this.promotion.text(c.subtext, lang),
+      imageUrl: this.promotion.bannerUrl(c),
+      accent: c.accentColor,
+      code: c.code,
+    };
+  });
+
+  protected copiedCode = signal(false);
+
   // Variant option lists cached per variant: handing p-select a fresh array on
   // every change-detection cycle forces it to resync continuously.
   private variantOptionCache = new Map<string, { label: string; value: string }[]>();
@@ -213,10 +236,11 @@ export class ProductDetailPageComponent implements OnDestroy {
         untracked(() => {
           const name = pickLocaleText(product.names, lang) || product.name;
           const description = pickLocaleText(product.descriptions, lang) || product.description;
-          document.title = `${name} — Pharora`;
+          const brand = this.siteContent.brandName(lang);
+          document.title = `${name} — ${brand}`;
           // A shared product link must describe the product, not the shop.
           this.meta.updateTag({ name: 'description', content: description.slice(0, 180) });
-          this.meta.updateTag({ property: 'og:title', content: `${name} — Pharora` });
+          this.meta.updateTag({ property: 'og:title', content: `${name} — ${brand}` });
           this.meta.updateTag({ property: 'og:description', content: description.slice(0, 180) });
           this.recent.push(product.id);
         });
@@ -365,5 +389,17 @@ export class ProductDetailPageComponent implements OnDestroy {
 
   protected goHome(): void {
     this.router.navigate(['/']);
+  }
+
+  protected copyCode(code: string): void {
+    const done = (): void => {
+      this.copiedCode.set(true);
+      setTimeout(() => this.copiedCode.set(false), 2000);
+    };
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(code).then(done).catch(done);
+      return;
+    }
+    done();
   }
 }

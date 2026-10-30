@@ -11,6 +11,9 @@ import { SiteContentService } from '../core/services/site-content.service';
 import { ContactService } from '../core/services/contact.service';
 import { ScrollService } from '../core/services/scroll.service';
 import { I18nService } from '../core/services/i18n.service';
+import { CurrencyService } from '../core/services/currency.service';
+import { ThemeService } from '../core/services/theme.service';
+import { PromotionService } from '../core/services/promotion.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -24,6 +27,9 @@ export class MainLayoutComponent implements OnInit {
   protected i18n = inject(I18nService);
   private siteContent = inject(SiteContentService);
   private contact = inject(ContactService);
+  private currency = inject(CurrencyService);
+  private theme = inject(ThemeService);
+  private promotion = inject(PromotionService);
   private router = inject(Router);
   private scroll = inject(ScrollService);
   private zone = inject(NgZone);
@@ -117,6 +123,12 @@ export class MainLayoutComponent implements OnInit {
     // checkout already knows how the store wants to be contacted. The bundled
     // environment values stay in place until (and unless) the API answers.
     this.contact.load();
+    // Brand/theme (colors, logo, favicon, SEO), sales campaigns and the store's
+    // currency list all come from the backend too; the compiled palette and
+    // bundled list stay until the API answers.
+    this.theme.load();
+    this.promotion.load();
+    this.currency.load();
     this.lastRefreshAt = Date.now();
   }
 
@@ -137,5 +149,10 @@ export class MainLayoutComponent implements OnInit {
     // email and the business hours are admin-managed, and a customer must
     // never be handed an out-of-date channel.
     this.contact.refresh();
+    // The theme and the campaign list are also admin-managed and must reflect
+    // a publish made while the tab stayed open.
+    this.theme.load(true);
+    this.promotion.load(true);
+    this.currency.load();
   }
 }

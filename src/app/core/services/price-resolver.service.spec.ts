@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { CurrencyService } from './currency.service';
 import { ExchangeRatesService } from './exchange-rates.service';
@@ -17,10 +19,14 @@ describe('PriceResolverService', () => {
   beforeEach(() => {
     localStorage.removeItem('novamart.currency');
     TestBed.configureTestingModule({
-      providers: [{
-        provide: ExchangeRatesService,
-        useValue: { snapshot: signal(rates), ensureLoaded: jasmine.createSpy('ensureLoaded') },
-      }],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: ExchangeRatesService,
+          useValue: { snapshot: signal(rates), ensureLoaded: jasmine.createSpy('ensureLoaded') },
+        },
+      ],
     });
     prices = TestBed.inject(PriceResolverService);
     currency = TestBed.inject(CurrencyService);

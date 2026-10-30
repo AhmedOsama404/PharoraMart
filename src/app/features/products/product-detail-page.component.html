@@ -60,6 +60,29 @@
       <p class="category">{{ i18n.t('product.category') }}:
         <a [routerLink]="['/products']" [queryParams]="{ category: product()!.categoryId }">{{ categoryName() }}</a>
       </p>
+      @if (campaign(); as c) {
+        <div class="campaign" [style.--campaign-accent]="c.accent || null">
+          <div class="campaign-copy">
+            @if (c.badge) { <span class="campaign-badge">{{ c.badge }}</span> }
+            @if (c.headline) { <strong class="campaign-headline">{{ c.headline }}</strong> }
+            @if (c.subtext) { <p class="campaign-subtext">{{ c.subtext }}</p> }
+            @if (c.code) {
+              <div class="campaign-code">
+                <span class="campaign-code__label">{{ i18n.t('checkout.couponCode') }}</span>
+                <code>{{ c.code }}</code>
+                <button type="button" class="campaign-code__copy"
+                  [attr.aria-label]="copiedCode() ? i18n.t('resilience.copied') : i18n.t('product.copyCode')"
+                  [attr.aria-pressed]="copiedCode()" (click)="copyCode(c.code)">
+                  <i class="pi" [class.pi-check]="copiedCode()" [class.pi-copy]="!copiedCode()" aria-hidden="true"></i>
+                </button>
+              </div>
+            }
+          </div>
+          @if (c.imageUrl) {
+            <img appSafeImg="banner" class="campaign-img" [src]="c.imageUrl" [alt]="c.headline || c.badge || ''" loading="lazy" />
+          }
+        </div>
+      }
       @if (product()!.variants?.length) {
         @for (v of product()!.variants!; track v.id) {
           <div class="variant">

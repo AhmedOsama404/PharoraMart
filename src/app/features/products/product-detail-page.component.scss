@@ -26,5 +26,39 @@ h1 { margin: 0.6rem 0 0.4rem; font-size: 1.7rem; letter-spacing: -0.01em; }
 dt { color: var(--text-secondary); } dd { margin: 0; font-weight: 600; }
 .related { margin-top: 2.4rem; }
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; }
+/* Active campaign strip: the promotion's own accent frames it and tints the
+   background, so it stays legible whatever color an admin picks. */
+.campaign {
+  display: flex; align-items: stretch; gap: 1rem;
+  margin: 1rem 0; padding: 1rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--campaign-accent, var(--accent, #c9a227)) 55%, var(--surface-border));
+  border-inline-start: 4px solid var(--campaign-accent, var(--accent, #c9a227));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--campaign-accent, var(--accent, #c9a227)) 8%, var(--surface-card));
+}
+.campaign-copy { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; flex: 1; }
+.campaign-badge {
+  align-self: flex-start; padding: 0.18rem 0.6rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 750; color: var(--campaign-accent, var(--accent, #c9a227));
+  background: color-mix(in srgb, var(--campaign-accent, var(--accent, #c9a227)) 16%, transparent);
+}
+.campaign-headline { font-size: 0.98rem; color: var(--text-primary); }
+.campaign-subtext { margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+.campaign-code {
+  display: inline-flex; align-items: center; gap: 0.5rem; align-self: flex-start;
+  margin-top: 0.25rem; padding: 0.3rem 0.3rem 0.3rem 0.7rem;
+  border: 1px dashed var(--campaign-accent, var(--accent, #c9a227)); border-radius: 0.7rem;
+  background: var(--surface-card);
+}
+.campaign-code__label { font-size: 0.72rem; color: var(--text-secondary); }
+.campaign-code code { font-weight: 800; letter-spacing: 0.06em; color: var(--text-primary); font-size: 0.9rem; }
+.campaign-code__copy {
+  display: grid; place-items: center; width: 1.9rem; height: 1.9rem;
+  border: none; border-radius: 0.55rem; cursor: pointer;
+  background: var(--campaign-accent, var(--accent, #c9a227)); color: #1e2b23;
+}
+.campaign-code__copy:hover { filter: brightness(1.05); }
+.campaign-code__copy:focus-visible { outline: 2px solid var(--campaign-accent, var(--accent, #c9a227)); outline-offset: 2px; }
+.campaign-img { width: 8.5rem; min-height: 5rem; object-fit: cover; border-radius: 0.75rem; flex: 0 0 auto; }
 @media (max-width: 960px) { .detail { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .campaign { flex-direction: column; } .campaign-img { width: 100%; height: 7rem; } }

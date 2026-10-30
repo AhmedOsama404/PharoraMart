@@ -16,6 +16,8 @@ import { RecentlyViewedService } from '../../core/services/recently-viewed.servi
 import { ContentService, type ContentBlock } from '../../core/services/content.service';
 import { StorefrontDefaultsService } from '../../core/services/storefront-defaults.service';
 import { SiteContentService, type HomeSectionKey } from '../../core/services/site-content.service';
+import { ThemeService } from '../../core/services/theme.service';
+import { PromotionService } from '../../core/services/promotion.service';
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import {
   DataBoundaryComponent,
@@ -69,6 +71,8 @@ export class HomePageComponent implements OnInit {
   private content = inject(ContentService);
   protected storefront = inject(StorefrontDefaultsService);
   protected siteContent = inject(SiteContentService);
+  protected theme = inject(ThemeService);
+  protected promotion = inject(PromotionService);
   private recent = inject(RecentlyViewedService);
   private router = inject(Router);
   private heroProductsSub: Subscription | null = null;
@@ -144,6 +148,46 @@ export class HomePageComponent implements OnInit {
   protected heroProductsLoading = signal(true);
   protected heroLoading = computed(() => !this.siteContent.ready() || this.heroProductsLoading());
 
+  // The homepage promotion is backend-owned: a published theme's own promo
+  // first, then the first featured active campaign. With neither configured
+  // there is nothing to show, so the section hides rather than rendering
+  // hardcoded cosmetics copy.
+  protected promo = computed(() => {
+    const lang = this.i18n.currentLang();
+    const themeBadge = this.theme.promoBadge(lang);
+    const themeHeadline = this.theme.promoHeadline(lang);
+    const themeImage = this.theme.promoImageUrl();
+    if (this.theme.published() && (themeHeadline || themeBadge || themeImage)) {
+      return {
+        badge: themeBadge,
+        headline: themeHeadline,
+        body: this.theme.promoBody(lang),
+        ctaLabel: this.theme.promoCtaLabel(lang) || this.i18n.t('home.promoCta'),
+        ctaUrl: this.theme.promoCtaUrl() || '/products?sale=1',
+        imageUrl: themeImage,
+        accent: '',
+      };
+    }
+    const campaign = this.promotion.featured()[0];
+    if (campaign) {
+      const badge = this.promotion.text(campaign.badgeText, lang);
+      const headline = this.promotion.text(campaign.headline, lang);
+      const imageUrl = this.promotion.bannerUrl(campaign);
+      if (headline || badge || imageUrl) {
+        return {
+          badge,
+          headline,
+          body: this.promotion.text(campaign.subtext, lang),
+          ctaLabel: this.i18n.t('home.promoCta'),
+          ctaUrl: '/products?sale=1',
+          imageUrl,
+          accent: campaign.accentColor,
+        };
+      }
+    }
+    return null;
+  });
+
   // One terminal state per home region. A failing feed can never leave another
   // region (or the whole page) stuck on a skeleton.
   protected state: Record<HomeDataSection, WritableSignal<BoundaryState>> = {
@@ -167,7 +211,6 @@ export class HomePageComponent implements OnInit {
   protected featured = signal<Product[]>([]);
   protected newArrivals = signal<Product[]>([]);
   protected popular = signal<Product[]>([]);
-  protected saleProduct = signal<Product | null>(null);
   protected recentlyViewed = signal<Product[]>([]);
   protected contentBlocks = signal<ContentBlock[]>([]);
   protected heroProduct = signal<Product | null>(null);
@@ -244,7 +287,6 @@ export class HomePageComponent implements OnInit {
             this.featured.set(list);
             this.setSection('featured', list.length ? 'success' : 'empty');
           }
-          this.loadPromo(items);
         },
         error: (err: unknown) => this.setSection('featured', this.failureState(), err),
       });
@@ -329,18 +371,6 @@ export class HomePageComponent implements OnInit {
         },
         error: (err: unknown) => this.setSection(key, this.failureState(), err),
       });
-  }
-
-  private loadPromo(items: Product[]): void {
-    const settings = this.storefront.sectionSettings('promo');
-    if (settings?.productId) {
-      this.products
-        .getById(settings.productId)
-        .pipe(catchError(() => of(null)), takeUntilDestroyed(this.destroyRef))
-        .subscribe((product) => this.saleProduct.set(product));
-      return;
-    }
-    this.saleProduct.set(items.find((p) => p.salePrice != null) ?? items[0] ?? null);
   }
 
   private resolveProducts(
@@ -575,10 +605,6 @@ export class HomePageComponent implements OnInit {
       clearTimeout(this.arrivalsTimer);
       this.arrivalsTimer = null;
     }
-  }
-
-  protected goSale(): void {
-    this.router.navigate(['/products'], { queryParams: { sale: 1 } });
   }
 
   protected goTo(url: string): void {

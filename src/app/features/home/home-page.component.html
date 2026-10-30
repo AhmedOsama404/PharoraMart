@@ -136,17 +136,25 @@
       }
     }
     @case ('promo') {
-      @if (storefront.isFeatureEnabled('promoBanners')) {
-        <section class="promo offer-promo">
+      @if (promo(); as p) {
+        <section class="promo offer-promo" [style.--promo-accent]="p.accent || null">
           <div>
-            <h2>{{ storefront.sectionText('promo', 'title', i18n.currentLang()) || i18n.t('home.promoTitle') }}</h2>
-            <p>{{ storefront.sectionText('promo', 'subtitle', i18n.currentLang()) || i18n.t('home.promoSubtitle') }}</p>
-            @if (storefront.sectionCtaVisible('promo')) {
-              <p-button [label]="storefront.sectionText('promo', 'ctaLabel', i18n.currentLang()) || i18n.t('home.promoCta')" icon="pi pi-arrow-up-right" class="promo-cta" (onClick)="goTo(storefront.sectionCtaUrl('promo') || '/products?sale=1')" />
+            @if (p.badge) {
+              <p class="promo-badge">{{ p.badge }}</p>
             }
+            @if (p.headline) {
+              <h2>{{ p.headline }}</h2>
+            }
+            @if (p.body) {
+              <p>{{ p.body }}</p>
+            }
+            <p-button [label]="p.ctaLabel" icon="pi pi-arrow-up-right" class="promo-cta" (onClick)="goTo(p.ctaUrl)" />
           </div>
-          @if (saleProduct()) {
-            <a [routerLink]="['/products', saleProduct()!.id]"><img appSafeImg="product" [src]="saleProduct()!.images[0]" [alt]="saleProduct()!.names | localized: saleProduct()!.name" loading="lazy" /></a>
+          @if (p.imageUrl) {
+            <a class="promo-media" role="link" tabindex="0" [attr.aria-label]="p.headline || p.ctaLabel"
+              (click)="goTo(p.ctaUrl)" (keydown.enter)="goTo(p.ctaUrl)">
+              <img appSafeImg="banner" [src]="p.imageUrl" [alt]="p.headline || p.badge || ''" loading="lazy" />
+            </a>
           }
         </section>
       }

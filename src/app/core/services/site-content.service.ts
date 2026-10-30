@@ -348,6 +348,19 @@ export class SiteContentService {
     return pick(locale) || pick('en');
   }
 
+  /**
+   * The store's brand name in the active language: the CMS header first, then
+   * the footer, then the bundled app name — so the header, the footer and the
+   * document title all read one name, and never an empty one.
+   */
+  brandName(locale: string): string {
+    return (
+      this.text(this.header()?.brandName, locale) ||
+      this.text(this.footer()?.brandName, locale) ||
+      environment.appName
+    );
+  }
+
   /** Allow-listed PrimeIcons class for a stored value, else the fallback. */
   icon(value: string | null | undefined, fallback: string = ICON_FALLBACK): string {
     const trimmed = typeof value === 'string' ? value.trim() : '';

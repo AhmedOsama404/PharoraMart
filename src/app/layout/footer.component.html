@@ -38,6 +38,7 @@
     }
     <div class="prefs">
       <h2 class="footer-heading">{{ i18n.t('footer.contact') }}</h2>
+      <a class="contact-link" routerLink="/contact">{{ i18n.t('footer.contactUs') }}</a>
       <label>{{ i18n.t('footer.currencyLabel') }}</label>
       <p-select [options]="currencyOptions()" [ngModel]="currency.code()" optionLabel="label" optionValue="value" (ngModelChange)="onCurrency($event)" [fluid]="true"
         [ariaLabel]="i18n.t('footer.currencyLabel')"
