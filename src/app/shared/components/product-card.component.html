@@ -10,6 +10,11 @@
       />
     </a>
     <div class="badges">
+      @if (campaignBadge(); as cb) {
+        @if (cb.kind === 'authored' || !isDiscounted()) {
+          <span class="badge badge-campaign" [style.--badge-accent]="cb.accent || null">{{ cb.label }}</span>
+        }
+      }
       @if (isDiscounted()) {
         <span class="badge badge-sale">{{ i18n.t('product.off', { percent: discount() }) }}</span>
       }
