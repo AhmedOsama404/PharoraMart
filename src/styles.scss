@@ -34,12 +34,18 @@ app-home-page .car-item { scroll-snap-align: start; }
   app-home-page .arrivals-carousel-shell--controls { gap: 0.4rem; }
   app-home-page .arrivals-control { width: 2.75rem; height: 2.75rem; }
 }
-/* On a phone the arrows are the least valuable 100px on the screen: the track
-   is swipeable and focusable (arrow keys scroll it), so the shelf takes the
-   full width and the compact card layout below 17rem can apply. */
+/* On a phone the arrows overlay the shelf instead of consuming ~100px of the
+   track: the track stays full-width and swipeable, while a compact control
+   sits on each edge so left/right navigation stays discoverable. */
 @media (max-width: 600px) {
-  app-home-page .arrivals-carousel-shell--controls { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  app-home-page .arrivals-control { display: none; }
+  app-home-page .arrivals-carousel-shell--controls { position: relative; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  app-home-page .arrivals-control {
+    position: absolute; top: calc(50% - 1.125rem); z-index: 3;
+    width: 2.25rem; height: 2.25rem;
+    box-shadow: 0 4px 14px rgb(16 41 31 / 18%);
+  }
+  app-home-page .arrivals-control:first-child { inset-inline-start: 0.25rem; }
+  app-home-page .arrivals-control:last-child { inset-inline-end: 0.25rem; }
   app-home-page .arrivals-carousel { --arrival-card-width: min(calc(100% - 2.5rem), 17rem); }
 }
 
