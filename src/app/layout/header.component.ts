@@ -22,10 +22,10 @@ import { CartStore } from '../core/services/cart.store';
 import { FavoritesStore } from '../core/services/favorites.store';
 import { AuthService } from '../core/services/auth.service';
 import { ProductService } from '../core/services/product.service';
-import { environment } from '../../environments/environment';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
 import { StorefrontDefaultsService } from '../core/services/storefront-defaults.service';
 import { SiteContentService } from '../core/services/site-content.service';
+import { ThemeService } from '../core/services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -48,21 +48,22 @@ export class HeaderComponent {
   private products = inject(ProductService);
   protected storefront = inject(StorefrontDefaultsService);
   protected siteContent = inject(SiteContentService);
+  protected theme = inject(ThemeService);
   private router = inject(Router);
 
   // Employee-editable brand + announcement (empty until loaded / when cleared).
-  // The brand name comes from the CMS; until it loads (or when it is left
-  // empty) the storefront still shows a name — and the logo link always has
-  // an accessible name.
-  protected brandName = computed(
-    () => this.siteContent.text(this.siteContent.header()?.brandName, this.i18n.currentLang()) || environment.appName,
-  );
-  // Falls back to the vector mark if the edited logo is missing/unreachable, so
-  // a dead upload never shows a broken-image icon in the header.
+  // The brand name comes from the CMS (header then footer); until it loads (or
+  // when it is left empty) the storefront still shows the bundled app name —
+  // and the logo link always has an accessible name.
+  protected brandName = computed(() => this.siteContent.brandName(this.i18n.currentLang()));
+  // The theme logo (published by the dashboard) wins; the CMS header logo is
+  // the secondary source. Falls back to the vector mark if neither loads, so a
+  // dead upload never shows a broken-image icon in the header.
   protected logoFailed = signal(false);
-  protected brandLogoUrl = computed(() =>
-    this.logoFailed() ? '' : this.siteContent.mediaUrl(this.siteContent.header()?.logoUrl),
-  );
+  protected brandLogoUrl = computed(() => {
+    if (this.logoFailed()) return '';
+    return this.theme.logoUrl() || this.siteContent.mediaUrl(this.siteContent.header()?.logoUrl);
+  });
   protected announcement = computed(() => {
     const header = this.siteContent.header();
     if (!header || header.announcementVisible === false) return '';

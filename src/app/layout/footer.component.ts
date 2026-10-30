@@ -8,7 +8,7 @@ import { CurrencyService } from '../core/services/currency.service';
 import { ContactService } from '../core/services/contact.service';
 import { BrandLogoComponent } from '../shared/components/brand-logo.component';
 import { SiteContentService } from '../core/services/site-content.service';
-import { environment } from '../../environments/environment';
+import { ThemeService } from '../core/services/theme.service';
 
 @Component({
   selector: 'app-footer',
@@ -22,21 +22,22 @@ export class FooterComponent {
   protected i18n = inject(I18nService);
   protected currency = inject(CurrencyService);
   protected siteContent = inject(SiteContentService);
+  protected theme = inject(ThemeService);
   protected contact = inject(ContactService);
   protected currencyOptions = computed(() => this.currency.options().map((c) => ({ label: c.code, value: c.code })));
 
   // Employee-editable footer copy (empty until loaded / when cleared).
   protected footer = this.siteContent.footer;
-  // The brand name comes from the CMS; the app name is the fallback so the
-  // footer never shows an empty brand.
-  protected brandName = computed(
-    () => this.siteContent.text(this.siteContent.footer()?.brandName, this.i18n.currentLang()) || environment.appName,
-  );
-  // Vector mark is the fallback when the edited logo is missing/unreachable.
+  // The brand name comes from the CMS (header then footer); the app name is
+  // the fallback so the footer never shows an empty brand.
+  protected brandName = computed(() => this.siteContent.brandName(this.i18n.currentLang()));
+  // The theme logo wins; the CMS footer logo is the secondary source. Vector
+  // mark is the fallback when neither loads.
   protected logoFailed = signal(false);
-  protected logoUrl = computed(() =>
-    this.logoFailed() ? '' : this.siteContent.mediaUrl(this.siteContent.footer()?.logoUrl),
-  );
+  protected logoUrl = computed(() => {
+    if (this.logoFailed()) return '';
+    return this.theme.logoUrl() || this.siteContent.mediaUrl(this.siteContent.footer()?.logoUrl);
+  });
   protected tagline = computed(() => this.siteContent.text(this.siteContent.footer()?.tagline, this.i18n.currentLang()));
   protected copyrightText = computed(() => this.siteContent.text(this.siteContent.footer()?.copyrightText, this.i18n.currentLang()));
   protected noticeText = computed(() => this.siteContent.text(this.siteContent.footer()?.noticeText, this.i18n.currentLang()));
