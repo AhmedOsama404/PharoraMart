@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { CurrencyService } from './currency.service';
 
@@ -6,7 +8,9 @@ describe('CurrencyService', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     svc = TestBed.inject(CurrencyService);
   });
 

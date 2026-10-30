@@ -1,6 +1,9 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { catchError, of } from 'rxjs';
 import { LANG_LOCALES } from '../config/i18n.config';
 import type { SupportedLang } from '../config/i18n.config';
+import { environment } from '../../../environments/environment';
+import { ApiClientService } from '../api/api-client.service';
 import { I18nService } from './i18n.service';
 
 export interface CurrencyOption {
@@ -11,7 +14,7 @@ export interface CurrencyOption {
   isActive: boolean;
 }
 
-/** Mirrors the supported-currency endpoint. Prices stay in their saved currency; this is not an FX table. */
+/** Bundled fallback list, served until (and unless) the API answers. */
 const CURRENCIES: CurrencyOption[] = [
   { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', decimalPlaces: 2, isActive: true },
   { code: 'EUR', name: 'Euro', symbol: '€', decimalPlaces: 2, isActive: true },
@@ -21,8 +24,28 @@ const CURRENCIES: CurrencyOption[] = [
 
 const STORAGE_KEY = 'novamart.currency';
 
+function toCurrencyOption(raw: unknown): CurrencyOption | null {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+  const src = raw as Record<string, unknown>;
+  const code = typeof src['code'] === 'string' ? src['code'].trim().toUpperCase() : '';
+  if (!code) return null;
+  return {
+    code,
+    name: typeof src['name'] === 'string' ? src['name'].trim() : code,
+    symbol: typeof src['symbol'] === 'string' ? src['symbol'] : code,
+    decimalPlaces:
+      typeof src['decimalPlaces'] === 'number' && Number.isFinite(src['decimalPlaces']) && src['decimalPlaces'] >= 0
+        ? src['decimalPlaces']
+        : 2,
+    isActive: src['isActive'] !== false,
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class CurrencyService {
+  private readonly api = inject(ApiClientService);
+  /** Guards the one-per-session load; a failed load may be retried. */
+  private requested = false;
   readonly options = signal<CurrencyOption[]>(CURRENCIES);
   readonly code = signal<string>('USD');
   readonly current = computed(() => this.options().find((c) => c.code === this.code()) ?? CURRENCIES[2]);
@@ -35,6 +58,40 @@ export class CurrencyService {
       /* ignore */
     }
 
+  }
+
+  /**
+   * Loads the store's published currency list (`GET store/currencies`).
+   * The bundled list is only the fallback: it stays until the API answers,
+   * and is kept if the API is unreachable or returns nothing usable. Prices
+   * stay in their saved currency — this is not an FX table.
+   */
+  load(): void {
+    if (environment.useMockApi) return;
+    if (this.requested) return;
+    this.requested = true;
+    this.api
+      .get<unknown>('store/currencies', undefined, { silent: true })
+      .pipe(catchError(() => of(null)))
+      .subscribe((raw) => {
+        const usable = Array.isArray(raw) ? raw : null;
+        if (!usable) {
+          // Unreachable or unusable: keep the fallback, allow a later retry.
+          this.requested = false;
+          return;
+        }
+        const mapped = usable
+          .map(toCurrencyOption)
+          .filter((c): c is CurrencyOption => c !== null);
+        if (mapped.length === 0) return;
+        this.options.set(mapped);
+        // A previously saved (or default) code that the store no longer offers
+        // is reset to the first option, so the price rail never shows a
+        // currency it cannot format.
+        if (!this.options().some((c) => c.code === this.code())) {
+          this.code.set(this.options()[0].code);
+        }
+      });
   }
 
   /**
