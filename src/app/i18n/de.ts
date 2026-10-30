@@ -367,6 +367,7 @@ export const de: TranslationDict = {
     invalidInput: 'Einige Angaben wurden nicht akzeptiert. Bitte prüfen Sie sie und versuchen Sie es erneut.',
     invalidCredentials: 'E-Mail oder Passwort ist falsch.',
     emailTaken: 'Diese E-Mail ist bereits registriert. Bitte melden Sie sich stattdessen an.',
+    passwordResetUnavailable: 'Das Zurücksetzen des Passworts ist nicht verfügbar. Bitte kontaktieren Sie den Support.',
     sessionExpired: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.',
     forbidden: 'Sie haben keine Berechtigung dafür.',
     conflict: 'Diese Änderung steht im Konflikt mit vorhandenen Daten. Aktualisieren Sie und versuchen Sie es erneut.',

@@ -367,6 +367,7 @@ export const fr: TranslationDict = {
     invalidInput: 'Certaines informations n’ont pas été acceptées. Vérifiez-les et réessayez.',
     invalidCredentials: 'E-mail ou mot de passe incorrect.',
     emailTaken: 'Cet e-mail est déjà enregistré. Connectez-vous plutôt.',
+    passwordResetUnavailable: 'La réinitialisation du mot de passe n’est pas disponible. Veuillez contacter l’assistance.',
     sessionExpired: 'Votre session a expiré. Veuillez vous reconnecter.',
     forbidden: 'Vous n’avez pas la permission de faire cela.',
     conflict: 'Cette modification entre en conflit avec des données existantes. Actualisez et réessayez.',

@@ -8,6 +8,7 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { I18nService } from '../../core/services/i18n.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiErrorService } from '../../core/services/api-error.service';
 import { ScrollService } from '../../core/services/scroll.service';
 import { firstErrorKey } from '../../shared/utils/validators';
 
@@ -23,10 +24,10 @@ export class ForgotPageComponent implements OnInit {
   protected i18n = inject(I18nService);
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  private apiError = inject(ApiErrorService);
   private scroll = inject(ScrollService);
   private readonly destroyRef = inject(DestroyRef);
   protected busy = signal(false);
-  protected sent = signal(false);
   /** A failed request must say so — a silent failure looks like success. */
   protected serverError = signal('');
   protected form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
@@ -47,20 +48,18 @@ export class ForgotPageComponent implements OnInit {
     }
     this.busy.set(true);
     this.serverError.set('');
-    // The request goes to the API, which validates the address and answers
-    // without disclosing whether an account exists. (The API's reset
-    // delivery is still a stub, so no email leaves the server yet.)
+    // Reset delivery is not enabled yet, so the API answers honestly with
+    // password_reset_unavailable rather than faking success.
     this.auth
       .requestPasswordReset(this.form.getRawValue().email)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.busy.set(false);
-          this.sent.set(true);
         },
-        error: () => {
+        error: (err) => {
           this.busy.set(false);
-          this.serverError.set(this.i18n.t('auth.resetFailed'));
+          this.serverError.set(this.apiError.message(err));
         },
       });
   }

@@ -367,6 +367,7 @@ export const sk: TranslationDict = {
     invalidInput: 'Niektoré údaje neboli prijaté. Skontrolujte ich a skúste to znova.',
     invalidCredentials: 'Nesprávny e-mail alebo heslo.',
     emailTaken: 'Tento e-mail je už zaregistrovaný. Skúste sa prihlásiť.',
+    passwordResetUnavailable: 'Obnovenie hesla nie je k dispozícii. Kontaktujte prosím podporu.',
     sessionExpired: 'Vaša relácia vypršala. Prihláste sa znova.',
     forbidden: 'Na túto akciu nemáte oprávnenie.',
     conflict: 'Táto zmena je v konflikte s existujúcimi údajmi. Obnovte stránku a skúste to znova.',

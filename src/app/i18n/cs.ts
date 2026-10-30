@@ -367,6 +367,7 @@ export const cs: TranslationDict = {
     invalidInput: 'Některé údaje nebyly přijaty. Zkontrolujte je a zkuste to znovu.',
     invalidCredentials: 'Nesprávný e-mail nebo heslo.',
     emailTaken: 'Tento e-mail je již zaregistrován. Zkuste se přihlásit.',
+    passwordResetUnavailable: 'Obnovení hesla není k dispozici. Kontaktujte prosím podporu.',
     sessionExpired: 'Vaše relace vypršela. Přihlaste se prosím znovu.',
     forbidden: 'K této akci nemáte oprávnění.',
     conflict: 'Tato změna je v konfliktu s existujícími daty. Obnovte stránku a zkuste to znovu.',

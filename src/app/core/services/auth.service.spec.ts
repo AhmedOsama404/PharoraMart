@@ -61,10 +61,14 @@ describe('AuthService (mock)', () => {
     });
   });
 
-  it('simulates password reset without sending email', (done) => {
-    svc.requestPasswordReset('any@example.com').subscribe((r) => {
-      expect(r.ok).toBeTrue();
-      done();
+  it('honestly reports that password reset is unavailable', (done) => {
+    svc.requestPasswordReset('any@example.com').subscribe({
+      next: () => done.fail('should have errored'),
+      error: (err) => {
+        expect(err.code).toBe('password_reset_unavailable');
+        expect(err.status).toBe(422);
+        done();
+      },
     });
   });
 });

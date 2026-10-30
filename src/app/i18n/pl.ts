@@ -367,6 +367,7 @@ export const pl: TranslationDict = {
     invalidInput: 'Niektóre dane nie zostały zaakceptowane. Sprawdź je i spróbuj ponownie.',
     invalidCredentials: 'Nieprawidłowy e-mail lub hasło.',
     emailTaken: 'Ten e-mail jest już zarejestrowany. Zamiast tego zaloguj się.',
+    passwordResetUnavailable: 'Resetowanie hasła nie jest dostępne. Skontaktuj się z pomocą techniczną.',
     sessionExpired: 'Twoja sesja wygasła. Zaloguj się ponownie.',
     forbidden: 'Nie masz uprawnień, aby to zrobić.',
     conflict: 'Ta zmiana koliduje z istniejącymi danymi. Odśwież i spróbuj ponownie.',

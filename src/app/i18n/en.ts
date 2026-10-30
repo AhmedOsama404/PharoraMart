@@ -369,6 +369,7 @@ export const en: TranslationDict = {
     invalidInput: 'Some details were not accepted. Please review and try again.',
     invalidCredentials: 'Incorrect email or password.',
     emailTaken: 'This email is already registered. Try signing in instead.',
+    passwordResetUnavailable: 'Password reset is not available. Please contact support.',
     sessionExpired: 'Your session has expired. Please sign in again.',
     forbidden: 'You do not have permission to do that.',
     conflict: 'That change conflicts with existing data. Refresh and try again.',
