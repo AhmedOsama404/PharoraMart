@@ -56,6 +56,13 @@ export class ApiErrorService {
     auth_invalid_credentials: 'errors.invalidCredentials',
     auth_email_taken: 'errors.emailTaken',
     password_reset_unavailable: 'errors.passwordResetUnavailable',
+    auth_current_password_incorrect: 'errors.currentPasswordIncorrect',
+    password_reset_invalid: 'errors.passwordResetInvalid',
+    password_reset_expired: 'errors.passwordResetExpired',
+    password_reset_used: 'errors.passwordResetUsed',
+    email_verification_invalid: 'errors.emailVerificationInvalid',
+    email_verification_expired: 'errors.emailVerificationExpired',
+    email_verification_used: 'errors.emailVerificationUsed',
     // Order placement
     order_hotel_unavailable: 'errors.orderHotelUnavailable',
     order_currency_unavailable: 'errors.orderCurrencyUnavailable',

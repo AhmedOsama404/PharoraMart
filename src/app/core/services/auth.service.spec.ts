@@ -61,14 +61,47 @@ describe('AuthService (mock)', () => {
     });
   });
 
-  it('honestly reports that password reset is unavailable', (done) => {
-    svc.requestPasswordReset('any@example.com').subscribe({
-      next: () => done.fail('should have errored'),
-      error: (err) => {
-        expect(err.code).toBe('password_reset_unavailable');
-        expect(err.status).toBe(422);
-        done();
-      },
+  it('gives a generic success for password reset (no account disclosure)', (done) => {
+    svc.requestPasswordReset('any@example.com').subscribe((res) => {
+      expect(res.ok).toBeTrue();
+      done();
+    });
+  });
+
+  it('consumes reset and verification tokens generically', (done) => {
+    svc.resetPassword({ token: 't', newPassword: 'secret12' }).subscribe((res) => {
+      expect(res.ok).toBeTrue();
+      svc.verifyEmail('t').subscribe((res2) => {
+        expect(res2.ok).toBeTrue();
+        svc.resendVerification('any@example.com').subscribe((res3) => {
+          expect(res3.ok).toBeTrue();
+          done();
+        });
+      });
+    });
+  });
+
+  it('rejects a password change with the wrong current password', (done) => {
+    svc.register({ name: 'A', email: 'cp@example.com', password: 'secret12' }).subscribe(() => {
+      svc.changePassword({ currentPassword: 'nope-nope', newPassword: 'newpass34' }).subscribe({
+        next: () => done.fail('should have errored'),
+        error: (err) => {
+          expect(err.code).toBe('auth_current_password_incorrect');
+          done();
+        },
+      });
+    });
+  });
+
+  it('changes password and accepts the new one on re-login', (done) => {
+    svc.register({ name: 'A', email: 'cp2@example.com', password: 'secret12' }).subscribe(() => {
+      svc.changePassword({ currentPassword: 'secret12', newPassword: 'newpass34' }).subscribe(() => {
+        svc.logout();
+        svc.login({ email: 'cp2@example.com', password: 'newpass34' }).subscribe((res) => {
+          expect(res.user.email).toBe('cp2@example.com');
+          done();
+        });
+      });
     });
   });
 });

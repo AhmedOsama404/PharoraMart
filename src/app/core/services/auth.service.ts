@@ -1,7 +1,14 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { delay, Observable, of, tap, throwError } from 'rxjs';
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from '../../models/user.model';
+import type {
+  AuthResponse,
+  ChangePasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+  ResetPasswordRequest,
+  User,
+} from '../../models/user.model';
 import { environment } from '../../../environments/environment';
 import { ApiClientService } from '../api/api-client.service';
 import { CartStore } from './cart.store';
@@ -166,11 +173,9 @@ export class AuthService {
   }
 
   /**
-   * Ask the server to start a password reset.
-   *
-   * Reset delivery is not enabled yet, so the API answers honestly
-   * (422 password_reset_unavailable) and the screen shows that message
-   * instead of faking success.
+   * Ask the server to start a password reset. The response is identical
+   * whether or not the email exists (no account enumeration); a real account
+   * receives a hashed single-use link, everyone else gets the same success.
    */
   requestPasswordReset(email: string): Observable<{ ok: true }> {
     if (!environment.useMockApi) {
@@ -181,11 +186,75 @@ export class AuthService {
         { silent: true },
       );
     }
-    // Mock mode mirrors the honest live answer.
-    return throwError(() => ({
-      status: 422,
-      code: 'password_reset_unavailable',
-      detail: 'Mock: password reset is not available.',
-    })).pipe(delay(700));
+    // Mock mirrors the generic live answer: no rows, no disclosure.
+    return of<{ ok: true }>({ ok: true }).pipe(delay(600));
+  }
+
+  /** Consumes a one-time reset token and sets a new password. */
+  resetPassword(req: ResetPasswordRequest): Observable<{ ok: true }> {
+    if (!environment.useMockApi) {
+      return this.api.post<{ ok: true }>('auth/reset-password', req, undefined, { silent: true });
+    }
+    return of<{ ok: true }>({ ok: true }).pipe(delay(600));
+  }
+
+  /** Consumes a one-time email-verification token. */
+  verifyEmail(token: string): Observable<{ ok: true }> {
+    if (!environment.useMockApi) {
+      return this.api.post<{ ok: true }>('auth/verify-email', { token: token.trim() }, undefined, { silent: true });
+    }
+    return of<{ ok: true }>({ ok: true }).pipe(delay(600));
+  }
+
+  /** Resends the verification email; generic success either way. */
+  resendVerification(email: string): Observable<{ ok: true }> {
+    if (!environment.useMockApi) {
+      return this.api.post<{ ok: true }>(
+        'auth/resend-verification',
+        { email: email.trim() },
+        undefined,
+        { silent: true },
+      );
+    }
+    return of<{ ok: true }>({ ok: true }).pipe(delay(600));
+  }
+
+  /**
+   * Authenticated password change. The server re-verifies the current password
+   * and bumps TokenVersion, invalidating every other session; success returns
+   * a fresh token for this session, which replaces the stored one.
+   */
+  changePassword(req: ChangePasswordRequest): Observable<AuthResponse> {
+    if (!environment.useMockApi) {
+      return this.api.post<AuthResponse>('auth/change-password', req, undefined, { silent: true }).pipe(
+        tap((auth) => {
+          this.session.set(auth);
+          this.persist(auth);
+        }),
+      );
+    }
+    const session = this.session();
+    if (!session) {
+      return throwError(() => ({
+        status: 401,
+        code: 'auth_current_password_incorrect',
+        detail: 'Mock: not signed in.',
+      })).pipe(delay(400));
+    }
+    const users = readUsers();
+    const found = users.find((u) => u.email.toLowerCase() === session.user.email.toLowerCase());
+    if (!found || found.password !== req.currentPassword) {
+      return throwError(() => ({
+        status: 401,
+        code: 'auth_current_password_incorrect',
+        detail: 'Mock: current password is incorrect.',
+      })).pipe(delay(400));
+    }
+    found.password = req.newPassword;
+    writeUsers(users);
+    const auth: AuthResponse = { user: session.user, token: `mock.${session.user.id}.${Date.now()}` };
+    this.session.set(auth);
+    this.persist(auth);
+    return of(auth).pipe(delay(500));
   }
 }
