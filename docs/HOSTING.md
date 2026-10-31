@@ -18,8 +18,10 @@ backend's `docs/FREE_HOSTING.md` for the full three-repo runbook.
 
 ## First-time setup
 
-1. Push this repository with `wrangler.toml`, `public/_redirects` and
-   `public/_headers` present.
+1. Push this repository with `public/_redirects` and `public/_headers` present.
+   (`wrangler.pages.toml` is only for manual `wrangler pages deploy` CLI runs —
+   it is kept out of the way so the Pages Git integration never auto-runs
+   `wrangler deploy`.)
 2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**
    → select `AhmedOsama404/PharoraMart` (the repository was renamed from
    `NovaMart`; GitHub redirects the old URL).
@@ -55,7 +57,7 @@ localhost URL, so a bad deploy cannot silently ship a broken endpoint.
   `Permissions-Policy`; `index.html` is `no-cache`.
 - Hashed JS/CSS bundles are cached by Cloudflare automatically.
 - Default `<base href="/">`; if you host under a sub-path, build with
-  `--base-href /sub-path/` and update `wrangler.toml`.
+  `--base-href /sub-path/` and update `wrangler.pages.toml`.
 
 ## CORS
 
