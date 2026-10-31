@@ -27,7 +27,6 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
   let orders: OrderService;
   let cart: CartStore;
   let originalUseMockApi: boolean;
-  let originalContactMode: 'whatsapp' | 'email' | 'both';
 
   // Test-only view over protected members (the template is the real caller).
   type Exposed = {
@@ -37,8 +36,6 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     couponError: Signal<string>;
     submitError: WritableSignal<string>;
     subtotal: Signal<number>;
-    contactOptions: Signal<{ value: string; label: string }[]>;
-    selectedContact: Signal<string>;
     applyCoupon(): void;
     onHotelChange(v: unknown): void;
     submit(): Promise<void>;
@@ -72,7 +69,6 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
   beforeEach(() => {
     localStorage.clear();
     originalUseMockApi = environment.useMockApi;
-    originalContactMode = environment.contactMode;
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -95,7 +91,6 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
 
   afterEach(() => {
     environment.useMockApi = originalUseMockApi;
-    environment.contactMode = originalContactMode;
     // A test may have swapped the directory for a failing one.
     hotelDirectory = () =>
       of([
@@ -147,57 +142,22 @@ describe('CheckoutPageComponent (hotel delivery)', () => {
     expect(el.querySelector('.update-note')?.textContent).toContain('order status');
   });
 
-  it('offers the contact methods the store supports and sends the chosen one', () => {    // The store supports both channels: WhatsApp and email are offered.
-    expect(x(comp).contactOptions().map((o) => o.value)).toEqual(['whatsapp', 'email']);
-
-    // Email is the default: order updates by email are part of the order.
-    expect(x(comp).form.get('contactMethod')?.value).toBe('email');
-    x(comp).form.patchValue({ contactMethod: 'whatsapp' });
-    expect(x(comp).form.get('contactMethod')?.value).toBe('whatsapp');
-    // The choice is mirrored for the template (the contact detail to mark).
-    expect(x(comp).selectedContact()).toBe('whatsapp');
-  });
-
-  it('offers only WhatsApp when the store supports only WhatsApp', () => {
-    environment.contactMode = 'whatsapp';
-    const waFixture = TestBed.createComponent(CheckoutPageComponent);
-    const waComp = waFixture.componentInstance;
-    waFixture.detectChanges();
-
-    expect(x(waComp).contactOptions().map((o) => o.value)).toEqual(['whatsapp']);
-    // The order starts with the only method the store can use.
-    expect(x(waComp).form.get('contactMethod')?.value).toBe('whatsapp');
-  });
-
-  it('offers only email when the store supports only email', () => {
-    environment.contactMode = 'email';
-    const mailFixture = TestBed.createComponent(CheckoutPageComponent);
-    const mailComp = mailFixture.componentInstance;
-    mailFixture.detectChanges();
-
-    expect(x(mailComp).contactOptions().map((o) => o.value)).toEqual(['email']);
-    expect(x(mailComp).form.get('contactMethod')?.value).toBe('email');
-  });
-
-  it('sends the chosen contact method with the order', async () => {
+  it('always sends email as the contact method and never opts into WhatsApp', async () => {
     cart.add(MOCK_PRODUCTS[0].id, 1, undefined, undefined, 99);
     fillContact();
     x(comp).form.get('hotelId')?.setValue('h1');
     x(comp).onHotelChange('h1');
-    x(comp).form.get('contactMethod')?.setValue('whatsapp');
     fixture.detectChanges();
 
     const create = spyOn(orders, 'create').and.callThrough();
     await x(comp).submit();
 
     const req = create.calls.mostRecent().args[0] as CreateOrderRequest;
-    expect(req.customer.contactMethod).toBe('whatsapp');
-    // The contact method IS the opt-in: WhatsApp updates only when it is chosen.
-    expect(req.whatsappOptIn).toBeTrue();
-    // The proof of the consent text travels with the opt-in, so the server can
-    // record WHAT was agreed, not only that something was.
-    expect(req.consentTextHash).toBeTruthy();
-    expect(req.consentTextHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(req.customer.contactMethod).toBe('email');
+    // Order updates go out by email only, so there is no WhatsApp opt-in and
+    // no consent proof travels with the order.
+    expect(req.whatsappOptIn).toBeFalse();
+    expect(req.consentTextHash).toBeUndefined();
   });
 
   it('sends an empty image for a product without a picture, never undefined', async () => {

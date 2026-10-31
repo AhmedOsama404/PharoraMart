@@ -24,7 +24,6 @@ import { ScrollService } from '../../core/services/scroll.service';
 import { ApiClientService } from '../../core/api/api-client.service';
 import { ApiErrorService } from '../../core/services/api-error.service';
 import { firstErrorKey, phoneValidator } from '../../shared/utils/validators';
-import { consentTextHash } from '../../shared/utils/consent-hash.utils';
 import { PhoneInputComponent } from '../../shared/components/phone-input.component';
 import { ConnectivityService } from '../../core/resilience/connectivity.service';
 import type { CreateOrderRequest } from '../../models/order.model';
@@ -37,7 +36,6 @@ import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { PriceResolverService } from '../../core/services/price-resolver.service';
 import { ExchangeRatesService } from '../../core/services/exchange-rates.service';
 import { SiteContentService, DEFAULT_PLACE_ORDER_ICON, DEFAULT_PLACE_ORDER_TONE } from '../../core/services/site-content.service';
-import { ContactService } from '../../core/services/contact.service';
 import type { SiteCheckoutContent } from '../../models/site-content.model';
 
 /**
@@ -69,7 +67,6 @@ export class CheckoutPageComponent implements OnInit {
 
   protected i18n = inject(I18nService);
   protected siteContent = inject(SiteContentService);
-  private contact = inject(ContactService);
   private currency = inject(CurrencyService);
   private prices = inject(PriceResolverService);
   private rates = inject(ExchangeRatesService);
@@ -104,68 +101,11 @@ export class CheckoutPageComponent implements OnInit {
     // The language the customer wants to be contacted in. It is required,
     // and it is frozen on the order: the messages always use it.
     language: ['', [Validators.required]],
-    // How the customer wants to be contacted about this order. The API accepts
-    // exactly `whatsapp` and `email` (ContactMethod); the storefront offers
-    // the methods the store can actually reach the customer on (see
-    // contactOptions) and always records one the server understands.
+    // How the customer is contacted about this order. Updates always go out
+    // by email, so the method is fixed to `email` (the API's allow-list also
+    // accepts `whatsapp`, but the storefront only ever sends email).
     contactMethod: ['email' as ContactMethod, [Validators.required]],
   });
-
-  /**
-   * The contact support the store publishes. The contact service owns it
-   * (it follows the backend settings); it is read through a tiny helper so
-   * that a plain getter and a signal are both accepted, and so the signal
-   * shape stays reactive.
-   */
-  private readonly contactMode = computed<'whatsapp' | 'email' | 'both'>(() => {
-    const raw = this.contact.mode as unknown;
-    const value = (typeof raw === 'function' ? (raw as () => string)() : raw) as string;
-    return value === 'whatsapp' || value === 'email' ? value : 'both';
-  });
-
-  /**
-   * The method the order starts with: the only one the store offers, or
-   * email when both are on (order updates by email always go out).
-   */
-  private readonly defaultContactMethod = computed<ContactMethod>(() =>
-    this.contactMode() === 'whatsapp' ? 'whatsapp' : 'email',
-  );
-
-  /**
-   * The contact methods the customer can pick. The store owns that answer:
-   * the contact service knows which channel the store supports (it follows
-   * the backend settings), and the storefront only offers what can really be
-   * used to reach the customer.
-   */
-  protected contactOptions = computed<{ value: ContactMethod; label: string }[]>(() => {
-    const mode = this.contactMode();
-    const options: { value: ContactMethod; label: string }[] = [];
-    if (mode === 'whatsapp' || mode === 'both') {
-      options.push({ value: 'whatsapp', label: this.i18n.t('checkout.contactWhatsapp') });
-    }
-    if (mode === 'email' || mode === 'both') {
-      options.push({ value: 'email', label: this.i18n.t('checkout.contactEmail') });
-    }
-    return options;
-  });
-
-  /** The contact method the customer picked (a mirror of the form control). */
-  protected selectedContact = signal<ContactMethod>('email');
-
-  /**
-   * The contact field the chosen method uses: WhatsApp goes to the mobile
-   * number, email to the address. The order highlights that field so the
-   * customer sees which detail the order will be sent to.
-   */
-  protected contactFocus = computed<'phone' | 'email' | null>(() => {
-    const method = this.selectedContact();
-    if (method === 'whatsapp') return 'phone';
-    if (method === 'email') return 'email';
-    return null;
-  });
-
-  /** True when the customer wants the order updates on WhatsApp as well. */
-  protected whatsappSelected = computed(() => this.selectedContact() === 'whatsapp');
 
   // Hotel directory (data-driven; the dashboard can extend it freely).
   protected cities = signal<string[]>([]);
@@ -244,23 +184,11 @@ export class CheckoutPageComponent implements OnInit {
     if (u) {
       this.form.patchValue({ fullName: u.name, email: u.email, phone: u.phone ?? '' });
     }
-    // The store's own contact support decides what the order starts with.
-    this.form.controls.contactMethod.setValue(this.defaultContactMethod());
-    this.selectedContact.set(this.defaultContactMethod());
-    // The store's support can change (backend settings): the recorded
-    // preference always stays one the server understands.
-    effect(() => {
-      const allowed = this.contactOptions().map((o) => o.value);
-      if (!allowed.includes(this.form.controls.contactMethod.value)) {
-        this.form.controls.contactMethod.setValue(this.defaultContactMethod());
-      }
-    });
     // An edit ends the last attempt's complaint: the message on screen must
     // always describe the order the customer is placing right now.
     this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        this.selectedContact.set(this.form.controls.contactMethod.value);
         if (this.submitError()) this.submitError.set('');
       });
     // When the backend comes back, unblock the money flow without a reload.
@@ -705,13 +633,6 @@ export class CheckoutPageComponent implements OnInit {
     this.submittedKey ??= `ck-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6)}`;
     const key = this.submittedKey;
     const hotel = this.delivery.hotelById(v.hotelId);
-    // The proof of the consent text: a SHA-256 of the exact line the customer
-    // saw. It travels only when the customer actually opted in to WhatsApp,
-    // because that is the only opt-in the server records.
-    const consentHash =
-      v.contactMethod === 'whatsapp'
-        ? await consentTextHash(this.i18n.t('checkout.whatsappUpdatesHint'))
-        : null;
     const req: CreateOrderRequest = {
       customer: {
         fullName: v.fullName,
@@ -725,10 +646,9 @@ export class CheckoutPageComponent implements OnInit {
         contactMethod: v.contactMethod,
       },
       language: v.language,
-      // The contact method IS the opt-in: WhatsApp updates only when the
-      // customer chose WhatsApp. There is no second control.
-      whatsappOptIn: v.contactMethod === 'whatsapp',
-      consentTextHash: consentHash ?? undefined,
+      // Order updates always go out by email, so the customer never opts in
+      // to WhatsApp and no consent proof is recorded.
+      whatsappOptIn: false,
       items: this.lines().map((l) => ({
         productId: l.productId,
         productName: l.name,

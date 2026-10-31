@@ -29,13 +29,13 @@
               placeholder="{{ i18n.t('checkout.fullNamePlaceholder') }}" />
             @if (err('fullName'); as e) { <small class="err" id="fullName-err">{{ i18n.t(e) }}</small> }
           </div>
-          <div class="field" [class.field--preferred]="contactFocus() === 'phone'">
+          <div class="field">
             <label for="phone">{{ i18n.t('checkout.phone') }}</label>
             <app-phone-input inputId="phone" [describedBy]="err('phone') ? 'phone-err' : null" formControlName="phone"
               (keydown.enter)="onFieldEnter($event)" />
             @if (err('phone'); as e) { <small class="err" id="phone-err">{{ i18n.t(e) }}</small> }
           </div>
-          <div class="field" [class.field--preferred]="contactFocus() === 'email'">
+          <div class="field">
             <label for="email">{{ i18n.t('checkout.email') }}</label>
             <input pInputText id="email" type="email" formControlName="email" autocomplete="email" [fluid]="true"
               (keydown.enter)="onFieldEnter($event)"
@@ -56,32 +56,14 @@
           @if (err('language'); as e) { <small class="err" id="language-err">{{ i18n.t(e) }}</small> }
         </div>
 
-        <!-- How the customer hears about the order. The strip under the pills
-             says what will actually be sent; the WhatsApp line is the consent
-             text the order records a hash of, so it is not reworded here. -->
-        @if (contactOptions().length) {
-          <div class="field field--spaced">
-            <span class="field-label" id="contactMethodLabel">{{ i18n.t('checkout.contactMethod') }}</span>
-            <div class="pill-group" role="radiogroup" aria-labelledby="contactMethodLabel">
-              @for (option of contactOptions(); track option.value) {
-                <label class="pill-choice" [class.selected]="selectedContact() === option.value">
-                  <input type="radio" formControlName="contactMethod" [value]="option.value" />
-                  <span>{{ option.label }}</span>
-                </label>
-              }
-            </div>
-            <p class="update-note">
-              @if (whatsappSelected()) {
-                <i class="pi pi-whatsapp" aria-hidden="true"></i>
-                <span>{{ i18n.t('checkout.whatsappUpdatesHint') }}</span>
-              } @else {
-                <i class="pi pi-envelope" aria-hidden="true"></i>
-                <span>{{ i18n.t('checkout.emailUpdatesHint') }}</span>
-              }
-            </p>
-            @if (err('contactMethod'); as e) { <small class="err" id="contactMethod-err">{{ i18n.t(e) }}</small> }
-          </div>
-        }
+        <!-- Order updates always go out by email, so the contact method is
+             stated as a note rather than offered as a radio choice. -->
+        <div class="field field--spaced">
+          <p class="update-note">
+            <i class="pi pi-envelope" aria-hidden="true"></i>
+            <span>{{ i18n.t('checkout.emailUpdatesHint') }}</span>
+          </p>
+        </div>
       </p-card>
 
       <!-- Address Card -->
