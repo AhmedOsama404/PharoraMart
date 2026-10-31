@@ -28,6 +28,8 @@ export class ForgotPageComponent implements OnInit {
   private scroll = inject(ScrollService);
   private readonly destroyRef = inject(DestroyRef);
   protected busy = signal(false);
+  /** Set once the request succeeds: the response is generic either way. */
+  protected sent = signal(false);
   /** A failed request must say so — a silent failure looks like success. */
   protected serverError = signal('');
   protected form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
@@ -48,14 +50,13 @@ export class ForgotPageComponent implements OnInit {
     }
     this.busy.set(true);
     this.serverError.set('');
-    // Reset delivery is not enabled yet, so the API answers honestly with
-    // password_reset_unavailable rather than faking success.
     this.auth
       .requestPasswordReset(this.form.getRawValue().email)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.busy.set(false);
+          this.sent.set(true);
         },
         error: (err) => {
           this.busy.set(false);

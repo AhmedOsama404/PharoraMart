@@ -1,0 +1,36 @@
+<div class="auth-wrap">
+  <p-card class="auth-card">
+    <h1>{{ i18n.t('auth.verifyEmailTitle') }}</h1>
+    <p class="sub">{{ i18n.t('auth.verifyEmailSubtitle') }}</p>
+
+    @switch (state()) {
+      @case ('verifying') {
+        <p-message severity="info" [text]="i18n.t('auth.verifyEmailChecking')" />
+      }
+      @case ('verified') {
+        <p-message severity="success" [text]="i18n.t('auth.verifyEmailSuccess')" />
+        <div class="links"><a routerLink="/auth/login">{{ i18n.t('auth.backToLogin') }}</a></div>
+      }
+      @case ('failed') {
+        @if (serverError()) { <p-message severity="error" [text]="serverError()" /> }
+
+        @if (resent()) {
+          <p-message severity="success" [text]="i18n.t('auth.resendVerificationSent')" />
+        } @else {
+          <form [formGroup]="resendForm" (ngSubmit)="resend()" novalidate>
+            <div class="field">
+              <label for="resend-email">{{ i18n.t('auth.verificationEmail') }}</label>
+              <input pInputText id="resend-email" type="email" formControlName="email" autocomplete="email" [fluid]="true"
+                [attr.aria-describedby]="resendErr() ? 'resend-err' : null"
+                [attr.aria-invalid]="resendErr() ? true : null" />
+              @if (resendErr(); as e) { <small class="err" id="resend-err">{{ i18n.t(e) }}</small> }
+            </div>
+            <p-button type="submit" [label]="i18n.t('auth.resendVerification')" [loading]="resendBusy()" [fluid]="true" severity="secondary" [outlined]="true" />
+          </form>
+        }
+
+        <div class="links"><a routerLink="/auth/login">{{ i18n.t('auth.backToLogin') }}</a></div>
+      }
+    }
+  </p-card>
+</div>

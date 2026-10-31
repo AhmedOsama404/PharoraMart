@@ -7,6 +7,7 @@
     <div class="row"><span>{{ i18n.t('auth.email') }}</span><strong>{{ u.email }}</strong></div>
     @if (u.phone) { <div class="row"><span>{{ i18n.t('auth.phone') }}</span><strong>{{ u.phone }}</strong></div> }
     <div class="actions">
+      <p-button [label]="i18n.t('auth.changePasswordTitle')" severity="secondary" [outlined]="true" (onClick)="go('/auth/change-password')" />
       <p-button [label]="i18n.t('nav.orders')" severity="secondary" [outlined]="true" (onClick)="go('/orders')" />
       <p-button [label]="i18n.t('nav.logout')" severity="danger" [outlined]="true" (onClick)="logout()" />
     </div>
