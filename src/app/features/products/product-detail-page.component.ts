@@ -5,7 +5,7 @@ import { toObservable, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-i
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Meta } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
-import { map, distinctUntilChanged, switchMap, catchError, startWith, of, type Observable } from 'rxjs';
+import { map, distinctUntilChanged, switchMap, combineLatest, catchError, startWith, of, type Observable } from 'rxjs';
 import { Breadcrumb } from 'primeng/breadcrumb';
 import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
@@ -290,18 +290,19 @@ export class ProductDetailPageComponent implements OnDestroy {
     if (!id) {
       return of({ status: 'not-found', product: null, related: [] } as const);
     }
-    return this.products.getById(id).pipe(
-      map((product) => {
-        if (!product || typeof product.id !== 'string') throw new Error('not-found');
-        return product;
-      }),
-      switchMap((product) =>
-        this.products.related(product).pipe(
-          map((related): ProductDetailState => ({ status: 'ready', product, related })),
-          // Related items are a nice-to-have: never fail the whole page for them.
-          catchError((): Observable<ProductDetailState> => of({ status: 'ready', product, related: [] })),
-        ),
+    return combineLatest({
+      product: this.products.getById(id).pipe(
+        map((product) => {
+          if (!product || typeof product.id !== 'string') throw new Error('not-found');
+          return product;
+        }),
       ),
+      // Related items are a nice-to-have: never fail the whole page for them.
+      related: this.products.relatedById(id).pipe(
+        catchError((): Observable<Product[]> => of([])),
+      ),
+    }).pipe(
+      map(({ product, related }): ProductDetailState => ({ status: 'ready', product, related })),
       catchError((err: unknown): Observable<ProductDetailState> =>
         of({
           status: err instanceof Error && err.message === 'not-found' ? 'not-found' : 'error',

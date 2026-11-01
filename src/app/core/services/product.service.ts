@@ -234,15 +234,27 @@ export class ProductService {
 
   related(product: Product, limit = 4): Observable<Product[]> {
     if (!environment.useMockApi) {
-      return this.api.get<BackendProduct[]>(`products/${product.id}/related`, { limit }).pipe(
-        map((items) => items.map(toProduct)),
-      );
+      return this.relatedById(product.id, limit);
     }
     const pool = this.products().filter(
       (p) => p.id !== product.id && (p.categoryId === product.categoryId || p.tags.some((t) => product.tags.includes(t))),
     );
     const fallback = this.products().filter((p) => p.id !== product.id && !pool.includes(p));
     return of([...pool, ...fallback].slice(0, limit)).pipe(delay(200));
+  }
+
+  /**
+   * Related products by id, so callers can fetch them in parallel with the
+   * product itself instead of waiting for the product to resolve first.
+   */
+  relatedById(id: string, limit = 4): Observable<Product[]> {
+    if (!environment.useMockApi) {
+      return this.api.get<BackendProduct[]>(`products/${encodeURIComponent(id)}/related`, { limit }).pipe(
+        map((items) => items.map(toProduct)),
+      );
+    }
+    const product = this.products().find((p) => p.id === id);
+    return product ? this.related(product, limit) : of([]);
   }
 
   featured(): Observable<Product[]> {

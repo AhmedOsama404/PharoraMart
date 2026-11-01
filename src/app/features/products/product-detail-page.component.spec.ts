@@ -28,7 +28,7 @@ describe('ProductDetailPageComponent (regression)', () => {
 
   const stubProducts = {
     getById: (id: string) => getByIdImpl(id),
-    related: () => {
+    relatedById: () => {
       if (relatedShouldFail) return throwError(() => new Error('related-down'));
       return of([]);
     },
